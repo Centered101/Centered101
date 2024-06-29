@@ -1,9 +1,6 @@
 ## Hi there 👋
-# Welcome to Profile Centered101
-
-## Credit
  
-> Instragram by **Centered101** *(Critter or Mr. Anonymus)*
+> **Centered101**
 <details>
 <summary>
 <strong>🚀 Active projects</strong></summary>
