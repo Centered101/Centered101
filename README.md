@@ -4,8 +4,6 @@
 <details>
 <summary>
 <strong>🚀 Active projects</strong></summary>
-
-*🚀 Active projects*
   
 	https://centered101-webfollow.web.app
  
@@ -18,8 +16,6 @@
 <summary>
 <strong>⚡ Stats</strong></summary>
 
-*⚡ Stats*
-
 [![Stats](https://github-readme-stats.vercel.app/api?username=centered101&count_private=true&show_icons=true&hide_border=true&custom_title=Stats&bg_color=00000000)](https://github.com/Centered101)
 
 [![Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=compact&langs_count=10&hide_border=true&custom_title=Languages&bg_color=00000000)](https://github.com/Centered101)
@@ -29,8 +25,6 @@
 <details>
 <summary>
 <strong>💬 Contact me</strong></summary>
-
-*💬 Contact me*
   
 [![Instagram](https://img.shields.io/badge/Instagram-%23E4405F.svg?logo=Instagram&logoColor=white)](https://instagram.com/centered101)
 [![Facebook](https://img.shields.io/badge/Facebook-%231877F2.svg?logo=Facebook&logoColor=white)](https://facebook.com/centered101)
@@ -39,9 +33,7 @@
 
 <details>
 <summary>
-<strong>😄 Support my work</strong></summary>
-
-*😄 Support my work*
+<strong>Support my work</strong></summary>
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/Centered101)
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)
