@@ -1,6 +1,4 @@
 ## Hi there 👋
- 
-> i'm **Centered101*
 
 [![Stats](https://github-readme-stats.vercel.app/api?username=centered101&count_private=true&show_icons=true&hide_border=true&custom_title=Stats&bg_color=00000000)](https://github.com/Centered101)
 
@@ -22,7 +20,6 @@
 <strong>💬 Contact me</strong></summary>
   
 [![Instagram](https://img.shields.io/badge/Instagram-%23E4405F.svg?logo=Instagram&logoColor=white)](https://instagram.com/centered101)
-[![Facebook](https://img.shields.io/badge/Facebook-%231877F2.svg?logo=Facebook&logoColor=white)](https://facebook.com/centered101)
 
 </details>
 
