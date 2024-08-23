@@ -8,11 +8,26 @@
 
 [![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=Centered101&langs_count=8&hide_border=true&custom_title=🌐&#8194;Languages&#8194;🥴&bg_color=00000000)](https://github.com/Centered101)
 
+<!-- **Centered101/Centered101** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+
+Here are some ideas to get you started: -->
+
+- 🔭 I’m currently working on: none
+- 🌱 I'm currently learning backend programming languages
+- 👯 I’m looking to collaborate on web projects
+- 🤔 I’m looking for help with back-end & JavaScript
+- 💬 Ask me about wanting to be a programmer
+- 📫 How to reach me: savencenter5047@gmail.com
+- 😄 Pronouns: Never stop learning
+- ⚡ Fun fact: Stack Overflow is everything
+
+<hr />
+
 <details>
 <summary>
 <strong>🚀 Active projects</strong></summary>
 
-#### web blok
+#### web blog
 	centered101-webfollow.web.app
 #### web test project
 	project-test-submission.web.app
@@ -41,18 +56,3 @@
 </details>
 
 <!-- Proudly created by (@centered101) -->
-
-<!--
-**Centered101/Centered101** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
-
-Here are some ideas to get you started:
-
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
