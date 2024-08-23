@@ -4,7 +4,7 @@
 
 [![Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=compact&langs_count=10&hide_border=true&custom_title=Languages&bg_color=00000000)](https://github.com/Centered101)
 
-https://camo.githubusercontent.com/e0e940c233bfe6c4701decbd49da0682cd04b75cbd67c36bd65df38e29a1e812/68747470733a2f2f6769746875622d726561646d652d73746174732e76657263656c2e6170702f6170692f746f702d6c616e67732f3f757365726e616d653d4368617463686177616e446577343034266c616e67735f636f756e743d38
+![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=Centered101&langs_count=8)
 
 <details>
 <summary>
