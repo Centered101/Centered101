@@ -6,6 +6,8 @@
 
 ![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=Centered101&langs_count=8)
 
+![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=Centered101&theme=radical) 
+
 <details>
 <summary>
 <strong>🚀 Active projects</strong></summary>
