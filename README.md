@@ -1,6 +1,6 @@
 ## Hi there 👋
 
-[![Stats](https://github-readme-stats.vercel.app/api?username=centered101&count_private=true&show_icons=true&hide_border=true&custom_title=Stats&bg_color=00000000)](https://github.com/Centered101)
+[![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=centered101&count_private=true&show_icons=true&hide_border=true&custom_title=Stats&bg_color=00000000)](https://github.com/Centered101)
 
 [![Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=compact&langs_count=10&hide_border=true&custom_title=Languages&bg_color=00000000)](https://github.com/Centered101)
 
