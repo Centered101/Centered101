@@ -1,21 +1,24 @@
 ## Hi there 👋
 
-[![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=centered101&count_private=true&show_icons=true&hide_border=true&custom_title=Stats&bg_color=#00CC4FB3)](https://github.com/Centered101)
+[![📊Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=centered101&count_private=true&show_icons=true&hide_border=true&bg_color=00CC4FB3)](https://github.com/Centered101)
 
-[![Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=compact&langs_count=10&hide_border=true&custom_title=Languages&bg_color=00000000)](https://github.com/Centered101)
+[![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=Centered101&theme=radical&count_private=true&show_icons=true&hide_border=true&custom_title=📊&#8194;Stats)](https://github.com/Centered101)
 
-[![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=Centered101&langs_count=8)](https://github.com/Centered101)
+[![Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=compact&langs_count=10&hide_border=true&custom_title=🌐&#8194;Languages&bg_color=00000000)](https://github.com/Centered101)
 
-[![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=Centered101&theme=radical)](https://github.com/Centered101)
+[![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=Centered101&langs_count=8&hide_border=true&custom_title=🌐&#8194;Languages&bg_color=00000000)](https://github.com/Centered101)
 
 <details>
 <summary>
 <strong>🚀 Active projects</strong></summary>
-  
-	https://centered101-webfollow.web.app
+
+#### web blok
+	centered101-webfollow.web.app
+#### web test project
+	project-test-submission.web.app
  
- [![Tes-D_Centered101](https://centered101-webfollow.web.app/images/Tes-D.png)
- ](https://centered101-webfollow.web.app/)
+ <!--[![Tes-D_Centered101](https://centered101-webfollow.web.app/images/Tes-D.png)
+ ](https://centered101-webfollow.web.app/) -->
 
 </details>
 
