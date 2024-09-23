@@ -6,7 +6,7 @@
 
 <!-- [![Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=compact&langs_count=10&hide_border=true&custom_title=🌐&#8194;Languages&bg_color=00000000)](https://github.com/Centered101) -->
 
-[![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=Centered101&langs_count=8&hide_border=true&custom_title=🌐&#8194;Languages&#8194;🥴&bg_color=00000000)](https://github.com/Centered101)
+<!-- [![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=Centered101&langs_count=8&hide_border=true&custom_title=🌐&#8194;Languages&#8194;🥴&bg_color=00000000)](https://github.com/Centered101) -->
 
 <!-- **Centered101/Centered101** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 
