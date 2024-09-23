@@ -3,7 +3,7 @@
 [![stats](https://github-readme-stats.vercel.app/api?username=centered101&count_private=true&show_icons=true&hide_border=true&custom_title=📊&#8194;Centered101's&#8194;GitHub&#8194;stats&#8194;ครับน้อง&#8194;~~~&bg_color=00000000)](https://github.com/Centered101)
 
 <!-- [![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=Centered101&theme=radical&count_private=true&show_icons=true&hide_border=true&custom_title=📊&#8194;Stats)](https://github.com/Centered101) -->
- [![Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=compact&langs_count=10&hide_border=true&custom_title=🌐&#8194;Languages&bg_color=00000000)](https://github.com/Centered101)
+ [![Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=compact&langs_count=10&hide_border=true&custom_title=🌐&#8194;Languages&8194;🥴&bg_color=00000000)](https://github.com/Centered101)
 
 <!-- [![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=Centered101&langs_count=8&hide_border=true&custom_title=🌐&#8194;Languages&#8194;🥴&bg_color=00000000)](https://github.com/Centered101) -->
 
