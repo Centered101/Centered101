@@ -17,9 +17,9 @@ Here are some ideas to get you started: -->
 - 🤔 I’m looking for help with back-end & JavaScript
 - 💬 Ask me about wanting to be a programmer
 - 📫 How to reach me: 
-	CENTERED101@HOTMAIL.COM​,
-	CENTERED101@OUTLOOK.COM,
-	36887@PRANARAI.AC.TH
+	- centered101@outlook.com,
+	- centered101@hotmail.com,
+	- 36887@pranarai.ac.th
 - 😄 Pronouns: Never stop learning
 - ⚡ Fun fact: Stack Overflow is everything
 
