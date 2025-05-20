@@ -37,7 +37,7 @@ Hi! I'm Centered101, a passionate self-taught web developer and aspiring full-st
 
 ## 💬 Contact me
 
-<table border=1 width="100%">
+<table width="100%">
   <thead>
     <tr>
       <th align="center" width="40">
