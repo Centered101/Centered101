@@ -1,21 +1,29 @@
-
 ## Hi there 👋
 
-<!-- **Centered101/Centered101** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
-
-Here are some ideas to get you started: -->
-
-- 🔭 I’m currently working on: none
-- 🌱 I'm currently learning backend programming languages
-- 👯 I’m looking to collaborate on web projects
-- 🤔 I’m looking for help with back-end & JavaScript
-- 💬 Ask me about wanting to be a programmer
-- 📫 How to reach me: 
-	- centered101@outlook.com,
-	- centered101@hotmail.com,
-	- 36887@pranarai.ac.th
-- 😄 Pronouns: Never stop learning
+- 🔭 I’m currently working on: none  
+- 🌱 I'm currently learning backend programming languages  
+- 👯 I’m looking to collaborate on web projects  
+- 🤔 I’m looking for help with back-end & JavaScript  
+- 💬 Ask me about wanting to be a programmer  
+- 📫 How to reach me:
+  - 📧 centered101@outlook.com
+  - 📧 centered101@hotmail.com
+  - 📧 36887@pranarai.ac.th
+- 😄 Pronouns: it, he/him  
 - ⚡ Fun fact: Stack Overflow is everything
+
+## 🙋‍♂️ About Me
+
+Hi! I'm Centered101, a passionate self-taught web developer and aspiring full-stack engineer from Thailand 🇹🇭.
+
+- 🔭 I’m currently building personal projects using React, Tailwind CSS, and Firebase  
+- 🌱 Currently learning backend technologies like Node.js and Express  
+- 💡 I love solving real-world problems through code and UI/UX design  
+
+## 🔗 Featured Projects
+
+- 🎨 [Project Test Submission](https://project-test-submission.netlify.app)  
+- 📊 [Asia-LB Web App](https://asia-lb.web.app)
 
 <hr />
 
@@ -29,11 +37,46 @@ Here are some ideas to get you started: -->
 
 ## 💬 Contact me
 
-|<img src="https://media.giphy.com/media/WUlplcMpOCEmTGBtBW/giphy.gif" align="center" draggable="false" oncontextmenu="return false;" width="30">|SOCIAL                                                                                                                                   |ACCUNT       |
-|------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|-------------|
-|Instagram                                                                                                                                       |[![Instagram](https://img.shields.io/badge/Instagram-%23E4405F.svg?logo=Instagram&logoColor=white)](https://instagram.com/centered101)   |`Centered101`|
-|LinkedIn                                                                                                                                        |[![LinkedIn](https://img.shields.io/badge/LinkedIn-%230077B5.svg?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/centered101)|`Centered101`|
-|Discord                                                                                                                                        |[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?logo=discord&logoColor=white)](https://Discordapp.com/users/955850603962183690)|`Centered101`|
+<table border=1 width="100%">
+  <thead>
+    <tr>
+      <th align="center" width="40">
+        <img src="https://media.giphy.com/media/WUlplcMpOCEmTGBtBW/giphy.gif" width="30" draggable="false" oncontextmenu="return false;">
+      </th>
+      <th align="center">SOCIAL</th>
+      <th align="center">ACCOUNT</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td></td>
+      <td>
+        <a href="https://instagram.com/centered101">
+          <img src="https://img.shields.io/badge/Instagram-%23E4405F.svg?logo=Instagram&logoColor=white">
+        </a>
+      </td>
+      <td><code>Centered101</code></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>
+        <a href="https://www.linkedin.com/in/centered101">
+          <img src="https://img.shields.io/badge/LinkedIn-%230077B5.svg?logo=linkedin&logoColor=white">
+        </a>
+      </td>
+      <td><code>Centered101</code></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>
+        <a href="https://Discordapp.com/users/955850603962183690">
+          <img src="https://img.shields.io/badge/Discord-%235865F2.svg?logo=discord&logoColor=white">
+        </a>
+      </td>
+      <td><code>Centered101</code></td>
+    </tr>
+  </tbody>
+</table>
 
 <details>
 <summary>
