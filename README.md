@@ -14,27 +14,35 @@
 ### 📊 GitHub Stats
 
 <div align="center">
+  <!-- GitHub Streak -->
   <a href="https://github.com/Centered101">
     <img
       src="https://github-readme-streak-stats.herokuapp.com?user=centered101&title_color=FF7070&theme=transparent&hide_border=true&ring=0D0D0D&fire=0D0D0D&currStreakLabel=0D0D0D"
       alt="GitHub Streak" />
   </a>
   <br />
+
+  <!-- GitHub Stats -->
   <a href="https://github.com/Centered101">
     <img
       src="https://github-readme-stats.vercel.app/api?username=centered101&custom_title=📊&nbsp;Centered101's&nbsp;GitHub&nbsp;Stats&theme=transparent&show_icons=true&hide_border=true&text_color=0D0D0D"
       alt="GitHub Stats" />
   </a>
   <br />
+
+  <!-- Top Languages -->
   <a href="https://github.com/Centered101">
     <img
       src="https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=donut&langs_count=10&custom_title=🌐&#8194;Top&#8194;Languages&#8194;🥴&theme=transparent&hide_border=true&text_color=0D0D0D"
       alt="Top Languages" />
   </a>
-    <a href="https://github.com/Centered101">
+  <br />
+
+  <!-- WakaTime Stats -->
+  <a href="https://wakatime.com/@centered101">
     <img
-      src="https://github-readme-stats.vercel.app/api/wakatime?username=centered101&layout=donut&langs_count=10&theme=transparent&hide_border=true&text_color=0D0D0D)](https://github.com/anuraghazra/github-readme-stats"
-      alt="Top Languages" />
+      src="https://github-readme-stats.vercel.app/api/wakatime?username=centered101&theme=transparent&hide_border=true&text_color=0D0D0D"
+      alt="WakaTime Stats" />
   </a>
 </div>
 
