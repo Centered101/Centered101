@@ -57,8 +57,8 @@
 ## 💬 Let's Connect
 Got a project in mind or just want to chat about dev stuff? Reach me here:
 
-[![Firebase](https://skillicons.dev/icons?i=instagram,&theme=light)](https://instagram.com/centered101)
-[![Firebase](https://skillicons.dev/icons?i=linkedin,&theme=light)](https://www.linkedin.com/in/centered101)
+[![Firebase](https://skillicons.dev/icons?i=instagram&theme=light)](https://instagram.com/centered101)
+[![Firebase](https://skillicons.dev/icons?i=linkedin&theme=light)](https://www.linkedin.com/in/centered101)
 [![Firebase](https://skillicons.dev/icons?i=discord&theme=light)](https://Discordapp.com/users/955850603962183690)
 
 ## 💖 Support the Project
