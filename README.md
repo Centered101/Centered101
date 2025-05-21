@@ -7,26 +7,16 @@
 - 🤝 Seeking help in **JavaScript** & **backend logic**  
 - 💬 Ask me about becoming a **programmer**  
 - 📫 Reach me at: [centered101@outlook.com](mailto:centered101@outlook.com) 📧
-- 😄 Pronouns: it/he  
+- 😄 Pronouns: it, he/him  
 - ⚡ Fun fact: Stack Overflow is my second brain 🧠 
 <hr />
 
 ### 📊 GitHub Stats
 
-
-<!-- [![stats](https://github-readme-stats.vercel.app/api?username=centered101&count_private=true&show_icons=true&hide_border=true&custom_title=📊&nbsp;Centered101's&nbsp;GitHub&nbsp;Stats&bg_color=00000000)](https://github.com/Centered101/) -->
-<!-- [![Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=compact&langs_count=10&hide_border=true&custom_title=🌐&#8194;Top&#8194;Languages&#8194;🥴&bg_color=00000000)](https://github.com/Centered101/) -->
-
-<!-- [![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=Centered101&theme=radical&count_private=true&show_icons=true&hide_border=true&custom_title=📊&#8194;Stats)](https://github.com/Centered101) -->
-<!-- [![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=Centered101&langs_count=8&hide_border=true&custom_title=🌐&#8194;Languages&#8194;🥴&bg_color=00000000)](https://github.com/Centered101) -->
-<!-- [![GitHub Streak](https://github-readme-streak-stats.herokuapp.com?user=centered101&theme=dark&hide_border=true&border_radius=20&mode=weekly)]((https://github.com/Centered101/) -->
-<!-- [![centered101's GitHub stats](https://github-readme-stats.vercel.app/api?username=centered101&hide=contribs&show_icons=true&theme=vision-friendly-dark&hide_border=true&border_radius=20&bg_color=151515)]((https://github.com/Centered101/) -->
-<!-- [![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=pie&theme=vision-friendly-dark&hide_border=true&border_radius=20&bg_color=151515)]((https://github.com/Centered101/) -->
-
 <div align="center">
   <a href="https://github.com/Centered101">
     <img
-      src="https://github-readme-streak-stats.herokuapp.com?user=centered101&theme=transparent&hide_border=true&ring=0D0D0D&fire=0D0D0D&currStreakLabel=0D0D0D"
+      src="https://github-readme-streak-stats.herokuapp.com?user=centered101&title_color=FF7070&theme=transparent&hide_border=true&ring=0D0D0D&fire=0D0D0D&currStreakLabel=0D0D0D"
       alt="GitHub Streak" />
   </a>
   <br />
@@ -38,7 +28,12 @@
   <br />
   <a href="https://github.com/Centered101">
     <img
-      src="https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=compact&langs_count=10&custom_title=🌐&#8194;Top&#8194;Languages&#8194;🥴&theme=transparent&hide_border=true&text_color=0D0D0D"
+      src="https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=donut&langs_count=10&custom_title=🌐&#8194;Top&#8194;Languages&#8194;🥴&theme=transparent&hide_border=true&text_color=0D0D0D"
+      alt="Top Languages" />
+  </a>
+    <a href="https://github.com/Centered101">
+    <img
+      src="https://github-readme-stats.vercel.app/api/wakatime?username=centered101&layout=donut&langs_count=10&theme=transparent&hide_border=true&text_color=0D0D0D)](https://github.com/anuraghazra/github-readme-stats"
       alt="Top Languages" />
   </a>
 </div>
