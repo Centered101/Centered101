@@ -1,90 +1,69 @@
-## Hi there 👋
+## 👋 Hey there! I'm Centered101
 
-- 🔭 I’m currently working on: none  
-- 🌱 I'm currently learning backend programming languages  
-- 👯 I’m looking to collaborate on web projects  
-- 🤔 I’m looking for help with back-end & JavaScript  
-- 💬 Ask me about wanting to be a programmer  
-- 📫 How to reach me:
-  - 📧 centered101@outlook.com
-  - 📧 centered101@hotmail.com
-  - 📧 36887@pranarai.ac.th
-- 😄 Pronouns: it, he/him  
-- ⚡ Fun fact: Stack Overflow is everything
-
-## 🙋‍♂️ About Me
-
-Hi! I'm Centered101, a passionate self-taught web developer and aspiring full-stack engineer from Thailand 🇹🇭.
-
-- 🔭 I’m currently building personal projects using React, Tailwind CSS, and Firebase  
-- 🌱 Currently learning backend technologies like Node.js and Express  
 - 💡 I love solving real-world problems through code and UI/UX design  
-
-## 🔗 Featured Projects
-
-- 🎨 [Project Test Submission](https://project-test-submission.netlify.app)  
-- 📊 [Asia-LB Web App](https://asia-lb.web.app)
-
+- 🔭 Currently building personal projects using **React**, **Tailwind CSS**, and **Firebase**  
+- 🌱 Learning more about **backend development**  
+- 👯 Open to collaborate on **web projects**  
+- 🤝 Seeking help in **JavaScript** & **backend logic**  
+- 💬 Ask me about becoming a **programmer**  
+- 📫 Reach me at:  
+  - 📧 [centered101@outlook.com](mailto:centered101@outlook.com)  
+  - 📧 [centered101@hotmail.com](mailto:centered101@hotmail.com)  
+  - 📧 [36887@pranarai.ac.th](mailto:36887@pranarai.ac.th)  
+- 😄 Pronouns: it/he  
+- ⚡ Fun fact: Stack Overflow is my second brain 🧠 
 <hr />
 
-![stats](https://github-readme-stats.vercel.app/api?username=centered101&count_private=true&show_icons=true&hide_border=true&custom_title=📊&#8194;Centered101's&#8194;GitHub&#8194;stats&#8194;ครับน้อง&#8194;~~~&bg_color=00000000)
-![Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=compact&langs_count=10&hide_border=true&custom_title=🌐&#8194;Languages&#8194;🥴&bg_color=00000000)
-<img src="https://media.giphy.com/media/M9gbBd9nbDrOTu1Mqx/giphy.gif" align="right" draggable="false" oncontextmenu="return false;" width="230">
-<img src="https://media.giphy.com/media/12oufCB0MyZ1Go/giphy.gif" align="right" draggable="false" oncontextmenu="return false;" width="50">
+### 📊 GitHub Stats
+
+<!-- [![stats](https://github-readme-stats.vercel.app/api?username=centered101&count_private=true&show_icons=true&hide_border=true&custom_title=📊&nbsp;Centered101's&nbsp;GitHub&nbsp;Stats&bg_color=00000000)](https://github.com/Centered101/) -->
+<!-- [![Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=compact&langs_count=10&hide_border=true&custom_title=🌐&#8194;Top&#8194;Languages&#8194;🥴&bg_color=00000000)](https://github.com/Centered101/) -->
 
 <!-- [![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=Centered101&theme=radical&count_private=true&show_icons=true&hide_border=true&custom_title=📊&#8194;Stats)](https://github.com/Centered101) -->
 <!-- [![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=Centered101&langs_count=8&hide_border=true&custom_title=🌐&#8194;Languages&#8194;🥴&bg_color=00000000)](https://github.com/Centered101) -->
+<!-- [![GitHub Streak](https://github-readme-streak-stats.herokuapp.com?user=centered101&theme=dark&hide_border=true&border_radius=20&mode=weekly)]((https://github.com/Centered101/) -->
+<!-- [![centered101's GitHub stats](https://github-readme-stats.vercel.app/api?username=centered101&hide=contribs&show_icons=true&theme=vision-friendly-dark&hide_border=true&border_radius=20&bg_color=151515)]((https://github.com/Centered101/) -->
+<!-- [![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=pie&theme=vision-friendly-dark&hide_border=true&border_radius=20&bg_color=151515)]((https://github.com/Centered101/) -->
 
-## 💬 Contact me
+<p align="center">
+  <img src="https://github-readme-streak-stats.herokuapp.com?user=centered101&theme=transparent&hide_border=true&ring=0D0D0D&fire=0D0D0D&currStreakLabel=0D0D0D" alt="GitHub Streak"/>
+</p>
 
-<table width="100%">
-  <thead>
-    <tr>
-      <th align="center" width="40">
-        <img src="https://media.giphy.com/media/WUlplcMpOCEmTGBtBW/giphy.gif" width="30" draggable="false" oncontextmenu="return false;">
-      </th>
-      <th align="center">SOCIAL</th>
-      <th align="center">ACCOUNT</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td></td>
-      <td>
-        <a href="https://instagram.com/centered101">
-          <img src="https://img.shields.io/badge/Instagram-%23E4405F.svg?logo=Instagram&logoColor=white">
-        </a>
-      </td>
-      <td><code>Centered101</code></td>
-    </tr>
-    <tr>
-      <td></td>
-      <td>
-        <a href="https://www.linkedin.com/in/centered101">
-          <img src="https://img.shields.io/badge/LinkedIn-%230077B5.svg?logo=linkedin&logoColor=white">
-        </a>
-      </td>
-      <td><code>Centered101</code></td>
-    </tr>
-    <tr>
-      <td></td>
-      <td>
-        <a href="https://Discordapp.com/users/955850603962183690">
-          <img src="https://img.shields.io/badge/Discord-%235865F2.svg?logo=discord&logoColor=white">
-        </a>
-      </td>
-      <td><code>Centered101</code></td>
-    </tr>
-  </tbody>
-</table>
+<p align="center">
+  <img src="https://github-readme-stats.vercel.app/api?username=centered101&theme=transparent&hide_border=true&text_color=0D0D0D" alt="GitHub Stats" />
+</p>
 
-<details>
-<summary>
-<strong>Support my work</strong></summary>
+<p align="center">
+  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=compact&langs_count=10&custom_title=🌐&#8194;Top&#8194;Languages&#8194;🥴&bg_color=00000000&theme=transparent&hide_border=true&text_color=0D0D0D" alt="Top Languages" />
+</p>
 
-[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/Centered101)
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)
-](https://ko-fi.com/centered101)
-</details>
+## Skills
+
+#### Code Editors
+[![My Skills](https://skillicons.dev/icons?i=vscode,visualstudio,pycharm,godot,arduino&theme=light)](https://github.com/Centered101/)
+
+#### 🚀 Languages  
+[![HTML](https://skillicons.dev/icons?i=html,css,js,py,c,cs,cpp&theme=light)](https://github.com/Centered101/)
+
+#### 🧠 Libraries & Frameworks  
+[![React](https://skillicons.dev/icons?i=react,vite,tailwind,jquery,nodejs&theme=light)](https://github.com/Centered101/)
+
+#### 🎨 Design Tools  
+[![Figma](https://skillicons.dev/icons?i=figma,photoshop,illustrator&theme=light)](https://github.com/Centered101/)
+
+#### 🔧 Tools & Platforms  
+[![Firebase](https://skillicons.dev/icons?i=firebase,vercel,netlify,git,github&theme=light)](https://github.com/Centered101/)
+
+## 💬 Let's Connect
+Got a project in mind or just want to chat about dev stuff? Reach me here:
+
+[![Firebase](https://skillicons.dev/icons?i=instagram,&theme=light)](https://instagram.com/centered101)
+[![Firebase](https://skillicons.dev/icons?i=linkedin,&theme=light)](https://www.linkedin.com/in/centered101)
+[![Firebase](https://skillicons.dev/icons?i=discord&theme=light)](https://Discordapp.com/users/955850603962183690)
+
+## 💖 Support the Project
+Thank you so much already for using my projects! If you want to go a step further and support my open source work, buy me a coffee:
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-%23FFDD00.svg?&style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/Centered101)
 
 <!-- Proudly created by (@centered101) -->
