@@ -15,25 +15,24 @@
 
 <div align="center">
   <!-- GitHub Streak -->
-  <a href="https://github.com/Centered101">
+  <a href="https://wakatime.com/@centered101">
     <img
-      src="https://github-readme-streak-stats.herokuapp.com?user=centered101&title_color=FF7070&theme=transparent&hide_border=true&ring=0D0D0D&fire=0D0D0D&currStreakLabel=0D0D0D"
-      alt="GitHub Streak" />
+      src="https://github-readme-streak-stats.herokuapp.com?user=centered101&icon_color=409EFE&title_color=409EFE&text_color=0D0D0D&theme=transparent&show_icons=true&hide_border=true&ring=409EFE&fire=FF7070"
+      alt="GitHub Streak" style="width: 768px;" />
   </a>
   <br />
 
   <!-- GitHub Stats -->
-  <a href="https://github.com/Centered101">
+  <a href="https://wakatime.com/@centered101">
     <img
-      src="https://github-readme-stats.vercel.app/api?username=centered101&custom_title=📊&nbsp;Centered101's&nbsp;GitHub&nbsp;Stats&theme=transparent&show_icons=true&hide_border=true&text_color=0D0D0D"
+      src="https://github-readme-stats.vercel.app/api?username=centered101&custom_title=📊&nbsp;Centered101's&nbsp;GitHub&nbsp;Stats&show=reviews,discussions_started,discussions_answered,prs_merged,prs_merged_percentage&icon_color=409EFE&title_color=409EFE&text_color=0D0D0D&theme=transparent&show_icons=true&hide_border=true"
       alt="GitHub Stats" />
   </a>
-  <br />
 
   <!-- Top Languages -->
-  <a href="https://github.com/Centered101">
+  <a href="https://wakatime.com/@centered101">
     <img
-      src="https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=donut&langs_count=10&custom_title=🌐&#8194;Top&#8194;Languages&#8194;🥴&theme=transparent&hide_border=true&text_color=0D0D0D"
+      src="https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=donut&custom_title=🌐&#8194;Top&#8194;Languages&#8194;🥴&icon_color=409EFE&title_color=409EFE&text_color=0D0D0D&theme=transparent&show_icons=true&hide_border=true"
       alt="Top Languages" />
   </a>
   <br />
@@ -41,9 +40,11 @@
   <!-- WakaTime Stats -->
   <a href="https://wakatime.com/@centered101">
     <img
-      src="https://github-readme-stats.vercel.app/api/wakatime?username=centered101&theme=transparent&hide_border=true&text_color=0D0D0D"
+      src="https://github-readme-stats.vercel.app/api/wakatime?username=centered101&custom_title=WakaTime&#8194;Stats&#8194;⏲&icon_color=409EFE&title_color=409EFE&text_color=0D0D0D&theme=transparent&show_icons=true&hide_border=true"
       alt="WakaTime Stats" />
   </a>
+ <br> 
+ <a href="https://wakatime.com/@5985a29f-6196-4ce1-88e2-b02dce864117"><img src="https://wakatime.com/badge/user/5985a29f-6196-4ce1-88e2-b02dce864117.svg" alt="Total time coded since May 21 2025" /></a>
 </div>
 
 ## Skills
