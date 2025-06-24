@@ -47,22 +47,20 @@
  <a href="https://wakatime.com/@5985a29f-6196-4ce1-88e2-b02dce864117" target="_blank" ><img src="https://wakatime.com/badge/user/5985a29f-6196-4ce1-88e2-b02dce864117.svg" alt="Total time coded since May 21 2025" /></a>
 </div>
 
-## Skills
+## 💻 Code Editors  
+[![Editors](https://skillicons.dev/icons?i=vscode,visualstudio,pycharm,godot,arduino,vim&theme=light)](https://skillicons.dev)
 
-#### Code Editors
-[![My Skills](https://skillicons.dev/icons?i=vscode,visualstudio,pycharm,godot,arduino&theme=light)](https://skillicons.dev)
+## 🚀 Programming Languages  
+[![Languages](https://skillicons.dev/icons?i=html,css,js,py,c,cs,cpp&theme=light)](https://skillicons.dev)
 
-#### 🚀 Languages  
-[![HTML](https://skillicons.dev/icons?i=html,css,js,py,c,cs,cpp&theme=light)](https://skillicons.dev)
+## 🧠 Libraries & Frameworks  
+[![Frameworks](https://skillicons.dev/icons?i=react,vite,tailwind,jquery,nodejs&theme=light)](https://skillicons.dev)
 
-#### 🧠 Libraries & Frameworks  
-[![React](https://skillicons.dev/icons?i=react,vite,tailwind,jquery,nodejs&theme=light)](https://skillicons.dev)
+## 🎨 Design Tools  
+[![Design](https://skillicons.dev/icons?i=figma,photoshop,illustrator&theme=light)](https://skillicons.dev)
 
-#### 🎨 Design Tools  
-[![Figma](https://skillicons.dev/icons?i=figma,photoshop,illustrator&theme=light)](https://skillicons.dev)
-
-#### 🔧 Tools & Platforms  
-[![Firebase](https://skillicons.dev/icons?i=firebase,vercel,netlify,git,github&theme=light)](https://skillicons.dev)
+## 🔧 Tools & Platforms  
+[![Tools](https://skillicons.dev/icons?i=firebase,vercel,netlify,git,github&theme=light)](https://skillicons.dev)
 
 ## 💬 Let's Connect
 Got a project in mind or just want to chat about dev stuff? Reach me here:
