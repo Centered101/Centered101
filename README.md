@@ -17,7 +17,7 @@
   <!-- GitHub Streak -->
   <a href="https://wakatime.com/@centered101" target="_blank" >
     <img
-      src="https://github-readme-streak-stats.herokuapp.com?user=centered101&icon_color=409EFE&title_color=409EFE&text_color=0D0D0D&theme=transparent&show_icons=true&hide_border=true&ring=409EFE&fire=FF7070"
+      src="https://github-readme-streak-stats.herokuapp.com?user=centered101&icon_color=409EFE&title_color=409EFE&theme=transparent&show_icons=true&hide_border=true&ring=409EFE&fire=FF7070"
       alt="GitHub Streak" style="width: 768px;" />
   </a>
   <br />
@@ -25,14 +25,14 @@
   <!-- GitHub Stats -->
   <a href="https://wakatime.com/@centered101" target="_blank" >
     <img
-      src="https://github-readme-stats.vercel.app/api?username=centered101&custom_title=📊&nbsp;Centered101's&nbsp;GitHub&nbsp;Stats&show=reviews,discussions_started,discussions_answered,prs_merged,prs_merged_percentage&icon_color=409EFE&title_color=409EFE&text_color=0D0D0D&theme=transparent&show_icons=true&hide_border=true"
+      src="https://github-readme-stats.vercel.app/api?username=centered101&custom_title=📊&nbsp;Centered101's&nbsp;GitHub&nbsp;Stats&show=reviews,discussions_started,discussions_answered,prs_merged,prs_merged_percentage&icon_color=409EFE&title_color=409EFE&theme=transparent&show_icons=true&hide_border=true"
       alt="GitHub Stats" />
   </a>
 
   <!-- Top Languages -->
   <a href="https://wakatime.com/@centered101" target="_blank" >
     <img
-      src="https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=donut&custom_title=🌐&#8194;Top&#8194;Languages&#8194;🥴&icon_color=409EFE&title_color=409EFE&text_color=0D0D0D&theme=transparent&show_icons=true&hide_border=true"
+      src="https://github-readme-stats.vercel.app/api/top-langs/?username=centered101&layout=donut&custom_title=🌐&#8194;Top&#8194;Languages&#8194;🥴&icon_color=409EFE&title_color=409EFE&theme=transparent&show_icons=true&hide_border=true"
       alt="Top Languages" />
   </a>
   <br />
@@ -40,7 +40,7 @@
   <!-- WakaTime Stats -->
   <a href="https://wakatime.com/@centered101" target="_blank" >
     <img
-      src="https://github-readme-stats.vercel.app/api/wakatime?username=centered101&custom_title=WakaTime&#8194;Stats&#8194;⏲&icon_color=409EFE&title_color=409EFE&text_color=0D0D0D&theme=transparent&show_icons=true&hide_border=true"
+      src="https://github-readme-stats.vercel.app/api/wakatime?username=centered101&custom_title=WakaTime&#8194;Stats&#8194;⏲&icon_color=409EFE&title_color=409EFE&theme=transparent&show_icons=true&hide_border=true"
       alt="WakaTime Stats" />
   </a>
  <br> 
@@ -72,6 +72,6 @@ Got a project in mind or just want to chat about dev stuff? Reach me here:
 ## 💖 Support the Project
 Thank you so much already for using my projects! If you want to go a step further and support my open source work, buy me a coffee:
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-%23FFDD00.svg?&style=for-the-badge&logo=buy-me-a-coffee&logoColor=0D0D0D)](https://www.buymeacoffee.com/Centered101)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-%23FFDD00.svg?&style=for-the-badge&logo=buy-me-a-coffe)](https://www.buymeacoffee.com/Centered101)
 
 <!-- Proudly created by (@centered101) -->
