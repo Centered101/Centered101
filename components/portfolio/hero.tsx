@@ -5,8 +5,12 @@ import { motion } from 'framer-motion'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { MapPin, Users, GitFork, Star, ExternalLink, Download, Mail } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { CalendarDays, CheckCircle2, Github, Loader2, MapPin, Mail, Send } from 'lucide-react'
+import { useLanguage } from '@/components/language-provider'
 import type { GitHubUser, LanguageStats } from '@/lib/github/types'
 
 interface HeroProps {
@@ -17,14 +21,7 @@ interface HeroProps {
   onResumeDownload?: () => void
 }
 
-const roles = [
-  'Full-Stack Developer',
-  'Open Source Enthusiast',
-  'Software Engineer',
-  'Problem Solver',
-]
-
-function TypewriterText() {
+function TypewriterText({ roles }: { roles: string[] }) {
   const [roleIndex, setRoleIndex] = useState(0)
   const [text, setText] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
@@ -57,233 +54,304 @@ function TypewriterText() {
 }
 
 export function Hero({ user, totalStars = 0, topLanguages = [], isLoading, onResumeDownload }: HeroProps) {
+  const { copy } = useLanguage()
+  const [messageOpen, setMessageOpen] = useState(false)
+  const [formState, setFormState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [errorMessage, setErrorMessage] = useState('')
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: '',
+  })
+
   if (isLoading) {
     return <HeroSkeleton />
   }
 
+  const profileName = user?.name || user?.login || 'centered101'
+  const username = user?.login || 'centered101'
+  const joinedDate = user?.created_at
+    ? new Date(user.created_at).toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : null
+  const resumeHref = '/resume/centered101-resume.pdf'
+
+  const handleResumeClick = async () => {
+    onResumeDownload?.()
+
+    try {
+      await fetch('/api/resume', { method: 'POST' })
+    } catch {
+      // Tracking should never block the file download.
+    }
+  }
+
+  const handleMessageSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setFormState('loading')
+    setErrorMessage('')
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          subject: 'Portfolio message',
+        }),
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send message')
+      }
+
+      setFormState('success')
+      setFormData({ name: '', email: '', message: '' })
+    } catch (error) {
+      setFormState('error')
+      setErrorMessage(error instanceof Error ? error.message : 'Something went wrong')
+    }
+  }
+
+  const handleMessageChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData((current) => ({ ...current, [event.target.name]: event.target.value }))
+
+    if (formState === 'error') {
+      setFormState('idle')
+      setErrorMessage('')
+    }
+  }
+
   return (
-    <section id="home" className="relative min-h-screen flex items-center justify-center px-6 py-24 overflow-hidden">
-      {/* Background effects */}
+    <section id="home" className="relative flex min-h-screen items-center px-4 pb-14 pt-28 sm:px-6 sm:pb-20">
       <div className="absolute inset-0 grid-pattern" />
-      
-      {/* Gradient orbs */}
-      <motion.div
-        className="gradient-orb gradient-orb-blue w-[600px] h-[600px] -top-40 -right-40"
-        animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0.3, 0.5, 0.3],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-      />
-      <motion.div
-        className="gradient-orb gradient-orb-purple w-[500px] h-[500px] bottom-0 -left-40"
-        animate={{
-          scale: [1.2, 1, 1.2],
-          opacity: [0.3, 0.5, 0.3],
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-      />
-      <motion.div
-        className="gradient-orb gradient-orb-cyan w-[400px] h-[400px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-        animate={{
-          scale: [1, 1.3, 1],
-          opacity: [0.2, 0.4, 0.2],
-        }}
-        transition={{
-          duration: 12,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-      />
-
-      <div className="relative z-10 max-w-5xl mx-auto text-center">
-        {/* Avatar with pulse ring */}
+      <div className="relative z-10 mx-auto w-full max-w-7xl">
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="relative inline-block mb-10"
+          data-aos="fade-up"
+          className="mx-auto w-full px-0 sm:px-4 lg:px-8"
         >
-          <div className="absolute inset-0 rounded-full bg-accent/20 pulse-ring" />
-          <div className="absolute inset-0 rounded-full bg-accent/10 pulse-ring" style={{ animationDelay: '0.5s' }} />
-          <Avatar className="w-36 h-36 ring-2 ring-accent/30 ring-offset-4 ring-offset-background relative floating">
-            <AvatarImage src={user?.avatar_url} alt={user?.name || user?.login || 'Profile'} />
-            <AvatarFallback className="text-4xl bg-card">
-              {user?.login?.slice(0, 2).toUpperCase() || 'GH'}
-            </AvatarFallback>
-          </Avatar>
-        </motion.div>
-
-        {/* Name and role */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-        >
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-4 text-balance">
-            <span className="gradient-text">{user?.name || user?.login || 'centered101'}</span>
-          </h1>
-          
-          <p className="text-xl md:text-2xl lg:text-3xl text-muted-foreground mb-2 h-10">
-            <TypewriterText />
-          </p>
-
-          <p className="text-lg md:text-xl text-muted-foreground/80 mb-8 max-w-2xl mx-auto text-pretty">
-            {user?.bio || 'Crafting elegant solutions to complex problems through clean code and innovative thinking.'}
-          </p>
-        </motion.div>
-
-        {/* Quick stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="flex flex-wrap items-center justify-center gap-6 mb-10"
-        >
-          {user?.location && (
-            <div className="flex items-center gap-2 text-muted-foreground glass-card px-4 py-2 rounded-full">
-              <MapPin className="w-4 h-4 text-accent" />
-              <span className="text-sm">{user.location}</span>
+          <div className="grid gap-5 sm:grid-cols-[128px_1fr] sm:gap-8 lg:grid-cols-[160px_1fr]">
+            <div className="flex items-start justify-center sm:justify-start">
+              <div className="relative">
+                <div className="absolute -inset-1.5 rounded-3xl bg-accent/35 opacity-80 blur-xl" />
+                <Avatar className="relative size-28 rounded-3xl border-4 border-background bg-card sm:size-32 lg:size-36">
+                  <AvatarImage src={user?.avatar_url} alt={profileName} />
+                  <AvatarFallback className="rounded-3xl bg-card text-3xl font-bold">
+                    {username.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
             </div>
-          )}
-          {user?.followers !== undefined && (
-            <div className="flex items-center gap-2 text-muted-foreground glass-card px-4 py-2 rounded-full">
-              <Users className="w-4 h-4 text-green-500" />
-              <span className="text-sm">{user.followers.toLocaleString()} followers</span>
-            </div>
-          )}
-          {user?.public_repos !== undefined && (
-            <div className="flex items-center gap-2 text-muted-foreground glass-card px-4 py-2 rounded-full">
-              <GitFork className="w-4 h-4 text-purple-500" />
-              <span className="text-sm">{user.public_repos} repos</span>
-            </div>
-          )}
-          {totalStars > 0 && (
-            <div className="flex items-center gap-2 text-muted-foreground glass-card px-4 py-2 rounded-full">
-              <Star className="w-4 h-4 text-yellow-500" />
-              <span className="text-sm">{totalStars.toLocaleString()} stars</span>
-            </div>
-          )}
-        </motion.div>
 
-        {/* Language badges */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="flex flex-wrap items-center justify-center gap-2 mb-12"
-        >
-          {topLanguages.slice(0, 6).map((lang, index) => (
-            <motion.div
-              key={lang.name}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, delay: 0.4 + index * 0.05 }}
+            <div className="min-w-0">
+              <div className="mb-5 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
+                <div>
+                  <div className="mb-3 flex flex-wrap items-center gap-3">
+                    <h1 className="text-3xl font-bold tracking-normal sm:text-4xl">
+                      <span className="gradient-text">{profileName}</span>
+                    </h1>
+                    <Badge variant="secondary" className="rounded-full border border-accent/20 bg-accent/10 px-3 py-1 text-accent">
+                      @{username}
+                    </Badge>
+                  </div>
+
+                  <div className="grid max-w-xl grid-cols-3 gap-3 text-sm sm:gap-8">
+                    <div>
+                      <p className="text-lg font-bold">{user?.public_repos ?? 0}</p>
+                      <p className="font-medium text-muted-foreground">Repository</p>
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold">{(user?.followers ?? 0).toLocaleString()}</p>
+                      <p className="font-medium text-muted-foreground">{copy.hero.followers}</p>
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold">{(user?.following ?? 0).toLocaleString()}</p>
+                      <p className="font-medium text-muted-foreground">{copy.hero.following}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="hidden rounded-xl border border-border px-4 py-3 text-right lg:block">
+                  <p className="text-sm text-muted-foreground">{copy.hero.stars}</p>
+                  <p className="text-2xl font-bold text-accent">{totalStars.toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div className="space-y-2 text-sm sm:text-base">
+                {joinedDate ? (
+                  <p className="inline-flex items-center gap-2 text-muted-foreground">
+                    <CalendarDays className="size-4 text-accent" />
+                    Joined {joinedDate}
+                  </p>
+                ) : null}
+                {user?.location ? (
+                  <p className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="size-4 text-accent" />
+                    {user.location}
+                  </p>
+                ) : null}
+                <p className="max-w-2xl leading-6 text-muted-foreground">
+                  {user?.bio || copy.hero.fallbackBio}
+                </p>
+                <p className="h-6 text-sm font-medium text-accent sm:text-base">
+                  <TypewriterText roles={[...copy.hero.roles]} />
+                </p>
+              </div>
+
+              {topLanguages.length > 0 ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {topLanguages.slice(0, 5).map((lang) => (
+                    <Badge
+                      key={lang.name}
+                      variant="secondary"
+                      className="rounded-full bg-secondary/70 px-3 py-1 text-xs"
+                    >
+                      <span
+                        className="mr-1.5 size-2 rounded-full"
+                        style={{ backgroundColor: lang.color }}
+                      />
+                      {lang.name}
+                    </Badge>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="mt-8 grid gap-2 sm:grid-cols-3">
+            <Button
+              className="h-10 rounded-lg bg-secondary text-foreground hover:bg-accent hover:text-accent-foreground"
+              asChild
             >
-              <Badge
-                variant="secondary"
-                className="px-4 py-1.5 text-sm font-medium glass-card border-none hover:scale-105 transition-transform cursor-default"
-              >
-                <span
-                  className="w-2.5 h-2.5 rounded-full mr-2 shadow-sm"
-                  style={{ backgroundColor: lang.color, boxShadow: `0 0 8px ${lang.color}40` }}
-                />
-                {lang.name}
-              </Badge>
-            </motion.div>
-          ))}
-        </motion.div>
+              <a href={`https://github.com/${username}`} target="_blank" rel="noopener noreferrer">
+                <Github className="size-4" />
+                Follow
+              </a>
+            </Button>
 
-        {/* CTA buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="flex flex-wrap items-center justify-center gap-4"
-        >
-          <Button
-            size="lg"
-            className="gap-2 px-8 h-12 text-base glow-accent hover:glow-strong transition-shadow"
-            onClick={() => document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' })}
-          >
-            View Projects
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            className="gap-2 px-8 h-12 text-base glass-card border-border/50 hover:border-accent/30"
-            onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-          >
-            <Mail className="w-4 h-4" />
-            Contact Me
-          </Button>
-          <Button
-            size="lg"
-            variant="ghost"
-            className="gap-2 px-8 h-12 text-base"
-            asChild
-          >
-            <a href={`https://github.com/${user?.login || 'centered101'}`} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="w-4 h-4" />
-              GitHub
-            </a>
-          </Button>
+            <Dialog open={messageOpen} onOpenChange={setMessageOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="secondary"
+                  className="h-10 rounded-lg bg-secondary text-foreground hover:bg-accent/20"
+                >
+                  <Mail className="size-4" />
+                  {copy.hero.message}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="border-border bg-card/95 backdrop-blur-xl sm:max-w-xl">
+                <DialogHeader>
+                  <DialogTitle>{copy.contact.sendTitle}</DialogTitle>
+                  <DialogDescription>{copy.contact.sendSubtitle}</DialogDescription>
+                </DialogHeader>
+
+                {formState === 'success' ? (
+                  <div className="mt-8 rounded-xl border border-green-500/20 bg-green-500/10 p-5 text-center">
+                    <CheckCircle2 className="mx-auto mb-3 size-8 text-green-500" />
+                    <p className="font-semibold">{copy.contact.successTitle}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{copy.contact.successBody}</p>
+                    <Button className="mt-5 w-full" onClick={() => setFormState('idle')}>
+                      {copy.contact.another}
+                    </Button>
+                  </div>
+                ) : (
+                  <form className="mt-8 space-y-4" onSubmit={handleMessageSubmit}>
+                    <Input
+                      name="name"
+                      value={formData.name}
+                      onChange={handleMessageChange}
+                      placeholder={copy.contact.namePlaceholder}
+                      required
+                      disabled={formState === 'loading'}
+                      className="bg-secondary/60"
+                    />
+                    <Input
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleMessageChange}
+                      placeholder={copy.contact.emailPlaceholder}
+                      required
+                      disabled={formState === 'loading'}
+                      className="bg-secondary/60"
+                    />
+                    <Textarea
+                      name="message"
+                      value={formData.message}
+                      onChange={handleMessageChange}
+                      placeholder={copy.contact.messagePlaceholder}
+                      rows={6}
+                      required
+                      disabled={formState === 'loading'}
+                      className="resize-none bg-secondary/60"
+                    />
+                    {formState === 'error' ? (
+                      <p className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                        {errorMessage}
+                      </p>
+                    ) : null}
+                    <Button className="w-full" type="submit" disabled={formState === 'loading'}>
+                      {formState === 'loading' ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <Send className="size-4" />
+                      )}
+                      {copy.contact.send}
+                    </Button>
+                  </form>
+                )}
+              </DialogContent>
+            </Dialog>
+
+            <Button
+              variant="secondary"
+              className="h-10 rounded-lg bg-secondary text-foreground hover:bg-accent/20"
+              onClick={handleResumeClick}
+              asChild
+            >
+              <a href={resumeHref} download="centered101-resume.pdf">
+                {copy.hero.resume}
+              </a>
+            </Button>
+          </div>
         </motion.div>
       </div>
-
-      {/* Scroll indicator */}
-      <motion.div
-        className="absolute bottom-8 left-1/2 -translate-x-1/2"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5 }}
-      >
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-          className="w-6 h-10 rounded-full border border-muted-foreground/30 flex items-start justify-center p-2"
-        >
-          <motion.div
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-            className="w-1 h-2 rounded-full bg-accent"
-          />
-        </motion.div>
-      </motion.div>
     </section>
   )
 }
 
 function HeroSkeleton() {
   return (
-    <section className="min-h-screen flex items-center justify-center px-6 py-24">
-      <div className="max-w-5xl mx-auto text-center">
-        <Skeleton className="w-36 h-36 rounded-full mx-auto mb-10" />
-        <Skeleton className="h-20 w-96 mx-auto mb-4" />
-        <Skeleton className="h-8 w-64 mx-auto mb-8" />
-        <Skeleton className="h-6 w-[500px] mx-auto mb-10" />
-        <div className="flex justify-center gap-4 mb-10">
-          <Skeleton className="h-10 w-32 rounded-full" />
-          <Skeleton className="h-10 w-32 rounded-full" />
-          <Skeleton className="h-10 w-32 rounded-full" />
-        </div>
-        <div className="flex justify-center gap-2 mb-12">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-8 w-24 rounded-full" />
-          ))}
-        </div>
-        <div className="flex justify-center gap-4">
-          <Skeleton className="h-12 w-40" />
-          <Skeleton className="h-12 w-40" />
-          <Skeleton className="h-12 w-32" />
+    <section className="flex min-h-screen items-center px-4 pb-14 pt-28 sm:px-6 sm:pb-20">
+      <div className="absolute inset-0 grid-pattern" />
+      <div className="relative z-10 mx-auto w-full max-w-7xl">
+        <div className="mx-auto w-full px-0 sm:px-4 lg:px-8">
+          <div className="grid gap-5 sm:grid-cols-[128px_1fr] sm:gap-8 lg:grid-cols-[160px_1fr]">
+            <Skeleton className="mx-auto size-28 rounded-3xl sm:mx-0 sm:size-32 lg:size-36" />
+            <div className="min-w-0">
+              <Skeleton className="mb-4 h-10 w-64" />
+              <div className="mb-6 grid max-w-xl grid-cols-3 gap-3">
+                <Skeleton className="h-12" />
+                <Skeleton className="h-12" />
+                <Skeleton className="h-12" />
+              </div>
+              <Skeleton className="mb-2 h-5 w-48" />
+              <Skeleton className="mb-2 h-5 w-32" />
+              <Skeleton className="h-6 w-full max-w-xl" />
+            </div>
+          </div>
+          <div className="mt-6 grid gap-2 sm:grid-cols-3">
+            <Skeleton className="h-10 rounded-lg" />
+            <Skeleton className="h-10 rounded-lg" />
+            <Skeleton className="h-10 rounded-lg" />
+          </div>
         </div>
       </div>
     </section>

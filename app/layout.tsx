@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { AosProvider } from '@/components/aos-provider'
+import { LanguageProvider } from '@/components/language-provider'
+import 'aos/dist/aos.css'
 import './globals.css'
 
 const geistSans = Geist({
@@ -14,18 +17,18 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'centered101 | Software Developer',
+  title: 'Centered101 | Software Developer',
   description: 'Full-stack developer passionate about building elegant, performant applications. Explore my projects, skills, and experience.',
-  keywords: ['developer', 'software engineer', 'full-stack', 'portfolio', 'GitHub', 'centered101'],
-  authors: [{ name: 'centered101' }],
+  keywords: ['developer', 'software engineer', 'full-stack', 'portfolio', 'GitHub', 'Centered101'],
+  authors: [{ name: 'Centered101' }],
   openGraph: {
-    title: 'centered101 | Software Developer',
+    title: 'Centered101 | Software Developer',
     description: 'Full-stack developer passionate about building elegant, performant applications.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'centered101 | Software Developer',
+    title: 'Centered101 | Software Developer',
     description: 'Full-stack developer passionate about building elegant, performant applications.',
   },
 }
@@ -42,9 +45,18 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} bg-background`}>
-      <body className="font-sans antialiased bg-background text-foreground min-h-screen">
-        {children}
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} bg-background`}
+      suppressHydrationWarning
+    >
+      <body
+        className="font-sans antialiased bg-background text-foreground min-h-screen"
+        suppressHydrationWarning
+      >
+        <LanguageProvider>
+          <AosProvider>{children}</AosProvider>
+        </LanguageProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

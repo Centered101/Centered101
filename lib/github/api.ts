@@ -1,4 +1,4 @@
-import type { GitHubUser, GitHubRepo, LanguageStats } from './types'
+import type { GitHubUser, GitHubRepo, GitHubSocialAccount, LanguageStats } from './types'
 
 const GITHUB_API_BASE = 'https://api.github.com'
 const GITHUB_USERNAME = 'centered101'
@@ -71,6 +71,48 @@ export async function fetchGitHubRepos(
   }
 
   return response.json()
+}
+
+export async function fetchGitHubSocialAccounts(
+  username: string = GITHUB_USERNAME
+): Promise<GitHubSocialAccount[]> {
+  const response = await fetch(`${GITHUB_API_BASE}/users/${username}/social_accounts`, {
+    headers: {
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2026-03-10',
+      ...(process.env.GITHUB_TOKEN && {
+        Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+      }),
+    },
+    next: { revalidate: 3600 },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch social accounts: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+export function extractOrcidId(socialAccounts: GitHubSocialAccount[]): string | null {
+  const orcidAccount = socialAccounts.find((account) => {
+    try {
+      return new URL(account.url).hostname.replace(/^www\./, '') === 'orcid.org'
+    } catch {
+      return false
+    }
+  })
+
+  if (!orcidAccount) {
+    return null
+  }
+
+  try {
+    const path = new URL(orcidAccount.url).pathname.replace(/^\/|\/$/g, '')
+    return path || null
+  } catch {
+    return null
+  }
 }
 
 export function calculateTotalStars(repos: GitHubRepo[]): number {

@@ -5,24 +5,22 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Github, Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { smoothScrollTo } from '@/lib/smooth-scroll'
+import { useLanguage } from '@/components/language-provider'
 import type { GitHubUser } from '@/lib/github/types'
 
 interface NavigationProps {
   user?: GitHubUser
 }
 
-const navItems = [
-  { id: 'home', label: 'Home' },
-  { id: 'projects', label: 'Projects' },
-  { id: 'skills', label: 'Skills' },
-  { id: 'timeline', label: 'Timeline' },
-  { id: 'contact', label: 'Contact' },
-]
+const navItemIds = ['home', 'projects', 'wakatime', 'skills', 'timeline', 'contact'] as const
 
 export function Navigation({ user }: NavigationProps) {
+  const { copy, toggleLocale } = useLanguage()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [activeSection, setActiveSection] = useState('home')
+  const navItems = navItemIds.map((id) => ({ id, label: copy.nav[id] }))
 
   useEffect(() => {
     const handleScroll = () => {
@@ -49,9 +47,9 @@ export function Navigation({ user }: NavigationProps) {
   const scrollTo = (id: string) => {
     setIsMobileMenuOpen(false)
     if (id === 'home') {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      smoothScrollTo(0)
     } else {
-      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+      smoothScrollTo(id)
     }
   }
 
@@ -83,6 +81,7 @@ export function Navigation({ user }: NavigationProps) {
             className="text-lg font-bold hover:text-accent transition-colors relative z-10"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
+            suppressHydrationWarning
           >
             <span className="gradient-text">{user?.login || 'centered101'}</span>
           </motion.button>
@@ -93,6 +92,7 @@ export function Navigation({ user }: NavigationProps) {
               <button
                 key={item.id}
                 onClick={() => scrollTo(item.id)}
+                suppressHydrationWarning
                 className={cn(
                   'relative px-4 py-2 text-sm font-medium transition-colors rounded-full',
                   activeSection === item.id 
@@ -112,6 +112,15 @@ export function Navigation({ user }: NavigationProps) {
             ))}
             
             <div className="w-px h-6 bg-border mx-2" />
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="glass-card border-border/50 px-3 hover:border-accent/30"
+              onClick={toggleLocale}
+            >
+              {copy.nav.language}
+            </Button>
             
             <Button 
               variant="outline" 
@@ -125,7 +134,7 @@ export function Navigation({ user }: NavigationProps) {
                 rel="noopener noreferrer"
               >
                 <Github className="w-4 h-4 mr-2" />
-                GitHub
+                {copy.nav.github}
               </a>
             </Button>
           </div>
@@ -200,6 +209,7 @@ export function Navigation({ user }: NavigationProps) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 + index * 0.05 }}
                     onClick={() => scrollTo(item.id)}
+                    suppressHydrationWarning
                     className={cn(
                       'w-full max-w-xs py-4 text-xl font-medium rounded-xl transition-colors',
                       activeSection === item.id 
@@ -224,8 +234,16 @@ export function Navigation({ user }: NavigationProps) {
                       rel="noopener noreferrer"
                     >
                       <Github className="w-5 h-5" />
-                      GitHub Profile
+                      {copy.nav.github}
                     </a>
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="mt-3 w-full"
+                    onClick={toggleLocale}
+                  >
+                    {copy.nav.language}
                   </Button>
                 </motion.div>
               </div>

@@ -6,6 +6,9 @@ import { Navigation } from '@/components/portfolio/navigation'
 import { Hero } from '@/components/portfolio/hero'
 import { Projects } from '@/components/portfolio/projects'
 import { Stats } from '@/components/portfolio/stats'
+import { WakaTimeStats } from '@/components/portfolio/wakatime-stats'
+import { Skills } from '@/components/portfolio/skills'
+import { Timeline } from '@/components/portfolio/timeline'
 import { Contact } from '@/components/portfolio/contact'
 import { Footer } from '@/components/portfolio/footer'
 
@@ -38,9 +41,22 @@ export default function Home() {
           topLanguages={data?.topLanguages}
           isLoading={isLoading}
         />
+
+        <WakaTimeStats />
+
+        <Skills
+          topLanguages={data?.topLanguages}
+          isLoading={isLoading}
+        />
+
+        <Timeline
+          isLoading={isLoading}
+        />
         
         <Contact
           user={data?.user}
+          socialAccounts={data?.socialAccounts}
+          orcidId={data?.orcidId}
           onSubmit={trackContactSubmit}
         />
       </main>

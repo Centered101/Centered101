@@ -25,6 +25,8 @@ export interface GitHubRepo {
   description: string | null
   html_url: string
   homepage: string | null
+  poster_url?: string | null
+  posterUrl?: string | null
   language: string | null
   stargazers_count: number
   forks_count: number
@@ -50,6 +52,11 @@ export interface GitHubEvent {
   created_at: string
 }
 
+export interface GitHubSocialAccount {
+  provider: string
+  url: string
+}
+
 export interface ContributionDay {
   date: string
   count: number
@@ -65,6 +72,8 @@ export interface LanguageStats {
 export interface GitHubProfile {
   user: GitHubUser
   repositories: GitHubRepo[]
+  socialAccounts: GitHubSocialAccount[]
+  orcidId: string | null
   totalStars: number
   topLanguages: LanguageStats[]
 }

@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getTopRepositories, getRecentRepositories } from '@/lib/github/api'
 import { Star, Clock, Sparkles } from 'lucide-react'
+import { useLanguage } from '@/components/language-provider'
 import type { GitHubRepo } from '@/lib/github/types'
 
 interface ProjectsProps {
@@ -15,12 +16,22 @@ interface ProjectsProps {
 }
 
 export function Projects({ repositories = [], isLoading, onRepoClick }: ProjectsProps) {
+  const { copy } = useLanguage()
   const topRepos = getTopRepositories(repositories, 6)
   const recentRepos = getRecentRepositories(repositories, 6)
 
   if (isLoading) {
     return <ProjectsSkeleton />
   }
+
+  if (topRepos.length === 0 && recentRepos.length === 0) {
+    return null
+  }
+
+  const hasTopRepos = topRepos.length > 0
+  const hasRecentRepos = recentRepos.length > 0
+  const defaultTab = hasTopRepos ? 'top' : 'recent'
+  const showTabs = hasTopRepos && hasRecentRepos
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -33,7 +44,7 @@ export function Projects({ repositories = [], isLoading, onRepoClick }: Projects
   }
 
   return (
-    <section id="projects" className="px-6 py-24 relative">
+    <section id="projects" className="px-6 py-24 relative" data-aos="fade-up">
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-accent/[0.02] via-transparent to-transparent" />
       
@@ -52,62 +63,69 @@ export function Projects({ repositories = [], isLoading, onRepoClick }: Projects
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-card text-sm mb-6"
           >
             <Sparkles className="w-4 h-4 text-accent" />
-            <span className="text-muted-foreground">Open Source</span>
+            <span className="text-muted-foreground">{copy.projects.eyebrow}</span>
           </motion.div>
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            <span className="gradient-text">Featured Projects</span>
+            <span className="gradient-text">{copy.projects.title}</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            A collection of open-source projects showcasing my work in software development
+            {copy.projects.description}
           </p>
         </motion.div>
 
-        <Tabs defaultValue="top" className="w-full">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="flex justify-center mb-10"
-          >
-            <TabsList className="glass-card border-none p-1.5">
-              <TabsTrigger 
-                value="top" 
-                className="gap-2 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground px-6"
-              >
-                <Star className="w-4 h-4" />
-                Most Starred
-              </TabsTrigger>
-              <TabsTrigger 
-                value="recent" 
-                className="gap-2 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground px-6"
-              >
-                <Clock className="w-4 h-4" />
-                Recently Updated
-              </TabsTrigger>
-            </TabsList>
-          </motion.div>
-
-          <TabsContent value="top" className="mt-0">
+        <Tabs defaultValue={defaultTab} className="w-full">
+          {showTabs ? (
             <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              transition={{ duration: 0.5, delay: 0.2 }}
+              data-aos="zoom-in"
+              data-aos-delay="120"
+              className="flex justify-center mb-10"
             >
-              {topRepos.map((repo, index) => (
-                <RepoCard
-                  key={repo.id}
-                  repo={repo}
-                  index={index}
-                  onRepoClick={onRepoClick}
-                />
-              ))}
+              <TabsList className="glass-card border-none p-1.5">
+                <TabsTrigger
+                  value="top"
+                  className="gap-2 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground px-6"
+                >
+                  <Star className="w-4 h-4" />
+                  {copy.projects.mostStarred}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="recent"
+                  className="gap-2 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground px-6"
+                >
+                  <Clock className="w-4 h-4" />
+                  {copy.projects.recentlyUpdated}
+                </TabsTrigger>
+              </TabsList>
             </motion.div>
-          </TabsContent>
+          ) : null}
 
-          <TabsContent value="recent" className="mt-0">
+          {hasTopRepos ? (
+            <TabsContent value="top" className="mt-0">
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              >
+                {topRepos.map((repo, index) => (
+                  <RepoCard
+                    key={repo.id}
+                    repo={repo}
+                    index={index}
+                    onRepoClick={onRepoClick}
+                  />
+                ))}
+              </motion.div>
+            </TabsContent>
+          ) : null}
+
+          {hasRecentRepos ? (
+            <TabsContent value="recent" className="mt-0">
             <motion.div
               variants={containerVariants}
               initial="hidden"
@@ -124,7 +142,8 @@ export function Projects({ repositories = [], isLoading, onRepoClick }: Projects
                 />
               ))}
             </motion.div>
-          </TabsContent>
+            </TabsContent>
+          ) : null}
         </Tabs>
       </div>
     </section>

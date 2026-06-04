@@ -3,92 +3,56 @@
 import { motion } from 'framer-motion'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Briefcase, GraduationCap, Award, Code, Rocket, Zap } from 'lucide-react'
-import type { GitHubUser } from '@/lib/github/types'
+import { useLanguage } from '@/components/language-provider'
+import { useLearningStory } from '@/hooks/use-learning-story'
+import type { LearningStoryItem } from '@/lib/portfolio/types'
 
 interface TimelineProps {
-  user?: GitHubUser
   isLoading?: boolean
 }
 
-interface TimelineItem {
-  year: string
-  title: string
-  description: string
-  icon: React.ElementType
-  type: 'work' | 'education' | 'achievement'
+const storyIcons = {
+  briefcase: Briefcase,
+  graduation: GraduationCap,
+  award: Award,
+  code: Code,
+  rocket: Rocket,
+  zap: Zap,
 }
 
-export function Timeline({ user, isLoading }: TimelineProps) {
-  if (isLoading) {
+function getStoryIcon(icon: LearningStoryItem['icon'], type: LearningStoryItem['type']) {
+  if (icon && icon in storyIcons) {
+    return storyIcons[icon as keyof typeof storyIcons]
+  }
+
+  switch (type) {
+    case 'education':
+      return GraduationCap
+    case 'achievement':
+      return Award
+    default:
+      return Briefcase
+  }
+}
+
+export function Timeline({ isLoading }: TimelineProps) {
+  const { copy, locale } = useLanguage()
+  const {
+    configured,
+    items: timelineItems,
+    isLoading: storyLoading,
+    error: storyError,
+  } = useLearningStory(locale)
+
+  if (isLoading || storyLoading) {
     return <TimelineSkeleton />
   }
 
-  const joinYear = user?.created_at
-    ? new Date(user.created_at).getFullYear()
-    : 2020
-
-  const currentYear = new Date().getFullYear()
-
-  // Generate timeline based on GitHub data
-  const timelineItems: TimelineItem[] = [
-    {
-      year: String(currentYear),
-      title: 'Continuous Growth',
-      description: 'Actively contributing to open source projects and expanding technical expertise across multiple domains.',
-      icon: Rocket,
-      type: 'achievement',
-    },
-    {
-      year: String(currentYear - 1),
-      title: 'Open Source Contributor',
-      description: 'Started making significant contributions to the open source community, sharing knowledge and collaborating globally.',
-      icon: Code,
-      type: 'work',
-    },
-    {
-      year: String(Math.max(joinYear + 1, currentYear - 2)),
-      title: 'Full-Stack Development',
-      description: 'Developed expertise in full-stack technologies, building scalable applications with modern frameworks.',
-      icon: Zap,
-      type: 'work',
-    },
-    {
-      year: String(joinYear),
-      title: 'GitHub Journey Begins',
-      description: `Started my journey on GitHub, embracing version control and collaborative development practices.`,
-      icon: Award,
-      type: 'achievement',
-    },
-    {
-      year: String(joinYear - 1),
-      title: 'Computer Science Studies',
-      description: 'Pursued education in computer science, building a strong foundation in algorithms and software engineering.',
-      icon: GraduationCap,
-      type: 'education',
-    },
-    {
-      year: String(joinYear - 2),
-      title: 'First Lines of Code',
-      description: 'Discovered the world of programming and wrote my first lines of code, sparking a lifelong passion.',
-      icon: Briefcase,
-      type: 'work',
-    },
-  ]
-
-  const getTypeColor = (type: TimelineItem['type']) => {
-    switch (type) {
-      case 'work':
-        return 'bg-accent text-accent-foreground'
-      case 'education':
-        return 'bg-green-500 text-white'
-      case 'achievement':
-        return 'bg-yellow-500 text-black'
-      default:
-        return 'bg-secondary text-secondary-foreground'
-    }
+  if (!configured || storyError || timelineItems.length === 0) {
+    return null
   }
 
-  const getTypeBorderColor = (type: TimelineItem['type']) => {
+  const getTypeBorderColor = (type: LearningStoryItem['type']) => {
     switch (type) {
       case 'work':
         return 'border-accent/30'
@@ -102,7 +66,7 @@ export function Timeline({ user, isLoading }: TimelineProps) {
   }
 
   return (
-    <section id="timeline" className="px-6 py-24 relative overflow-hidden">
+    <section id="timeline" className="px-6 py-24 relative overflow-hidden" data-aos="fade-up">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-accent/[0.01] to-transparent" />
 
@@ -115,10 +79,10 @@ export function Timeline({ user, isLoading }: TimelineProps) {
           className="text-center mb-16"
         >
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            <span className="gradient-text">Journey & Milestones</span>
+            <span className="gradient-text">{copy.timeline.title}</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            A timeline of my growth as a developer
+            {copy.timeline.description}
           </p>
         </motion.div>
 
@@ -128,13 +92,18 @@ export function Timeline({ user, isLoading }: TimelineProps) {
           <div className="absolute left-0 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-border to-transparent md:-translate-x-1/2" />
 
           <div className="space-y-12">
-            {timelineItems.map((item, index) => (
+            {timelineItems.map((item, index) => {
+              const Icon = getStoryIcon(item.icon, item.type)
+
+              return (
               <motion.div
-                key={index}
+                key={item.id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
+                data-aos={index % 2 === 0 ? 'fade-right' : 'fade-left'}
+                data-aos-delay={String(Math.min(index * 80, 320))}
                 className={`relative flex items-center ${
                   index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'
                 }`}
@@ -159,7 +128,7 @@ export function Timeline({ user, isLoading }: TimelineProps) {
 
                 {/* Icon on line */}
                 <div className="absolute left-0 md:left-1/2 md:-translate-x-1/2 w-10 h-10 rounded-full flex items-center justify-center glass-card border border-border">
-                  <item.icon className={`w-5 h-5 ${
+                  <Icon className={`w-5 h-5 ${
                     item.type === 'work' ? 'text-accent' :
                     item.type === 'education' ? 'text-green-500' :
                     'text-yellow-500'
@@ -169,7 +138,8 @@ export function Timeline({ user, isLoading }: TimelineProps) {
                 {/* Empty space for other side */}
                 <div className="hidden md:block w-1/2" />
               </motion.div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </div>

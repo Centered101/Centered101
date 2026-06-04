@@ -7,15 +7,39 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { FieldGroup, Field, FieldLabel } from '@/components/ui/field'
 import { Spinner } from '@/components/ui/spinner'
-import { Mail, Send, CheckCircle2, AlertCircle, Github, Twitter, Globe, MapPin, Sparkles } from 'lucide-react'
-import type { GitHubUser } from '@/lib/github/types'
+import { Mail, Send, CheckCircle2, AlertCircle, Github, Twitter, Globe, MapPin, Sparkles, BadgeCheck } from 'lucide-react'
+import { useLanguage } from '@/components/language-provider'
+import type { GitHubSocialAccount, GitHubUser } from '@/lib/github/types'
 
 interface ContactProps {
   user?: GitHubUser
+  socialAccounts?: GitHubSocialAccount[]
+  orcidId?: string | null
   onSubmit?: () => void
 }
 
-export function Contact({ user, onSubmit }: ContactProps) {
+function getSocialLabel(url: string) {
+  try {
+    const parsedUrl = new URL(url)
+    return parsedUrl.hostname.replace(/^www\./, '') + parsedUrl.pathname.replace(/\/$/, '')
+  } catch {
+    return url
+  }
+}
+
+function isDuplicateSocial(url: string, user?: GitHubUser) {
+  const normalizedUrl = url.toLowerCase()
+
+  return Boolean(
+    normalizedUrl.includes('github.com') ||
+      (user?.twitter_username && normalizedUrl.includes('twitter.com')) ||
+      (user?.twitter_username && normalizedUrl.includes('x.com')) ||
+      (user?.blog && normalizedUrl.includes(user.blog.toLowerCase().replace(/^https?:\/\//, '')))
+  )
+}
+
+export function Contact({ user, socialAccounts = [], orcidId, onSubmit }: ContactProps) {
+  const { copy } = useLanguage()
   const [formState, setFormState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
   const [formData, setFormData] = useState({
@@ -60,6 +84,17 @@ export function Contact({ user, onSubmit }: ContactProps) {
     }
   }
 
+  const githubSocialLinks = socialAccounts
+    .filter((account) => account.url && !isDuplicateSocial(account.url, user))
+    .filter((account) => !account.url.toLowerCase().includes('orcid.org'))
+    .map((account) => ({
+      name: account.provider || 'Social',
+      icon: Globe,
+      href: account.url,
+      label: getSocialLabel(account.url),
+      show: true,
+    }))
+
   const socialLinks = [
     {
       name: 'GitHub',
@@ -89,10 +124,18 @@ export function Contact({ user, onSubmit }: ContactProps) {
       label: user?.email || null,
       show: !!user?.email,
     },
+    {
+      name: 'ORCID iD',
+      icon: BadgeCheck,
+      href: orcidId ? `https://orcid.org/${orcidId}` : null,
+      label: orcidId || null,
+      show: !!orcidId,
+    },
+    ...githubSocialLinks,
   ].filter(link => link.show)
 
   return (
-    <section id="contact" className="px-6 py-24 relative overflow-hidden">
+    <section id="contact" className="px-6 py-24 relative overflow-hidden" data-aos="fade-up">
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-t from-accent/[0.03] to-transparent" />
       
@@ -125,13 +168,13 @@ export function Contact({ user, onSubmit }: ContactProps) {
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-card text-sm mb-6"
           >
             <Sparkles className="w-4 h-4 text-accent" />
-            <span className="text-muted-foreground">Let&apos;s Connect</span>
+            <span className="text-muted-foreground">{copy.contact.eyebrow}</span>
           </motion.div>
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            <span className="gradient-text">Get in Touch</span>
+            <span className="gradient-text">{copy.contact.title}</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Have a question or want to work together? I&apos;d love to hear from you.
+            {copy.contact.description}
           </p>
         </motion.div>
 
@@ -142,10 +185,11 @@ export function Contact({ user, onSubmit }: ContactProps) {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
+            data-aos="fade-right"
             className="lg:col-span-2 space-y-6"
           >
             <div className="glass-card rounded-2xl p-6">
-              <h3 className="text-lg font-semibold mb-6">Connect with me</h3>
+              <h3 className="text-lg font-semibold mb-6">{copy.contact.connect}</h3>
               <div className="space-y-4">
                 {socialLinks.map((link) => (
                   <a
@@ -180,7 +224,7 @@ export function Contact({ user, onSubmit }: ContactProps) {
                     <MapPin className="w-5 h-5 text-accent" />
                   </div>
                   <div>
-                    <p className="font-medium">Location</p>
+                    <p className="font-medium">{copy.contact.location}</p>
                     <p className="text-sm text-muted-foreground">{user.location}</p>
                   </div>
                 </div>
@@ -194,11 +238,13 @@ export function Contact({ user, onSubmit }: ContactProps) {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
+            data-aos="fade-left"
+            data-aos-delay="120"
             className="lg:col-span-3"
           >
             <div className="glass-card rounded-2xl p-8">
-              <h3 className="text-lg font-semibold mb-2">Send a Message</h3>
-              <p className="text-sm text-muted-foreground mb-6">I&apos;ll get back to you as soon as possible</p>
+              <h3 className="text-lg font-semibold mb-2">{copy.contact.sendTitle}</h3>
+              <p className="text-sm text-muted-foreground mb-6">{copy.contact.sendSubtitle}</p>
 
               {formState === 'success' ? (
                 <motion.div
@@ -209,16 +255,16 @@ export function Contact({ user, onSubmit }: ContactProps) {
                   <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
                     <CheckCircle2 className="w-8 h-8 text-green-500" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">Message Sent!</h3>
+                  <h3 className="text-xl font-semibold mb-2">{copy.contact.successTitle}</h3>
                   <p className="text-muted-foreground mb-6 max-w-sm">
-                    Thanks for reaching out. I&apos;ll get back to you as soon as possible.
+                    {copy.contact.successBody}
                   </p>
                   <Button
                     variant="outline"
                     onClick={() => setFormState('idle')}
                     className="glass-card border-border/50"
                   >
-                    Send Another Message
+                    {copy.contact.another}
                   </Button>
                 </motion.div>
               ) : (
@@ -226,27 +272,27 @@ export function Contact({ user, onSubmit }: ContactProps) {
                   <FieldGroup>
                     <div className="grid sm:grid-cols-2 gap-4">
                       <Field>
-                        <FieldLabel htmlFor="name">Name</FieldLabel>
+                        <FieldLabel htmlFor="name">{copy.contact.name}</FieldLabel>
                         <Input
                           id="name"
                           name="name"
                           value={formData.name}
                           onChange={handleChange}
-                          placeholder="Your name"
+                          placeholder={copy.contact.namePlaceholder}
                           required
                           disabled={formState === 'loading'}
                           className="bg-secondary/50 border-border/50 focus:border-accent/50"
                         />
                       </Field>
                       <Field>
-                        <FieldLabel htmlFor="email">Email</FieldLabel>
+                        <FieldLabel htmlFor="email">{copy.contact.email}</FieldLabel>
                         <Input
                           id="email"
                           name="email"
                           type="email"
                           value={formData.email}
                           onChange={handleChange}
-                          placeholder="you@example.com"
+                          placeholder={copy.contact.emailPlaceholder}
                           required
                           disabled={formState === 'loading'}
                           className="bg-secondary/50 border-border/50 focus:border-accent/50"
@@ -254,25 +300,25 @@ export function Contact({ user, onSubmit }: ContactProps) {
                       </Field>
                     </div>
                     <Field>
-                      <FieldLabel htmlFor="subject">Subject (Optional)</FieldLabel>
+                      <FieldLabel htmlFor="subject">{copy.contact.subject}</FieldLabel>
                       <Input
                         id="subject"
                         name="subject"
                         value={formData.subject}
                         onChange={handleChange}
-                        placeholder="What&apos;s this about?"
+                        placeholder={copy.contact.subjectPlaceholder}
                         disabled={formState === 'loading'}
                         className="bg-secondary/50 border-border/50 focus:border-accent/50"
                       />
                     </Field>
                     <Field>
-                      <FieldLabel htmlFor="message">Message</FieldLabel>
+                      <FieldLabel htmlFor="message">{copy.contact.message}</FieldLabel>
                       <Textarea
                         id="message"
                         name="message"
                         value={formData.message}
                         onChange={handleChange}
-                        placeholder="Your message..."
+                        placeholder={copy.contact.messagePlaceholder}
                         rows={5}
                         required
                         disabled={formState === 'loading'}
@@ -301,12 +347,12 @@ export function Contact({ user, onSubmit }: ContactProps) {
                     {formState === 'loading' ? (
                       <>
                         <Spinner className="mr-2" />
-                        Sending...
+                        {copy.contact.sending}
                       </>
                     ) : (
                       <>
                         <Send className="w-4 h-4 mr-2" />
-                        Send Message
+                        {copy.contact.send}
                       </>
                     )}
                   </Button>

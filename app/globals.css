@@ -4,33 +4,33 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #050505;
+  --background: #050607;
   --foreground: #ffffff;
-  --card: #0f0f0f;
+  --card: #0b0d10;
   --card-foreground: #ffffff;
-  --popover: #0f0f0f;
+  --popover: #0b0d10;
   --popover-foreground: #ffffff;
-  --primary: #ffffff;
-  --primary-foreground: #050505;
-  --secondary: #171717;
+  --primary: #409EFE;
+  --primary-foreground: #ffffff;
+  --secondary: #111318;
   --secondary-foreground: #ffffff;
-  --muted: #171717;
-  --muted-foreground: #a1a1aa;
-  --accent: #3b82f6;
+  --muted: #111318;
+  --muted-foreground: #9aa4b2;
+  --accent: #409EFE;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: rgba(255, 255, 255, 0.08);
-  --input: #171717;
-  --ring: #3b82f6;
+  --border: rgba(64, 158, 254, 0.12);
+  --input: #111318;
+  --ring: #409EFE;
   --radius: 0.75rem;
-  --surface: #0f0f0f;
-  --surface-2: #171717;
+  --surface: #0b0d10;
+  --surface-2: #111318;
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback', system-ui, sans-serif;
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback', monospace;
+  --font-sans: 'Geist', 'Geist Fallback', "Kanit", system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback',"Kanit", monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -62,6 +62,9 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
+    background:
+      radial-gradient(circle at 78% 12%, rgba(64, 158, 254, 0.08), transparent 32rem),
+      linear-gradient(180deg, #050607 0%, #07090c 55%, #050607 100%);
   }
   html {
     scroll-behavior: smooth;
@@ -89,12 +92,15 @@
 
 /* Selection color */
 ::selection {
-  background: rgba(59, 130, 246, 0.3);
+  background: rgba(64, 158, 254, 0.3);
 }
+
+html, select { cursor: url(https://sweezy-cursors.com/wp-content/uploads/cursor/old-roblox/old-roblox-cursor-32x32.png), auto !important; }
+a, button, label, .cursor-pointer, [class^="btn-"] { cursor: url(https://sweezy-cursors.com/wp-content/uploads/cursor/old-roblox/old-roblox-pointer-32x32.png), pointer !important; }
 
 /* Gradient text utility */
 .gradient-text {
-  background: linear-gradient(135deg, #ffffff 0%, #3b82f6 50%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #409EFE 62%, #8abfff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -102,9 +108,9 @@
 
 /* Glass card effect */
 .glass-card {
-  background: linear-gradient(135deg, rgba(15, 15, 15, 0.9) 0%, rgba(23, 23, 23, 0.8) 100%);
+  background: linear-gradient(135deg, rgba(11, 13, 16, 0.92) 0%, rgba(17, 19, 24, 0.82) 100%);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(64, 158, 254, 0.1);
   box-shadow: 
     0 0 0 1px rgba(255, 255, 255, 0.03),
     0 4px 6px -1px rgba(0, 0, 0, 0.5),
@@ -112,21 +118,21 @@
 }
 
 .glass-card:hover {
-  border-color: rgba(59, 130, 246, 0.2);
+  border-color: rgba(64, 158, 254, 0.28);
   box-shadow: 
-    0 0 0 1px rgba(59, 130, 246, 0.1),
+    0 0 0 1px rgba(64, 158, 254, 0.12),
     0 20px 25px -5px rgba(0, 0, 0, 0.5),
     0 8px 10px -6px rgba(0, 0, 0, 0.5),
-    0 0 60px -12px rgba(59, 130, 246, 0.15);
+    0 0 60px -12px rgba(64, 158, 254, 0.18);
 }
 
 /* Glow effects */
 .glow-accent {
-  box-shadow: 0 0 40px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 40px rgba(64, 158, 254, 0.18);
 }
 
 .glow-strong {
-  box-shadow: 0 0 80px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 0 80px rgba(64, 158, 254, 0.28);
 }
 
 /* Gradient orb */
@@ -139,7 +145,7 @@
 }
 
 .gradient-orb-blue {
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(64, 158, 254, 0.34) 0%, transparent 70%);
 }
 
 .gradient-orb-purple {
@@ -188,7 +194,7 @@
   animation: border-rotate 4s linear infinite;
   background: 
     linear-gradient(var(--card) 0 0) padding-box,
-    conic-gradient(from var(--border-angle), transparent 25%, rgba(59, 130, 246, 0.5), transparent 50%) border-box;
+    conic-gradient(from var(--border-angle), transparent 25%, rgba(64, 158, 254, 0.5), transparent 50%) border-box;
   border: 1px solid transparent;
 }
 
