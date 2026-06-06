@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { toast } from 'sonner'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -53,7 +53,7 @@ function TypewriterText({ roles }: { roles: string[] }) {
   )
 }
 
-export function Hero({ user, totalStars = 0, topLanguages = [], isLoading, onResumeDownload }: HeroProps) {
+export function Hero({ user, totalStars = 0, isLoading, onResumeDownload }: HeroProps) {
   const { copy } = useLanguage()
   const [messageOpen, setMessageOpen] = useState(false)
   const [formState, setFormState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
@@ -77,7 +77,7 @@ export function Hero({ user, totalStars = 0, topLanguages = [], isLoading, onRes
         year: 'numeric',
       })
     : null
-  const resumeHref = '/resume/centered101-resume.pdf'
+  const resumeHref = '/porfilio/resume/centered101-resume.pdf'
 
   const handleResumeClick = async () => {
     onResumeDownload?.()
@@ -93,6 +93,7 @@ export function Hero({ user, totalStars = 0, topLanguages = [], isLoading, onRes
     event.preventDefault()
     setFormState('loading')
     setErrorMessage('')
+    const toastId = toast.loading('กำลังส่งข้อความ...')
 
     try {
       const response = await fetch('/api/contact', {
@@ -111,9 +112,12 @@ export function Hero({ user, totalStars = 0, topLanguages = [], isLoading, onRes
 
       setFormState('success')
       setFormData({ name: '', email: '', message: '' })
+      toast.success('ส่งข้อความแล้ว', { id: toastId })
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Something went wrong'
       setFormState('error')
-      setErrorMessage(error instanceof Error ? error.message : 'Something went wrong')
+      setErrorMessage(message)
+      toast.error(message, { id: toastId })
     }
   }
 
@@ -127,21 +131,41 @@ export function Hero({ user, totalStars = 0, topLanguages = [], isLoading, onRes
   }
 
   return (
-    <section id="home" className="relative flex min-h-screen items-center px-4 pb-14 pt-28 sm:px-6 sm:pb-20">
-      <div className="absolute inset-0 grid-pattern" />
-      <div className="relative z-10 mx-auto w-full max-w-7xl">
+    <section id="home" className="relative flex min-h-screen items-center overflow-hidden px-4 pb-14 pt-28 sm:px-6 sm:pb-20">
+      <div className="absolute inset-0 z-0 grid-pattern" />
+      <div className="pointer-events-none absolute inset-0 z-0 bg-[url('/porfilio/images/bg-portfolio.png')] bg-cover bg-center opacity-75" />
+      <div className="pointer-events-none absolute inset-0 z-0 bg-background/62" />
+      <motion.img
+        src="/porfilio/images/bg-avatar-hero.png"
+        alt=""
+        aria-hidden="true"
+        draggable={false}
+        onContextMenu={(event) => event.preventDefault()}
+        initial={{ opacity: 0, y: 28 }}
+        animate={{ opacity: 0.95, y: 0 }}
+        transition={{ duration: 1.1, delay: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+        className="pointer-events-none absolute bottom-0 right-64 z-0 hidden h-[min(82vh,760px)] w-[54vw] max-w-[820px] select-none object-contain object-right-bottom opacity-95 lg:block"
+      />
+      <motion.div
+        aria-hidden="true"
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 0.1, y: 0 }}
+        transition={{ duration: 1, delay: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+        className="pointer-events-none absolute bottom-0 right-[-36%] z-0 h-[58vh] w-[92vw] bg-[url('/porfilio/images/bg-avatar-hero.png')] bg-contain bg-right-bottom bg-no-repeat sm:right-[-24%] lg:hidden"
+      />
+      <div className="z-10 mx-auto w-full max-w-[1400px]">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           data-aos="fade-up"
-          className="mx-auto w-full px-0 sm:px-4 lg:px-8"
+          className="mx-auto w-full px-0"
         >
           <div className="grid gap-5 sm:grid-cols-[128px_1fr] sm:gap-8 lg:grid-cols-[160px_1fr]">
             <div className="flex items-start justify-center sm:justify-start">
               <div className="relative">
-                <div className="absolute -inset-1.5 rounded-3xl bg-accent/35 opacity-80 blur-xl" />
-                <Avatar className="relative size-28 rounded-3xl border-4 border-background bg-card sm:size-32 lg:size-36">
+                <div className="absolute inset-1.5 rounded-3xl bg-accent/35 opacity-80 blur-xl" />
+                <Avatar className="relative size-64 rounded border border-primary bg-card sm:size-32 lg:size-36">
                   <AvatarImage src={user?.avatar_url} alt={profileName} />
                   <AvatarFallback className="rounded-3xl bg-card text-3xl font-bold">
                     {username.slice(0, 2).toUpperCase()}
@@ -157,9 +181,6 @@ export function Hero({ user, totalStars = 0, topLanguages = [], isLoading, onRes
                     <h1 className="text-3xl font-bold tracking-normal sm:text-4xl">
                       <span className="gradient-text">{profileName}</span>
                     </h1>
-                    <Badge variant="secondary" className="rounded-full border border-accent/20 bg-accent/10 px-3 py-1 text-accent">
-                      @{username}
-                    </Badge>
                   </div>
 
                   <div className="grid max-w-xl grid-cols-3 gap-3 text-sm sm:gap-8">
@@ -177,20 +198,9 @@ export function Hero({ user, totalStars = 0, topLanguages = [], isLoading, onRes
                     </div>
                   </div>
                 </div>
-
-                <div className="hidden rounded-xl border border-border px-4 py-3 text-right lg:block">
-                  <p className="text-sm text-muted-foreground">{copy.hero.stars}</p>
-                  <p className="text-2xl font-bold text-accent">{totalStars.toLocaleString()}</p>
-                </div>
               </div>
 
               <div className="space-y-2 text-sm sm:text-base">
-                {joinedDate ? (
-                  <p className="inline-flex items-center gap-2 text-muted-foreground">
-                    <CalendarDays className="size-4 text-accent" />
-                    Joined {joinedDate}
-                  </p>
-                ) : null}
                 {user?.location ? (
                   <p className="flex items-center gap-2 text-muted-foreground">
                     <MapPin className="size-4 text-accent" />
@@ -205,27 +215,10 @@ export function Hero({ user, totalStars = 0, topLanguages = [], isLoading, onRes
                 </p>
               </div>
 
-              {topLanguages.length > 0 ? (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {topLanguages.slice(0, 5).map((lang) => (
-                    <Badge
-                      key={lang.name}
-                      variant="secondary"
-                      className="rounded-full bg-secondary/70 px-3 py-1 text-xs"
-                    >
-                      <span
-                        className="mr-1.5 size-2 rounded-full"
-                        style={{ backgroundColor: lang.color }}
-                      />
-                      {lang.name}
-                    </Badge>
-                  ))}
-                </div>
-              ) : null}
             </div>
           </div>
 
-          <div className="mt-8 grid gap-2 sm:grid-cols-3">
+          <div className="mt-8 flex items-center justify-between *:w-full sm:grid gap-2 sm:grid-cols-3 lg:w-max">
             <Button
               className="h-10 rounded-lg bg-secondary text-foreground hover:bg-accent hover:text-accent-foreground"
               asChild
@@ -253,8 +246,8 @@ export function Hero({ user, totalStars = 0, topLanguages = [], isLoading, onRes
                 </DialogHeader>
 
                 {formState === 'success' ? (
-                  <div className="mt-8 rounded-xl border border-green-500/20 bg-green-500/10 p-5 text-center">
-                    <CheckCircle2 className="mx-auto mb-3 size-8 text-green-500" />
+                  <div className="mt-8 rounded-xl border border-accent/20 bg-accent/10 p-5 text-center">
+                    <CheckCircle2 className="mx-auto mb-3 size-8 text-accent" />
                     <p className="font-semibold">{copy.contact.successTitle}</p>
                     <p className="mt-1 text-sm text-muted-foreground">{copy.contact.successBody}</p>
                     <Button className="mt-5 w-full" onClick={() => setFormState('idle')}>
@@ -329,12 +322,28 @@ export function Hero({ user, totalStars = 0, topLanguages = [], isLoading, onRes
 
 function HeroSkeleton() {
   return (
-    <section className="flex min-h-screen items-center px-4 pb-14 pt-28 sm:px-6 sm:pb-20">
-      <div className="absolute inset-0 grid-pattern" />
-      <div className="relative z-10 mx-auto w-full max-w-7xl">
-        <div className="mx-auto w-full px-0 sm:px-4 lg:px-8">
+    <section className="relative flex min-h-screen items-center overflow-hidden px-4 pb-14 pt-28 sm:px-6 sm:pb-20">
+      <div className="absolute inset-0 z-0 grid-pattern" />
+      <div className="pointer-events-none absolute inset-0 z-0 bg-[url('/porfilio/images/bg-portfolio.png')] bg-cover bg-center opacity-75" />
+      <div className="pointer-events-none absolute inset-0 z-0 bg-background/62" />
+      <img
+        src="/porfilio/images/bg-avatar-hero.png"
+        alt=""
+        aria-hidden="true"
+        draggable={false}
+        onContextMenu={(event) => event.preventDefault()}
+        className="pointer-events-none absolute bottom-0 right-64 z-0 hidden h-[min(82vh,760px)] w-[54vw] max-w-[820px] select-none object-contain object-right-bottom opacity-95 lg:block"
+      />
+      <div className="pointer-events-none absolute bottom-0 right-[-36%] z-0 h-[58vh] w-[92vw] bg-[url('/porfilio/images/bg-avatar-hero.png')] bg-contain bg-right-bottom bg-no-repeat opacity-10 sm:right-[-24%] lg:hidden" />
+      <div className="relative z-10 mx-auto w-full max-w-[1400px]">
+        <div className="mx-auto w-full px-0">
           <div className="grid gap-5 sm:grid-cols-[128px_1fr] sm:gap-8 lg:grid-cols-[160px_1fr]">
-            <Skeleton className="mx-auto size-28 rounded-3xl sm:mx-0 sm:size-32 lg:size-36" />
+            <div className="flex items-start justify-center sm:justify-start">
+              <div className="relative">
+                <div className="absolute inset-1.5 rounded-3xl bg-accent/35 opacity-80 blur-xl" />
+                <Skeleton className="relative mx-auto size-64 rounded border border-primary bg-card sm:mx-0 sm:size-32 lg:size-36" />
+              </div>
+            </div>
             <div className="min-w-0">
               <Skeleton className="mb-4 h-10 w-64" />
               <div className="mb-6 grid max-w-xl grid-cols-3 gap-3">

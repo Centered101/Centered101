@@ -7,24 +7,33 @@ const GITHUB_USERNAME = 'centered101'
 const LANGUAGE_COLORS: Record<string, string> = {
   TypeScript: '#3178c6',
   JavaScript: '#f1e05a',
-  Python: '#3572A5',
+  Python: '#3572a5',
   Rust: '#dea584',
-  Go: '#00ADD8',
+  Go: '#00add8',
   Java: '#b07219',
   'C++': '#f34b7d',
   C: '#555555',
+  'C#': '#178600',
   Ruby: '#701516',
-  PHP: '#4F5D95',
-  Swift: '#ffac45',
-  Kotlin: '#A97BFF',
-  Dart: '#00B4AB',
+  PHP: '#4f5d95',
+  Swift: '#f05138',
+  Kotlin: '#a97bff',
+  Dart: '#00b4ab',
   HTML: '#e34c26',
-  CSS: '#563d7c',
+  CSS: '#663399',
   SCSS: '#c6538c',
   Shell: '#89e051',
   Vue: '#41b883',
   Svelte: '#ff3e00',
-  default: '#8b949e',
+  Astro: '#ff5d01',
+  MDX: '#fcb32c',
+  Dockerfile: '#384d54',
+  PowerShell: '#012456',
+  Lua: '#000080',
+  R: '#198ce7',
+  JupyterNotebook: '#da5b0b',
+  'Jupyter Notebook': '#da5b0b',
+  default: '#409EFE',
 }
 
 export function getLanguageColor(language: string): string {
@@ -119,7 +128,7 @@ export function calculateTotalStars(repos: GitHubRepo[]): number {
   return repos.reduce((total, repo) => total + repo.stargazers_count, 0)
 }
 
-export function calculateTopLanguages(repos: GitHubRepo[], limit: number = 6): LanguageStats[] {
+export function calculateTopLanguages(repos: GitHubRepo[], limit: number = 9): LanguageStats[] {
   const languageCounts: Record<string, number> = {}
   let totalCount = 0
 

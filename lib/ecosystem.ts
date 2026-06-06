@@ -1,0 +1,156 @@
+import {
+  Activity,
+  BookOpen,
+  BriefcaseBusiness,
+  Cloud,
+  Code2,
+  FlaskConical,
+  Gamepad2,
+  Gauge,
+  Github,
+  Home,
+  LayoutDashboard,
+  Newspaper,
+  Puzzle,
+  Server,
+  ShieldCheck,
+  Sparkles,
+  Terminal,
+  User,
+} from 'lucide-react'
+
+export const ecosystemStatus = {
+  label: 'Building the Centered101 Digital Operating System',
+  currentProject: 'Centered101 Ecosystem',
+  currentFocus: ['MyCert', 'ASIA-BOT', 'Open Source Projects'],
+  stack: ['Next.js', 'React', 'TypeScript', 'Supabase', 'Vercel', 'Cloudflare'],
+}
+
+export const ecosystemPages = [
+  {
+    title: 'Home',
+    slug: '/',
+    icon: Home,
+    description: 'The command center for everything Centered101 is building.',
+    status: 'Live',
+  },
+  {
+    title: 'About',
+    slug: '/about',
+    icon: User,
+    description: 'Story, education, skills, goals, dreams, and current focus.',
+    status: 'Foundation',
+  },
+  {
+    title: 'Projects',
+    slug: '/projects',
+    icon: LayoutDashboard,
+    description: 'Portfolio system with project cards, stacks, screenshots, docs, and changelogs.',
+    status: 'Live',
+  },
+  {
+    title: 'Open Source',
+    slug: '/open-source',
+    icon: Github,
+    description: 'Repositories, stars, forks, releases, languages, and contribution activity.',
+    status: 'Connected',
+  },
+  {
+    title: 'Blog',
+    slug: '/blog',
+    icon: Newspaper,
+    description: 'Development, business, technology, thoughts, and tutorials.',
+    status: 'Planned',
+  },
+  {
+    title: 'Knowledge Base',
+    slug: '/knowledge',
+    icon: BookOpen,
+    description: 'Personal wiki for Next.js, React, Supabase, Linux, networking, security, Arduino, ESP32, and RFID.',
+    status: 'Planned',
+  },
+  {
+    title: 'Business',
+    slug: '/business',
+    icon: BriefcaseBusiness,
+    description: 'Services, pricing, packages, contact, and booking.',
+    status: 'Planned',
+  },
+  {
+    title: 'Dashboard',
+    slug: '/dashboard',
+    icon: Gauge,
+    description: 'Public system dashboard for uptime, API health, deployments, and analytics.',
+    status: 'Planned',
+  },
+  {
+    title: 'Labs',
+    slug: '/labs',
+    icon: FlaskConical,
+    description: 'AI tools, beta features, internal experiments, and new ideas.',
+    status: 'Experimental',
+  },
+  {
+    title: 'Games',
+    slug: '/games',
+    icon: Gamepad2,
+    description: 'Typing game, memory game, terminal game, and small interactive experiments.',
+    status: 'Planned',
+  },
+  {
+    title: 'New Tab',
+    slug: '/newtab',
+    icon: Puzzle,
+    description: 'Chrome new tab dashboard with clock, tasks, quick links, GitHub activity, notes, Pomodoro, and search.',
+    status: 'Planned',
+  },
+  {
+    title: 'Developer',
+    slug: '/developer',
+    icon: Terminal,
+    description: 'Developer portal for APIs, SDKs, documentation, and testing tools.',
+    status: 'Planned',
+  },
+  {
+    title: 'Status',
+    slug: '/status',
+    icon: Activity,
+    description: 'Public status page for services, APIs, database, incidents, and uptime history.',
+    status: 'Planned',
+  },
+]
+
+export const ecosystemSubdomains = [
+  'projects.centered101.com',
+  'docs.centered101.com',
+  'blog.centered101.com',
+  'api.centered101.com',
+  'status.centered101.com',
+  'system.centered101.com',
+  'labs.centered101.com',
+  'games.centered101.com',
+  'newtab.centered101.com',
+  'auth.centered101.com',
+  'admin.centered101.com',
+  'cloud.centered101.com',
+]
+
+export const ecosystemServices = [
+  { name: 'Portfolio', icon: LayoutDashboard, state: 'Live', tone: 'success' },
+  { name: 'GitHub API', icon: Code2, state: 'Connected', tone: 'success' },
+  { name: 'Supabase', icon: Server, state: 'Active', tone: 'success' },
+  { name: 'Admin', icon: ShieldCheck, state: 'Private', tone: 'accent' },
+  { name: 'Personal Cloud', icon: Cloud, state: 'Planned', tone: 'muted' },
+  { name: 'Labs', icon: Sparkles, state: 'Building', tone: 'accent' },
+]
+
+export const aboutTimeline = [
+  ['2019', 'เริ่มสนใจการเขียนโปรแกรมจากการเล่น Minecraft'],
+  ['2020', 'เริ่มเรียน Python Turtle'],
+  ['2021', 'เริ่มสร้างเว็บไซต์'],
+  ['2022', 'เรียนรู้ HTML CSS JavaScript'],
+  ['2023', 'สร้างโปรเจกต์จริง'],
+  ['2024', 'พัฒนาเว็บแอปพลิเคชันอย่างจริงจัง'],
+  ['2025', 'เริ่มสร้างระบบ SaaS และ Open Source'],
+  ['2026', 'กำลังสร้าง Ecosystem ของตนเอง'],
+]

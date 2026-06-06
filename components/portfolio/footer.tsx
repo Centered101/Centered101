@@ -3,8 +3,10 @@
 import { useState } from 'react'
 import { motion, useMotionValueEvent, useScroll } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { Github, Twitter, Mail, Download, ArrowUp, Globe, MapPin, Sparkles } from 'lucide-react'
+import { Download, ArrowUp, MapPin, Sparkles } from 'lucide-react'
 import { useLanguage } from '@/components/language-provider'
+import { getSocialLinkIcon } from '@/components/social-link-icon'
+import { useSocialLinks } from '@/hooks/use-social-links'
 import { smoothScrollTo } from '@/lib/smooth-scroll'
 import type { GitHubUser } from '@/lib/github/types'
 
@@ -15,6 +17,7 @@ interface FooterProps {
 
 export function Footer({ user, onResumeDownload }: FooterProps) {
   const { copy } = useLanguage()
+  const { links: socialLinks } = useSocialLinks()
   const currentYear = new Date().getFullYear()
   const [showBackToTop, setShowBackToTop] = useState(false)
   const { scrollY } = useScroll()
@@ -48,33 +51,7 @@ export function Footer({ user, onResumeDownload }: FooterProps) {
 
   const profileName = user?.name || user?.login || 'centered101'
   const username = user?.login || 'centered101'
-  const resumeHref = '/resume/centered101-resume.pdf'
-  const socialLinks = [
-    {
-      name: 'GitHub',
-      icon: Github,
-      href: `https://github.com/${username}`,
-      show: true,
-    },
-    {
-      name: 'Twitter',
-      icon: Twitter,
-      href: user?.twitter_username ? `https://twitter.com/${user.twitter_username}` : null,
-      show: Boolean(user?.twitter_username),
-    },
-    {
-      name: 'Website',
-      icon: Globe,
-      href: user?.blog ? (user.blog.startsWith('http') ? user.blog : `https://${user.blog}`) : null,
-      show: Boolean(user?.blog),
-    },
-    {
-      name: 'Email',
-      icon: Mail,
-      href: user?.email ? `mailto:${user.email}` : null,
-      show: Boolean(user?.email),
-    },
-  ].filter((link) => link.show && link.href)
+  const resumeHref = '/porfilio/resume/centered101-resume.pdf'
 
   return (
     <>
@@ -98,7 +75,7 @@ export function Footer({ user, onResumeDownload }: FooterProps) {
         <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,rgba(64,158,254,0.035)_48%,rgba(5,6,7,0.9)_100%)]" />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
 
-        <div className="relative mx-auto max-w-6xl">
+        <div className="relative mx-auto w-full max-w-[1400px]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -126,7 +103,10 @@ export function Footer({ user, onResumeDownload }: FooterProps) {
                   </span>
                 ) : null}
                 <span className="inline-flex items-center gap-1.5">
-                  <Github className="size-4 text-accent" />
+                  {(() => {
+                    const Icon = getSocialLinkIcon('github')
+                    return <Icon className="size-4 text-accent" />
+                  })()}
                   @{username}
                 </span>
               </div>
@@ -154,24 +134,28 @@ export function Footer({ user, onResumeDownload }: FooterProps) {
 
             <div className="space-y-4" data-aos="fade-up" data-aos-delay="180">
               <div className="flex flex-wrap gap-2">
-                {socialLinks.map((link) => (
+                {socialLinks.map((link) => {
+                  const Icon = getSocialLinkIcon(link.icon)
+
+                  return (
                   <Button
-                    key={link.name}
+                    key={link.id}
                     variant="ghost"
                     size="icon"
                     className="rounded-xl border border-border bg-secondary/35 hover:border-accent/35 hover:bg-accent/10 hover:text-accent"
                     asChild
                   >
                     <a
-                      href={link.href || '#'}
+                      href={link.href}
                       target={link.name === 'Email' ? undefined : '_blank'}
                       rel={link.name === 'Email' ? undefined : 'noopener noreferrer'}
                       aria-label={link.name}
                     >
-                      <link.icon className="size-5" />
+                      <Icon className="size-5" />
                     </a>
                   </Button>
-                ))}
+                  )
+                })}
               </div>
 
               <Button

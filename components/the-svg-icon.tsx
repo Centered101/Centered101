@@ -9,6 +9,8 @@ interface TheSvgIconProps {
 }
 
 export function TheSvgIcon({ label, slug, className }: TheSvgIconProps) {
+  const normalizedSlug = slug?.toLowerCase()
+
   return (
     <span
       className={cn(
@@ -17,11 +19,17 @@ export function TheSvgIcon({ label, slug, className }: TheSvgIconProps) {
       )}
       aria-hidden="true"
     >
-      {slug ? (
+      {normalizedSlug === 'vercel' ? (
+        <svg viewBox="0 0 24 24" className="size-5 fill-foreground" role="img">
+          <path d="M12 2 24 22H0L12 2Z" />
+        </svg>
+      ) : slug ? (
         <img
           src={`https://thesvg.org/icons/${slug}/default.svg`}
           alt=""
-          className="size-5"
+          draggable={false}
+          onContextMenu={(event) => event.preventDefault()}
+          className="size-5 select-none"
           loading="lazy"
         />
       ) : (

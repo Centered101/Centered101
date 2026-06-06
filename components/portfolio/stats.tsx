@@ -60,7 +60,7 @@ export function Stats({
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-accent/[0.02] to-transparent" />
       
-      <div className="max-w-6xl mx-auto relative">
+      <div className="relative mx-auto w-full max-w-[1400px]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -91,8 +91,8 @@ export function Stats({
               data-aos="fade-up"
               className="col-span-2 row-span-2 glass-card rounded-2xl p-8 relative overflow-hidden group hover-lift"
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full blur-3xl group-hover:bg-yellow-500/20 transition-colors" />
-              <Star className="w-10 h-10 text-yellow-500 mb-4" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full blur-3xl group-hover:bg-accent/20 transition-colors" />
+              <Star className="w-10 h-10 text-accent mb-4" />
               <p className="text-6xl md:text-7xl font-bold mb-2">{totalStars.toLocaleString()}</p>
               <p className="text-muted-foreground text-lg">{copy.stats.totalStars}</p>
               <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
@@ -123,8 +123,8 @@ export function Stats({
               data-aos-delay="120"
               className="glass-card rounded-2xl p-6 relative overflow-hidden group hover-lift"
             >
-              <div className="absolute top-0 right-0 w-20 h-20 bg-green-500/10 rounded-full blur-2xl group-hover:bg-green-500/20 transition-colors" />
-              <Users className="w-8 h-8 text-green-500 mb-3" />
+              <div className="absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
+              <Users className="w-8 h-8 text-accent mb-3" />
               <p className="text-4xl font-bold mb-1">{(user?.followers || 0).toLocaleString()}</p>
               <p className="text-sm text-muted-foreground">{copy.stats.followers}</p>
             </motion.div>
@@ -137,8 +137,8 @@ export function Stats({
               data-aos-delay="160"
               className="glass-card rounded-2xl p-6 relative overflow-hidden group hover-lift"
             >
-              <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-colors" />
-              <GitFork className="w-8 h-8 text-purple-500 mb-3" />
+              <div className="absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
+              <GitFork className="w-8 h-8 text-accent mb-3" />
               <p className="text-4xl font-bold mb-1">{totalForks.toLocaleString()}</p>
               <p className="text-sm text-muted-foreground">{copy.stats.forks}</p>
             </motion.div>
@@ -151,8 +151,8 @@ export function Stats({
               data-aos-delay="200"
               className="glass-card rounded-2xl p-6 relative overflow-hidden group hover-lift"
             >
-              <div className="absolute top-0 right-0 w-20 h-20 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition-colors" />
-              <Calendar className="w-8 h-8 text-cyan-500 mb-3" />
+              <div className="absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
+              <Calendar className="w-8 h-8 text-accent mb-3" />
               <p className="text-4xl font-bold mb-1">{accountAge}+</p>
               <p className="text-sm text-muted-foreground">{copy.stats.years}</p>
             </motion.div>
@@ -208,8 +208,8 @@ export function Stats({
               data-aos-delay="160"
               className="glass-card rounded-2xl p-6 relative overflow-hidden group hover-lift"
             >
-              <div className="absolute top-0 right-0 w-20 h-20 bg-orange-500/10 rounded-full blur-2xl group-hover:bg-orange-500/20 transition-colors" />
-              <Trophy className="w-8 h-8 text-orange-500 mb-3" />
+              <div className="absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
+              <Trophy className="w-8 h-8 text-accent mb-3" />
               <p className="text-4xl font-bold mb-1">{(user?.following || 0).toLocaleString()}</p>
               <p className="text-sm text-muted-foreground">{copy.stats.following}</p>
             </motion.div>
@@ -222,8 +222,8 @@ export function Stats({
               data-aos-delay="200"
               className="glass-card rounded-2xl p-6 relative overflow-hidden group hover-lift"
             >
-              <div className="absolute top-0 right-0 w-20 h-20 bg-pink-500/10 rounded-full blur-2xl group-hover:bg-pink-500/20 transition-colors" />
-              <Star className="w-8 h-8 text-pink-500 mb-3" />
+              <div className="absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
+              <Star className="w-8 h-8 text-accent mb-3" />
               <p className="text-4xl font-bold mb-1">
                 {Math.max(...repositories.map(r => r.stargazers_count))}
               </p>
@@ -239,7 +239,7 @@ export function Stats({
 function StatsSkeleton() {
   return (
     <section className="px-6 py-24">
-      <div className="max-w-6xl mx-auto">
+      <div className="mx-auto w-full max-w-[1400px]">
         <div className="text-center mb-16">
           <Skeleton className="h-12 w-64 mx-auto mb-4" />
           <Skeleton className="h-6 w-96 mx-auto" />

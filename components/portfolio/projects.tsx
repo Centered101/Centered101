@@ -48,7 +48,7 @@ export function Projects({ repositories = [], isLoading, onRepoClick }: Projects
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-accent/[0.02] via-transparent to-transparent" />
       
-      <div className="max-w-6xl mx-auto relative">
+      <div className="relative mx-auto w-full max-w-[1400px]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -153,7 +153,7 @@ export function Projects({ repositories = [], isLoading, onRepoClick }: Projects
 function ProjectsSkeleton() {
   return (
     <section className="px-6 py-24">
-      <div className="max-w-6xl mx-auto">
+      <div className="mx-auto w-full max-w-[1400px]">
         <div className="text-center mb-16">
           <Skeleton className="h-8 w-32 mx-auto mb-6 rounded-full" />
           <Skeleton className="h-12 w-80 mx-auto mb-4" />

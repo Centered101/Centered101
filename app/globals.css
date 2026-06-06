@@ -4,28 +4,28 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #050607;
-  --foreground: #ffffff;
-  --card: #0b0d10;
-  --card-foreground: #ffffff;
-  --popover: #0b0d10;
-  --popover-foreground: #ffffff;
+  --background: #05070b;
+  --foreground: #f8fbff;
+  --card: #0b1018;
+  --card-foreground: #f8fbff;
+  --popover: #0b1018;
+  --popover-foreground: #f8fbff;
   --primary: #409EFE;
   --primary-foreground: #ffffff;
-  --secondary: #111318;
-  --secondary-foreground: #ffffff;
-  --muted: #111318;
-  --muted-foreground: #9aa4b2;
+  --secondary: #101722;
+  --secondary-foreground: #f8fbff;
+  --muted: #101722;
+  --muted-foreground: #95a0af;
   --accent: #409EFE;
   --accent-foreground: #ffffff;
-  --destructive: #ef4444;
+  --destructive: #FF7070;
   --destructive-foreground: #ffffff;
-  --border: rgba(64, 158, 254, 0.12);
-  --input: #111318;
+  --border: rgba(132, 212, 250, 0.14);
+  --input: #101722;
   --ring: #409EFE;
-  --radius: 0.75rem;
-  --surface: #0b0d10;
-  --surface-2: #111318;
+  --radius: 0.25rem;
+  --surface: #0b1018;
+  --surface-2: #101722;
 }
 
 @theme inline {
@@ -63,11 +63,23 @@
   body {
     @apply bg-background text-foreground antialiased;
     background:
-      radial-gradient(circle at 78% 12%, rgba(64, 158, 254, 0.08), transparent 32rem),
-      linear-gradient(180deg, #050607 0%, #07090c 55%, #050607 100%);
+      radial-gradient(circle at 18% 12%, rgba(64, 158, 254, 0.16), transparent 32rem),
+      radial-gradient(circle at 82% 4%, rgba(132, 212, 250, 0.1), transparent 34rem),
+      linear-gradient(90deg, rgba(132, 212, 250, 0.035) 1px, transparent 1px),
+      linear-gradient(180deg, rgba(132, 212, 250, 0.035) 1px, transparent 1px),
+      linear-gradient(180deg, #05070b 0%, #070b12 52%, #05070b 100%);
+    background-size: 76px 76px, 76px 76px, auto;
   }
   html {
-    scroll-behavior: smooth;
+    scroll-behavior: none;
+  }
+  img,
+  svg,
+  canvas,
+  video {
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none;
+    user-select: none;
   }
 }
 
@@ -78,16 +90,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f0f0f;
+  background: #05070b;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333;
+  background: #1e2a3b;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #444;
+  background: #2e4059;
 }
 
 /* Selection color */
@@ -100,7 +112,7 @@ a, button, label, .cursor-pointer, [class^="btn-"] { cursor: url(https://sweezy-
 
 /* Gradient text utility */
 .gradient-text {
-  background: linear-gradient(135deg, #ffffff 0%, #409EFE 62%, #8abfff 100%);
+  background: linear-gradient(135deg, #f8fbff 0%, #84D4FA 45%, #409EFE 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -108,22 +120,71 @@ a, button, label, .cursor-pointer, [class^="btn-"] { cursor: url(https://sweezy-
 
 /* Glass card effect */
 .glass-card {
-  background: linear-gradient(135deg, rgba(11, 13, 16, 0.92) 0%, rgba(17, 19, 24, 0.82) 100%);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(64, 158, 254, 0.1);
+  background: linear-gradient(135deg, rgba(11, 16, 24, 0.78), rgba(16, 23, 34, 0.58));
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(132, 212, 250, 0.12);
+  border-radius: 0.35rem !important;
   box-shadow: 
-    0 0 0 1px rgba(255, 255, 255, 0.03),
-    0 4px 6px -1px rgba(0, 0, 0, 0.5),
-    0 2px 4px -2px rgba(0, 0, 0, 0.5);
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 18px 50px -42px rgba(0, 0, 0, 0.75);
 }
 
 .glass-card:hover {
-  border-color: rgba(64, 158, 254, 0.28);
+  border-color: rgba(64, 158, 254, 0.38);
   box-shadow: 
-    0 0 0 1px rgba(64, 158, 254, 0.12),
-    0 20px 25px -5px rgba(0, 0, 0, 0.5),
-    0 8px 10px -6px rgba(0, 0, 0, 0.5),
-    0 0 60px -12px rgba(64, 158, 254, 0.18);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 22px 60px -42px rgba(64, 158, 254, 0.45);
+}
+
+.portfolio-classic-theme {
+  --background: #ffffff;
+  --foreground: #090c13;
+  --card: #ffffff;
+  --card-foreground: #0a0d14;
+  --popover: #ffffff;
+  --popover-foreground: #0a0d14;
+  --secondary: #f6f7f9;
+  --secondary-foreground: #0a0d14;
+  --muted: #f6f7f9;
+  --muted-foreground: #747b86;
+  --border: rgba(9, 12, 19, 0.095);
+  --input: #f3f5f7;
+  --surface: #ffffff;
+  --surface-2: #f2f5f8;
+  background:
+    linear-gradient(90deg, rgba(9, 12, 19, 0.018) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(9, 12, 19, 0.018) 1px, transparent 1px),
+    linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
+  background-size: 76px 76px, 76px 76px, auto;
+}
+
+.portfolio-classic-theme .gradient-text {
+  background: linear-gradient(135deg, #090c13 0%, #090c13 58%, #409EFE 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.portfolio-classic-theme .glass-card {
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(10px);
+  border-color: rgba(9, 12, 19, 0.09);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8),
+    0 18px 50px -42px rgba(9, 12, 19, 0.45);
+}
+
+.portfolio-classic-theme .glass-card:hover {
+  border-color: rgba(9, 12, 19, 0.16);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9),
+    0 22px 60px -42px rgba(9, 12, 19, 0.55);
+}
+
+.portfolio-classic-theme .grid-pattern {
+  background-image:
+    linear-gradient(to right, rgba(9, 12, 19, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(9, 12, 19, 0.025) 1px, transparent 1px);
 }
 
 /* Glow effects */
@@ -148,12 +209,9 @@ a, button, label, .cursor-pointer, [class^="btn-"] { cursor: url(https://sweezy-
   background: radial-gradient(circle, rgba(64, 158, 254, 0.34) 0%, transparent 70%);
 }
 
-.gradient-orb-purple {
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, transparent 70%);
-}
-
+.gradient-orb-purple,
 .gradient-orb-cyan {
-  background: radial-gradient(circle, rgba(6, 182, 212, 0.3) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(64, 158, 254, 0.22) 0%, transparent 70%);
 }
 
 /* Noise texture */
@@ -174,9 +232,9 @@ a, button, label, .cursor-pointer, [class^="btn-"] { cursor: url(https://sweezy-
 /* Grid pattern */
 .grid-pattern {
   background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 60px 60px;
+    linear-gradient(to right, rgba(132, 212, 250, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(132, 212, 250, 0.04) 1px, transparent 1px);
+  background-size: 76px 76px;
 }
 
 /* Animated border gradient */
@@ -268,7 +326,7 @@ a, button, label, .cursor-pointer, [class^="btn-"] { cursor: url(https://sweezy-
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.1) 50%,
+    rgba(10, 13, 20, 0.1) 50%,
     transparent 100%
   );
 }

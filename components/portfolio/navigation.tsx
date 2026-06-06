@@ -62,39 +62,46 @@ export function Navigation({ user }: NavigationProps) {
         className={cn(
           'fixed top-0 left-0 right-0 z-50 transition-all duration-500',
           isScrolled 
-            ? 'py-3' 
-            : 'py-5 bg-transparent'
+            ? 'py-4' 
+            : 'py-8 bg-transparent'
         )}
       >
-        {/* Backdrop blur container */}
         <div className={cn(
           'absolute inset-0 transition-all duration-500',
           isScrolled 
-            ? 'bg-background/80 backdrop-blur-xl border-b border-border/50' 
+            ? 'bg-background/88 backdrop-blur-md border-b border-border/60' 
             : 'bg-transparent'
         )} />
 
-        <nav className="max-w-6xl mx-auto px-6 flex items-center justify-between relative">
-          {/* Logo */}
+        <nav className="relative mx-auto flex w-full max-w-[1400px] items-center justify-between px-6">
           <motion.button
             onClick={() => scrollTo('home')}
-            className="text-lg font-bold hover:text-accent transition-colors relative z-10"
+            className="relative z-10 flex items-center gap-3 text-left transition-colors hover:text-accent"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             suppressHydrationWarning
           >
-            <span className="gradient-text">{user?.login || 'centered101'}</span>
+            <span className="grid size-11 place-items-center rounded-full border-2 border-foreground text-base font-black leading-none">
+              {(user?.login || 'C').slice(0, 1).toUpperCase()}
+            </span>
+            <span className="hidden sm:block">
+              <span className="block text-lg font-black leading-none text-foreground">
+                {user?.login || 'centered101'}
+              </span>
+              <span className="mt-1 block text-[0.58rem] font-black uppercase tracking-[0.5em] text-foreground">
+                Portfolio
+              </span>
+            </span>
           </motion.button>
 
-          {/* Desktop navigation */}
-          <div className="hidden md:flex items-center gap-1 relative z-10">
+          <div className="relative z-10 hidden items-center gap-5 md:flex">
             {navItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => scrollTo(item.id)}
                 suppressHydrationWarning
                 className={cn(
-                  'relative px-4 py-2 text-sm font-medium transition-colors rounded-full',
+                  'relative py-2 text-[0.68rem] font-black uppercase tracking-[0.22em] transition-colors',
                   activeSection === item.id 
                     ? 'text-foreground' 
                     : 'text-muted-foreground hover:text-foreground'
@@ -103,7 +110,7 @@ export function Navigation({ user }: NavigationProps) {
                 {activeSection === item.id && (
                   <motion.div
                     layoutId="activeSection"
-                    className="absolute inset-0 bg-secondary rounded-full"
+                    className="absolute -bottom-0.5 left-0 h-0.5 w-full bg-accent"
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   />
                 )}
@@ -111,21 +118,21 @@ export function Navigation({ user }: NavigationProps) {
               </button>
             ))}
             
-            <div className="w-px h-6 bg-border mx-2" />
+            <div className="mx-1 h-6 w-px bg-border" />
 
             <Button
               variant="ghost"
               size="sm"
-              className="glass-card border-border/50 px-3 hover:border-accent/30"
+              className="h-auto rounded-none px-0 text-[0.68rem] font-black uppercase tracking-[0.22em] text-foreground hover:bg-transparent hover:text-accent"
               onClick={toggleLocale}
             >
               {copy.nav.language}
             </Button>
             
             <Button 
-              variant="outline" 
+              variant="ghost" 
               size="sm" 
-              className="glass-card border-border/50 hover:border-accent/30"
+              className="h-auto rounded-none px-0 text-[0.68rem] font-black uppercase tracking-[0.22em] text-foreground hover:bg-transparent hover:text-accent"
               asChild
             >
               <a
@@ -133,17 +140,16 @@ export function Navigation({ user }: NavigationProps) {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <Github className="w-4 h-4 mr-2" />
+                <Github className="mr-2 size-4" />
                 {copy.nav.github}
               </a>
             </Button>
           </div>
 
-          {/* Mobile menu button */}
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden relative z-10"
+            className="relative z-10 rounded-none md:hidden"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -156,7 +162,7 @@ export function Navigation({ user }: NavigationProps) {
                   exit={{ rotate: 90, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <X className="w-5 h-5" />
+                  <X className="size-6" />
                 </motion.div>
               ) : (
                 <motion.div
@@ -166,7 +172,7 @@ export function Navigation({ user }: NavigationProps) {
                   exit={{ rotate: -90, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <Menu className="w-5 h-5" />
+                  <Menu className="size-6" />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -227,20 +233,20 @@ export function Navigation({ user }: NavigationProps) {
                   transition={{ delay: 0.3 }}
                   className="pt-4"
                 >
-                  <Button size="lg" className="gap-2" asChild>
+                  <Button size="lg" className="gap-2 rounded-none bg-foreground text-background hover:bg-accent" asChild>
                     <a
                       href={`https://github.com/${user?.login || 'centered101'}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <Github className="w-5 h-5" />
+                      <Github className="size-5" />
                       {copy.nav.github}
                     </a>
                   </Button>
                   <Button
                     size="lg"
                     variant="outline"
-                    className="mt-3 w-full"
+                    className="mt-3 w-full rounded-none"
                     onClick={toggleLocale}
                   >
                     {copy.nav.language}

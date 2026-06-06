@@ -53,7 +53,7 @@ export function Skills({ topLanguages = [], isLoading }: SkillsProps) {
     return <SkillsSkeleton />
   }
 
-  const visibleLanguages = isLoading ? [] : topLanguages.slice(0, 6)
+  const visibleLanguages = isLoading ? [] : topLanguages.slice(0, 9)
   const visibleTools = !toolsLoading && toolsConfigured && !toolsError ? tools : []
   const showLanguageCard = Boolean(isLoading || visibleLanguages.length > 0)
   const showToolsCard = Boolean(toolsLoading || visibleTools.length > 0)
@@ -81,7 +81,7 @@ export function Skills({ topLanguages = [], isLoading }: SkillsProps) {
     <section id="skills" className="px-6 py-24 relative" data-aos="fade-up">
       <div className="absolute inset-0 bg-gradient-to-t from-accent/[0.02] to-transparent" />
       
-      <div className="max-w-6xl mx-auto relative">
+      <div className="relative mx-auto w-full max-w-[1400px]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -97,7 +97,7 @@ export function Skills({ topLanguages = [], isLoading }: SkillsProps) {
           </p>
         </motion.div>
 
-        <div className={showLanguageCard && showToolsCard ? 'grid lg:grid-cols-2 gap-12' : 'grid gap-12 max-w-3xl mx-auto'}>
+        <div className={showLanguageCard && showToolsCard ? 'grid lg:grid-cols-2 gap-12' : 'mx-auto grid w-full max-w-[1400px] gap-12'}>
           {/* Language proficiency */}
           {isLoading ? (
             <LanguageCardSkeleton />
@@ -210,7 +210,7 @@ function LanguageCardSkeleton() {
     <div className="rounded-2xl border border-border p-8">
       <Skeleton className="h-6 w-48 mb-8" />
       <div className="space-y-6">
-        {Array.from({ length: 6 }).map((_, i) => (
+        {Array.from({ length: 9 }).map((_, i) => (
           <div key={i}>
             <div className="flex justify-between mb-2">
               <Skeleton className="h-4 w-24" />
@@ -240,7 +240,7 @@ function ToolsCardSkeleton() {
 function SkillsSkeleton() {
   return (
     <section className="px-6 py-24">
-      <div className="max-w-6xl mx-auto">
+      <div className="mx-auto w-full max-w-[1400px]">
         <div className="text-center mb-16">
           <Skeleton className="h-12 w-80 mx-auto mb-4" />
           <Skeleton className="h-6 w-96 mx-auto" />

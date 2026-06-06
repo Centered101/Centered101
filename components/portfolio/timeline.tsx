@@ -57,9 +57,9 @@ export function Timeline({ isLoading }: TimelineProps) {
       case 'work':
         return 'border-accent/30'
       case 'education':
-        return 'border-green-500/30'
+        return 'border-accent/30'
       case 'achievement':
-        return 'border-yellow-500/30'
+        return 'border-accent/30'
       default:
         return 'border-border'
     }
@@ -70,7 +70,7 @@ export function Timeline({ isLoading }: TimelineProps) {
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-accent/[0.01] to-transparent" />
 
-      <div className="max-w-4xl mx-auto relative">
+      <div className="relative mx-auto w-full max-w-[1400px]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -115,8 +115,8 @@ export function Timeline({ isLoading }: TimelineProps) {
                       <span className="text-sm font-mono text-muted-foreground">{item.year}</span>
                       <div className={`px-2 py-0.5 rounded text-xs font-medium capitalize ${
                         item.type === 'work' ? 'bg-accent/10 text-accent' :
-                        item.type === 'education' ? 'bg-green-500/10 text-green-500' :
-                        'bg-yellow-500/10 text-yellow-500'
+                        item.type === 'education' ? 'bg-accent/10 text-accent' :
+                        'bg-accent/10 text-accent'
                       }`}>
                         {item.type}
                       </div>
@@ -130,8 +130,8 @@ export function Timeline({ isLoading }: TimelineProps) {
                 <div className="absolute left-0 md:left-1/2 md:-translate-x-1/2 w-10 h-10 rounded-full flex items-center justify-center glass-card border border-border">
                   <Icon className={`w-5 h-5 ${
                     item.type === 'work' ? 'text-accent' :
-                    item.type === 'education' ? 'text-green-500' :
-                    'text-yellow-500'
+                    item.type === 'education' ? 'text-accent' :
+                    'text-accent'
                   }`} />
                 </div>
 
@@ -150,7 +150,7 @@ export function Timeline({ isLoading }: TimelineProps) {
 function TimelineSkeleton() {
   return (
     <section className="px-6 py-24">
-      <div className="max-w-4xl mx-auto">
+      <div className="mx-auto w-full max-w-[1400px]">
         <div className="text-center mb-16">
           <Skeleton className="h-12 w-80 mx-auto mb-4" />
           <Skeleton className="h-6 w-64 mx-auto" />

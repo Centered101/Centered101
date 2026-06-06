@@ -34,8 +34,19 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 .idea/
-.vscode/*
-!.vscode/extensions.json
+.vscode/
+
+# AI agents / coding assistants
+.agents/
+.codex/
+.claude/
+.cursor/
+.continue/
+.windsurf/
+.roo/
+.aider*
+CLAUDE.md
+AGENTS.md
 
 # Temp
 .tmp.driveupload/

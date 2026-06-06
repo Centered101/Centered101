@@ -7,39 +7,20 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { FieldGroup, Field, FieldLabel } from '@/components/ui/field'
 import { Spinner } from '@/components/ui/spinner'
-import { Mail, Send, CheckCircle2, AlertCircle, Github, Twitter, Globe, MapPin, Sparkles, BadgeCheck } from 'lucide-react'
+import { Send, CheckCircle2, AlertCircle, MapPin, Sparkles } from 'lucide-react'
 import { useLanguage } from '@/components/language-provider'
-import type { GitHubSocialAccount, GitHubUser } from '@/lib/github/types'
+import { useSocialLinks } from '@/hooks/use-social-links'
+import { getSocialLinkIcon } from '@/components/social-link-icon'
+import type { GitHubUser } from '@/lib/github/types'
 
 interface ContactProps {
   user?: GitHubUser
-  socialAccounts?: GitHubSocialAccount[]
-  orcidId?: string | null
   onSubmit?: () => void
 }
 
-function getSocialLabel(url: string) {
-  try {
-    const parsedUrl = new URL(url)
-    return parsedUrl.hostname.replace(/^www\./, '') + parsedUrl.pathname.replace(/\/$/, '')
-  } catch {
-    return url
-  }
-}
-
-function isDuplicateSocial(url: string, user?: GitHubUser) {
-  const normalizedUrl = url.toLowerCase()
-
-  return Boolean(
-    normalizedUrl.includes('github.com') ||
-      (user?.twitter_username && normalizedUrl.includes('twitter.com')) ||
-      (user?.twitter_username && normalizedUrl.includes('x.com')) ||
-      (user?.blog && normalizedUrl.includes(user.blog.toLowerCase().replace(/^https?:\/\//, '')))
-  )
-}
-
-export function Contact({ user, socialAccounts = [], orcidId, onSubmit }: ContactProps) {
+export function Contact({ user, onSubmit }: ContactProps) {
   const { copy } = useLanguage()
+  const { links: socialLinks } = useSocialLinks()
   const [formState, setFormState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
   const [formData, setFormData] = useState({
@@ -84,56 +65,6 @@ export function Contact({ user, socialAccounts = [], orcidId, onSubmit }: Contac
     }
   }
 
-  const githubSocialLinks = socialAccounts
-    .filter((account) => account.url && !isDuplicateSocial(account.url, user))
-    .filter((account) => !account.url.toLowerCase().includes('orcid.org'))
-    .map((account) => ({
-      name: account.provider || 'Social',
-      icon: Globe,
-      href: account.url,
-      label: getSocialLabel(account.url),
-      show: true,
-    }))
-
-  const socialLinks = [
-    {
-      name: 'GitHub',
-      icon: Github,
-      href: `https://github.com/${user?.login || 'centered101'}`,
-      label: `@${user?.login || 'centered101'}`,
-      show: true,
-    },
-    {
-      name: 'Twitter',
-      icon: Twitter,
-      href: user?.twitter_username ? `https://twitter.com/${user.twitter_username}` : null,
-      label: user?.twitter_username ? `@${user.twitter_username}` : null,
-      show: !!user?.twitter_username,
-    },
-    {
-      name: 'Website',
-      icon: Globe,
-      href: user?.blog ? (user.blog.startsWith('http') ? user.blog : `https://${user.blog}`) : null,
-      label: user?.blog || null,
-      show: !!user?.blog,
-    },
-    {
-      name: 'Email',
-      icon: Mail,
-      href: user?.email ? `mailto:${user.email}` : null,
-      label: user?.email || null,
-      show: !!user?.email,
-    },
-    {
-      name: 'ORCID iD',
-      icon: BadgeCheck,
-      href: orcidId ? `https://orcid.org/${orcidId}` : null,
-      label: orcidId || null,
-      show: !!orcidId,
-    },
-    ...githubSocialLinks,
-  ].filter(link => link.show)
-
   return (
     <section id="contact" className="px-6 py-24 relative overflow-hidden" data-aos="fade-up">
       {/* Background gradient */}
@@ -153,7 +84,7 @@ export function Contact({ user, socialAccounts = [], orcidId, onSubmit }: Contac
         }}
       />
 
-      <div className="max-w-5xl mx-auto relative">
+      <div className="relative mx-auto w-full max-w-[1400px]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -191,23 +122,27 @@ export function Contact({ user, socialAccounts = [], orcidId, onSubmit }: Contac
             <div className="glass-card rounded-2xl p-6">
               <h3 className="text-lg font-semibold mb-6">{copy.contact.connect}</h3>
               <div className="space-y-4">
-                {socialLinks.map((link) => (
-                  <a
-                    key={link.name}
-                    href={link.href || '#'}
+                {socialLinks.map((link) => {
+                  const Icon = getSocialLinkIcon(link.icon)
+
+                  return (
+                    <a
+                    key={link.id}
+                    href={link.href}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-4 text-muted-foreground hover:text-foreground transition-all group"
                   >
                     <div className="w-12 h-12 rounded-xl bg-secondary/80 flex items-center justify-center group-hover:bg-accent/20 group-hover:scale-105 transition-all">
-                      <link.icon className="w-5 h-5 group-hover:text-accent transition-colors" />
+                      <Icon className="w-5 h-5 group-hover:text-accent transition-colors" />
                     </div>
                     <div>
                       <p className="font-medium text-foreground">{link.name}</p>
                       <p className="text-sm truncate max-w-[180px]">{link.label}</p>
                     </div>
                   </a>
-                ))}
+                  )
+                })}
               </div>
             </div>
 
@@ -252,8 +187,8 @@ export function Contact({ user, socialAccounts = [], orcidId, onSubmit }: Contac
                   animate={{ opacity: 1, scale: 1 }}
                   className="flex flex-col items-center justify-center py-12 text-center"
                 >
-                  <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
-                    <CheckCircle2 className="w-8 h-8 text-green-500" />
+                  <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mb-4">
+                    <CheckCircle2 className="w-8 h-8 text-accent" />
                   </div>
                   <h3 className="text-xl font-semibold mb-2">{copy.contact.successTitle}</h3>
                   <p className="text-muted-foreground mb-6 max-w-sm">

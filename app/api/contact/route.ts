@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { buildContactLineMessage, pushLineMessage } from '@/lib/line/messaging'
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,24 +25,55 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = createAdminClient() || await createClient()
+    let savedToDatabase = false
+    let sentToLine = false
 
-    const { error } = await supabase.from('contact_messages').insert({
-      name,
-      email,
-      subject: subject || null,
-      message,
-    })
+    try {
+      const supabase = createAdminClient() || await createClient()
 
-    if (error) {
-      console.error('Supabase error:', error)
+      const { error } = await supabase.from('contact_messages').insert({
+        name,
+        email,
+        subject: subject || null,
+        message,
+      })
+
+      if (error) {
+        console.warn('Contact message database save skipped:', error)
+      } else {
+        savedToDatabase = true
+      }
+    } catch (databaseError) {
+      console.warn('Contact message database unavailable:', databaseError)
+    }
+
+    try {
+      const lineResult = await pushLineMessage(buildContactLineMessage({
+        name,
+        email,
+        subject: subject || null,
+        message,
+      }))
+      sentToLine = lineResult.ok
+    } catch (lineError) {
+      console.warn('LINE notification skipped:', lineError)
+    }
+
+    if (!savedToDatabase && !sentToLine) {
       return NextResponse.json(
-        { error: 'Failed to save message' },
+        { error: 'Failed to send message' },
         { status: 500 }
       )
     }
 
-    return NextResponse.json({ success: true, message: 'Message sent successfully' })
+    return NextResponse.json({
+      success: true,
+      message: 'Message sent successfully',
+      delivered: {
+        database: savedToDatabase,
+        line: sentToLine,
+      },
+    })
   } catch (error) {
     console.error('Contact API error:', error)
     return NextResponse.json(

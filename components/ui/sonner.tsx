@@ -3,6 +3,14 @@
 import { useTheme } from 'next-themes'
 import { Toaster as Sonner, ToasterProps } from 'sonner'
 
+const toasterIcons = {
+  success: <i className="fa-solid fa-circle-check text-green-500 text-sm" />,
+  error: <i className="fa-solid fa-circle-exclamation text-red-500 text-sm" />,
+  info: <i className="fa-solid fa-circle-info text-blue-400 text-sm" />,
+  warning: <i className="fa-solid fa-circle-info text-yellow-500 text-sm" />,
+  loading: <i className="fa-solid fa-spinner text-slate-400 text-sm animate-spin" />,
+}
+
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = 'system' } = useTheme()
 
@@ -17,6 +25,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           '--normal-border': 'var(--border)',
         } as React.CSSProperties
       }
+      icons={toasterIcons}
       {...props}
     />
   )

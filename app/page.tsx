@@ -17,9 +17,9 @@ export default function Home() {
   const { trackRepoClick, trackContactSubmit, trackResumeDownload } = useAnalytics()
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="portfolio-classic-theme min-h-screen bg-background text-foreground">
       <Navigation user={data?.user} />
-      
+
       <main>
         <Hero
           user={data?.user}
@@ -27,13 +27,13 @@ export default function Home() {
           topLanguages={data?.topLanguages}
           isLoading={isLoading}
         />
-        
+
         <Projects
           repositories={data?.repositories}
           isLoading={isLoading}
           onRepoClick={trackRepoClick}
         />
-        
+
         <Stats
           user={data?.user}
           repositories={data?.repositories}
@@ -49,18 +49,14 @@ export default function Home() {
           isLoading={isLoading}
         />
 
-        <Timeline
-          isLoading={isLoading}
-        />
-        
+        <Timeline isLoading={isLoading} />
+
         <Contact
           user={data?.user}
-          socialAccounts={data?.socialAccounts}
-          orcidId={data?.orcidId}
           onSubmit={trackContactSubmit}
         />
       </main>
-      
+
       <Footer
         user={data?.user}
         onResumeDownload={trackResumeDownload}

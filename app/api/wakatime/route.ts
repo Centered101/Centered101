@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getLanguageColor } from '@/lib/github/api'
 import type { WakaTimeStats } from '@/lib/wakatime/types'
 
 type WakaTimeEntity = {
@@ -26,13 +27,15 @@ type WakaTimeStatsResponse = {
 
 const DEFAULT_RANGE = 'last_7_days'
 
-function normalizeEntity(entity: WakaTimeEntity) {
+function normalizeEntity(entity: WakaTimeEntity, useLanguageColor = false) {
+  const name = entity.name || 'Unknown'
+
   return {
-    name: entity.name || 'Unknown',
+    name,
     totalSeconds: entity.total_seconds || 0,
     text: entity.text || '0 mins',
     percent: Math.round((entity.percent || 0) * 10) / 10,
-    color: entity.color || null,
+    color: useLanguageColor ? getLanguageColor(name) : entity.color || getLanguageColor(name),
   }
 }
 
@@ -87,8 +90,8 @@ export async function GET(request: Request) {
       dailyAverageSeconds: data?.daily_average || 0,
       bestDayText: data?.best_day?.text || null,
       bestDayDate: data?.best_day?.date || null,
-      languages: (data?.languages || []).slice(0, 5).map(normalizeEntity),
-      projects: (data?.projects || []).slice(0, 5).map(normalizeEntity),
+      languages: (data?.languages || []).slice(0, 5).map((language) => normalizeEntity(language, true)),
+      projects: (data?.projects || []).slice(0, 5).map((project) => normalizeEntity(project)),
     } satisfies WakaTimeStats)
   } catch (error) {
     console.error('WakaTime API error:', error)

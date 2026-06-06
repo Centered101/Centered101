@@ -36,7 +36,7 @@ export function WakaTimeStats() {
     <section id="wakatime" className="relative overflow-hidden px-6 py-24" data-aos="fade-up">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-accent/[0.025] to-transparent" />
 
-      <div className="relative mx-auto max-w-6xl">
+      <div className="relative mx-auto w-full max-w-[1400px]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -161,7 +161,7 @@ export function WakaTimeStats() {
 function WakaTimeSkeleton() {
   return (
     <section className="px-6 py-24">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto w-full max-w-[1400px]">
         <div className="mb-16 text-center">
           <Skeleton className="mx-auto mb-6 h-8 w-40 rounded-full" />
           <Skeleton className="mx-auto mb-4 h-12 w-72" />

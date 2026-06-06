@@ -1,11 +1,12 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Star, GitFork, ExternalLink, Github, Calendar } from 'lucide-react'
 import { getLanguageColor, getRelativeTime } from '@/lib/github/api'
-import { getProjectPoster } from '@/lib/github/project-posters'
+import { getProjectPosterCandidates } from '@/lib/github/project-posters'
 import { useLanguage } from '@/components/language-provider'
 import type { GitHubRepo } from '@/lib/github/types'
 
@@ -20,7 +21,9 @@ export function RepoCard({ repo, index, onRepoClick }: RepoCardProps) {
   const langColor = getLanguageColor(repo.language || '')
   const topics = Array.isArray(repo.topics) ? repo.topics.slice(0, 3) : []
   const homepage = repo.homepage || undefined
-  const poster = getProjectPoster(repo)
+  const posterCandidates = getProjectPosterCandidates(repo)
+  const [posterIndex, setPosterIndex] = useState(0)
+  const poster = posterCandidates[posterIndex]
 
   const handleClick = () => {
     onRepoClick?.(repo.name, repo.html_url)
@@ -43,17 +46,20 @@ export function RepoCard({ repo, index, onRepoClick }: RepoCardProps) {
       >
         {/* Glow effect on hover */}
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-          <div className="absolute -inset-1 bg-gradient-to-r from-accent/20 via-purple-500/10 to-cyan-500/20 rounded-2xl blur-xl" />
+          <div className="absolute -inset-1 bg-gradient-to-r from-accent/20 via-white/5 to-accent/20 rounded-2xl blur-xl" />
         </div>
 
         <div className="relative z-10 flex flex-col h-full">
           {poster && (
-            <div className="relative -mx-6 -mt-6 mb-5 aspect-video overflow-hidden border-b border-border/50 bg-secondary">
+            <div className="relative -mx-6 -mt-6 mb-5 aspect-[4/5] overflow-hidden border-b border-border/50 bg-secondary">
               <img
                 src={poster}
                 alt={`${repo.name} project poster`}
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                draggable={false}
+                onContextMenu={(event) => event.preventDefault()}
+                className="h-full w-full select-none object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
+                onError={() => setPosterIndex((current) => current + 1)}
               />
               <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-card/80 to-transparent" />
             </div>
@@ -71,7 +77,7 @@ export function RepoCard({ repo, index, onRepoClick }: RepoCardProps) {
               </div>
             </div>
             <div className="flex items-center gap-1 text-sm">
-              <Star className="w-4 h-4 text-yellow-500" />
+              <Star className="w-4 h-4 text-accent" />
               <span className="font-medium">{repo.stargazers_count}</span>
             </div>
           </div>

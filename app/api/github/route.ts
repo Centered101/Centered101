@@ -7,10 +7,54 @@ import {
   extractOrcidId,
   calculateTotalStars,
   calculateTopLanguages,
+  getLanguageColor,
 } from '@/lib/github/api'
 
 const GITHUB_USERNAME = 'Centered101'
 const CACHE_DURATION_MS = 60 * 60 * 1000 // 1 hour
+
+type CachedLanguage = {
+  name: string
+  percentage: number
+  color?: string
+}
+
+type ProjectPosterRow = {
+  repo_name: string
+  poster_url: string
+}
+
+function normalizeLanguageColors(languages: CachedLanguage[] | null | undefined) {
+  return (languages || []).map((language) => ({
+    ...language,
+    color: getLanguageColor(language.name),
+  }))
+}
+
+async function getProjectPosterMap(supabase: Awaited<ReturnType<typeof createClient>> | null) {
+  if (!supabase) {
+    return new Map<string, string>()
+  }
+
+  const { data, error } = await supabase
+    .from('portfolio_project_posters')
+    .select('repo_name, poster_url')
+    .eq('enabled', true)
+
+  if (error) {
+    console.warn('Project poster cache read failed:', error)
+    return new Map<string, string>()
+  }
+
+  return new Map((data as ProjectPosterRow[] | null || []).map((poster) => [poster.repo_name, poster.poster_url]))
+}
+
+function attachProjectPosters<T extends { name: string }>(repos: T[], posters: Map<string, string>) {
+  return repos.map((repo) => ({
+    ...repo,
+    poster_url: posters.get(repo.name) || null,
+  }))
+}
 
 export async function GET() {
   try {
@@ -35,10 +79,14 @@ export async function GET() {
       }
 
       const now = new Date()
+      const cachedLanguages = Array.isArray(cachedProfile?.top_languages)
+        ? cachedProfile.top_languages
+        : []
       const cacheValid =
         cachedProfile &&
         cachedProfile.cached_at &&
-        now.getTime() - new Date(cachedProfile.cached_at).getTime() < CACHE_DURATION_MS
+        now.getTime() - new Date(cachedProfile.cached_at).getTime() < CACHE_DURATION_MS &&
+        cachedLanguages.length >= 9
 
       if (cacheValid && cachedProfile) {
         const socialAccounts = await fetchGitHubSocialAccounts(GITHUB_USERNAME).catch((error) => {
@@ -55,6 +103,8 @@ export async function GET() {
           .order('stargazers_count', { ascending: false })
 
         if (!reposError) {
+          const projectPosters = await getProjectPosterMap(supabase)
+
           return NextResponse.json({
             user: {
               login: cachedProfile.username,
@@ -69,11 +119,11 @@ export async function GET() {
               following: cachedProfile.following,
               public_repos: cachedProfile.public_repos,
             },
-            repositories: cachedRepos || [],
+            repositories: attachProjectPosters(cachedRepos || [], projectPosters),
             socialAccounts,
             orcidId,
             totalStars: cachedProfile.total_stars,
-            topLanguages: cachedProfile.top_languages,
+            topLanguages: normalizeLanguageColors(cachedProfile.top_languages),
             cached: true,
           })
         }
@@ -95,6 +145,7 @@ export async function GET() {
     const totalStars = calculateTotalStars(repos)
     const topLanguages = calculateTopLanguages(repos)
     const orcidId = extractOrcidId(socialAccounts)
+    const projectPosters = await getProjectPosterMap(supabase)
 
     if (supabase) {
       // Update cache in Supabase. Cache failures should not break the API response.
@@ -159,7 +210,7 @@ export async function GET() {
 
     return NextResponse.json({
       user,
-      repositories: repos,
+      repositories: attachProjectPosters(repos, projectPosters),
       socialAccounts,
       orcidId,
       totalStars,
