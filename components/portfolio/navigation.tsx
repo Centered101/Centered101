@@ -86,7 +86,7 @@ export function Navigation({ user }: NavigationProps) {
             </span>
             <span className="hidden sm:block">
               <span className="block text-lg font-black leading-none text-foreground">
-                {user?.login || 'centered101'}
+                {user?.login || 'Centered101'}
               </span>
               <span className="mt-1 block text-[0.58rem] font-black uppercase tracking-[0.5em] text-foreground">
                 Portfolio
@@ -136,7 +136,7 @@ export function Navigation({ user }: NavigationProps) {
               asChild
             >
               <a
-                href={`https://github.com/${user?.login || 'centered101'}`}
+                href={`https://github.com/${user?.login || 'Centered101'}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -235,7 +235,7 @@ export function Navigation({ user }: NavigationProps) {
                 >
                   <Button size="lg" className="gap-2 rounded-none bg-foreground text-background hover:bg-accent" asChild>
                     <a
-                      href={`https://github.com/${user?.login || 'centered101'}`}
+                      href={`https://github.com/${user?.login || 'Centered101'}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >

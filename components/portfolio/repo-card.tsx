@@ -1,12 +1,10 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Star, GitFork, ExternalLink, Github, Calendar } from 'lucide-react'
 import { getLanguageColor, getRelativeTime } from '@/lib/github/api'
-import { getProjectPosterCandidates } from '@/lib/github/project-posters'
 import { useLanguage } from '@/components/language-provider'
 import type { GitHubRepo } from '@/lib/github/types'
 
@@ -21,9 +19,6 @@ export function RepoCard({ repo, index, onRepoClick }: RepoCardProps) {
   const langColor = getLanguageColor(repo.language || '')
   const topics = Array.isArray(repo.topics) ? repo.topics.slice(0, 3) : []
   const homepage = repo.homepage || undefined
-  const posterCandidates = getProjectPosterCandidates(repo)
-  const [posterIndex, setPosterIndex] = useState(0)
-  const poster = posterCandidates[posterIndex]
 
   const handleClick = () => {
     onRepoClick?.(repo.name, repo.html_url)
@@ -50,21 +45,6 @@ export function RepoCard({ repo, index, onRepoClick }: RepoCardProps) {
         </div>
 
         <div className="relative z-10 flex flex-col h-full">
-          {poster && (
-            <div className="relative -mx-6 -mt-6 mb-5 aspect-[4/5] overflow-hidden border-b border-border/50 bg-secondary">
-              <img
-                src={poster}
-                alt={`${repo.name} project poster`}
-                draggable={false}
-                onContextMenu={(event) => event.preventDefault()}
-                className="h-full w-full select-none object-cover transition-transform duration-500 group-hover:scale-105"
-                loading="lazy"
-                onError={() => setPosterIndex((current) => current + 1)}
-              />
-              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-card/80 to-transparent" />
-            </div>
-          )}
-
           {/* Header */}
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1 min-w-0">

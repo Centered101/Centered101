@@ -68,8 +68,8 @@ export function Hero({ user, totalStars = 0, isLoading, onResumeDownload }: Hero
     return <HeroSkeleton />
   }
 
-  const profileName = user?.name || user?.login || 'centered101'
-  const username = user?.login || 'centered101'
+  const profileName = user?.name || user?.login || 'Centered101'
+  const username = user?.login || 'Centered101'
   const joinedDate = user?.created_at
     ? new Date(user.created_at).toLocaleDateString('en-US', {
         month: 'long',
@@ -77,7 +77,7 @@ export function Hero({ user, totalStars = 0, isLoading, onResumeDownload }: Hero
         year: 'numeric',
       })
     : null
-  const resumeHref = '/porfilio/resume/centered101-resume.pdf'
+  const resumeHref = '/porfilio/resume/Centered101-resume.pdf'
 
   const handleResumeClick = async () => {
     onResumeDownload?.()
@@ -131,7 +131,7 @@ export function Hero({ user, totalStars = 0, isLoading, onResumeDownload }: Hero
   }
 
   return (
-    <section id="home" className="relative flex min-h-screen items-center overflow-hidden px-4 pb-14 pt-28 sm:px-6 sm:pb-20">
+    <section id="home" className="relative flex min-h-screen items-end overflow-hidden px-4 pb-16 pt-28 sm:px-6 sm:pb-24 lg:pb-28">
       <div className="absolute inset-0 z-0 grid-pattern" />
       <div className="pointer-events-none absolute inset-0 z-0 bg-[url('/porfilio/images/bg-portfolio.png')] bg-cover bg-center opacity-75" />
       <div className="pointer-events-none absolute inset-0 z-0 bg-background/62" />
@@ -309,7 +309,7 @@ export function Hero({ user, totalStars = 0, isLoading, onResumeDownload }: Hero
               onClick={handleResumeClick}
               asChild
             >
-              <a href={resumeHref} download="centered101-resume.pdf">
+              <a href={resumeHref} download="Centered101-resume.pdf">
                 {copy.hero.resume}
               </a>
             </Button>
@@ -322,7 +322,7 @@ export function Hero({ user, totalStars = 0, isLoading, onResumeDownload }: Hero
 
 function HeroSkeleton() {
   return (
-    <section className="relative flex min-h-screen items-center overflow-hidden px-4 pb-14 pt-28 sm:px-6 sm:pb-20">
+    <section className="relative flex min-h-screen items-end overflow-hidden px-4 pb-16 pt-28 sm:px-6 sm:pb-24 lg:pb-28">
       <div className="absolute inset-0 z-0 grid-pattern" />
       <div className="pointer-events-none absolute inset-0 z-0 bg-[url('/porfilio/images/bg-portfolio.png')] bg-cover bg-center opacity-75" />
       <div className="pointer-events-none absolute inset-0 z-0 bg-background/62" />
@@ -340,23 +340,28 @@ function HeroSkeleton() {
           <div className="grid gap-5 sm:grid-cols-[128px_1fr] sm:gap-8 lg:grid-cols-[160px_1fr]">
             <div className="flex items-start justify-center sm:justify-start">
               <div className="relative">
-                <div className="absolute inset-1.5 rounded-3xl bg-accent/35 opacity-80 blur-xl" />
-                <Skeleton className="relative mx-auto size-64 rounded border border-primary bg-card sm:mx-0 sm:size-32 lg:size-36" />
+                <div className="absolute inset-1.5 rounded bg-accent/35 opacity-80 blur-xl" />
+                <Skeleton className="relative mx-auto size-64 rounded-3xl border border-primary bg-card sm:mx-0 sm:size-32 lg:size-36" />
               </div>
             </div>
             <div className="min-w-0">
-              <Skeleton className="mb-4 h-10 w-64" />
-              <div className="mb-6 grid max-w-xl grid-cols-3 gap-3">
-                <Skeleton className="h-12" />
-                <Skeleton className="h-12" />
-                <Skeleton className="h-12" />
+              <Skeleton className="mb-5 h-10 w-64" />
+              <div className="mb-6 grid max-w-xl grid-cols-3 gap-3 sm:gap-8">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div key={index} className="space-y-2">
+                    <Skeleton className="h-5 w-10" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                ))}
               </div>
-              <Skeleton className="mb-2 h-5 w-48" />
-              <Skeleton className="mb-2 h-5 w-32" />
-              <Skeleton className="h-6 w-full max-w-xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-5 w-full max-w-md" />
+                <Skeleton className="h-6 w-36" />
+              </div>
             </div>
           </div>
-          <div className="mt-6 grid gap-2 sm:grid-cols-3">
+          <div className="mt-8 flex items-center justify-between gap-2 *:w-full sm:grid sm:grid-cols-3 lg:w-max">
             <Skeleton className="h-10 rounded-lg" />
             <Skeleton className="h-10 rounded-lg" />
             <Skeleton className="h-10 rounded-lg" />

@@ -50,3 +50,6 @@ AGENTS.md
 
 # Temp
 .tmp.driveupload/
+
+# Database dumps
+FullSQL.sql

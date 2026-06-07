@@ -25,8 +25,6 @@ export interface GitHubRepo {
   description: string | null
   html_url: string
   homepage: string | null
-  poster_url?: string | null
-  posterUrl?: string | null
   language: string | null
   stargazers_count: number
   forks_count: number

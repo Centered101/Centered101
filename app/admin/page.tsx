@@ -10,7 +10,6 @@ import {
   Database,
   FileText,
   Github,
-  ImagePlus,
   LayoutDashboard,
   LockKeyhole,
   LogOut,
@@ -21,7 +20,6 @@ import {
   ShieldCheck,
   Trash2,
   RefreshCw,
-  Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,17 +29,53 @@ import { ecosystemPages, ecosystemServices } from '@/lib/ecosystem'
 
 type GitHubRepo = {
   name: string
-  poster_url?: string | null
 }
 
-type ProjectPoster = {
-  repo_name: string
+type PortfolioProject = {
+  id?: string
+  slug: string
+  title: string
+  short_description: string
+  description: string
+  category: string
+  status: string
   poster_url: string
+  poster_alt: string
+  live_url: string
+  github_url: string
+  docs_url: string
+  source_type: string
+  source_repo: string
+  tech_stack: string[]
+  tags: string[]
+  featured: boolean
   enabled: boolean
+  sort_order: number
   updated_at?: string
 }
 
 const TOKEN_STORAGE_KEY = 'centered101_admin_token'
+
+const emptyProject: PortfolioProject = {
+  slug: '',
+  title: '',
+  short_description: '',
+  description: '',
+  category: 'project',
+  status: 'published',
+  poster_url: '',
+  poster_alt: '',
+  live_url: '',
+  github_url: '',
+  docs_url: '',
+  source_type: 'manual',
+  source_repo: '',
+  tech_stack: [],
+  tags: [],
+  featured: true,
+  enabled: true,
+  sort_order: 100,
+}
 
 const adminModules = [
   {
@@ -52,10 +86,10 @@ const adminModules = [
     status: 'Live',
   },
   {
-    id: 'posters',
-    label: 'Project Posters',
-    icon: ImagePlus,
-    description: 'ควบคุม poster ของ Featured Projects',
+    id: 'projects',
+    label: 'Projects',
+    icon: FileText,
+    description: 'ควบคุมโปรเจกต์ Portfolio จาก Supabase',
     status: 'Live',
   },
   {
@@ -105,18 +139,18 @@ function StatusBadge({ status }: { status: string }) {
 export default function AdminPage() {
   const [token, setToken] = useState('')
   const [repos, setRepos] = useState<GitHubRepo[]>([])
-  const [posters, setPosters] = useState<Record<string, ProjectPoster>>({})
-  const [selectedRepo, setSelectedRepo] = useState('')
-  const [posterUrl, setPosterUrl] = useState('')
-  const [posterFile, setPosterFile] = useState<File | null>(null)
-  const [posterInputKey, setPosterInputKey] = useState(0)
-  const [enabled, setEnabled] = useState(true)
+  const [projects, setProjects] = useState<PortfolioProject[]>([])
+  const [selectedProjectId, setSelectedProjectId] = useState('')
+  const [projectForm, setProjectForm] = useState<PortfolioProject>(emptyProject)
   const [status, setStatus] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [activeModule, setActiveModule] = useState('overview')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
-  const selectedPoster = useMemo(() => posters[selectedRepo], [posters, selectedRepo])
+  const selectedProject = useMemo(
+    () => projects.find((project) => project.id === selectedProjectId),
+    [projects, selectedProjectId]
+  )
   const activeModuleConfig = adminModules.find((module) => module.id === activeModule) || adminModules[0]
   const ActiveModuleIcon = activeModuleConfig.icon
 
@@ -124,7 +158,7 @@ export default function AdminPage() {
     const savedToken = window.localStorage.getItem(TOKEN_STORAGE_KEY)
     if (savedToken) {
       setToken(savedToken)
-      loadPosters(savedToken)
+      unlockDashboard(savedToken)
     }
 
     fetch('/api/github')
@@ -132,7 +166,6 @@ export default function AdminPage() {
       .then((data) => {
         const nextRepos = (data.repositories || []) as GitHubRepo[]
         setRepos(nextRepos)
-        setSelectedRepo(nextRepos[0]?.name || '')
       })
       .catch(() => {
         setStatus('โหลด repo ไม่สำเร็จ')
@@ -141,17 +174,47 @@ export default function AdminPage() {
   }, [])
 
   useEffect(() => {
-    if (!selectedRepo) {
+    if (!selectedProject) {
+      setProjectForm(emptyProject)
       return
     }
 
-    setPosterUrl(selectedPoster?.poster_url || '')
-    setEnabled(selectedPoster?.enabled ?? true)
-    setPosterFile(null)
-    setPosterInputKey((current) => current + 1)
-  }, [selectedPoster, selectedRepo])
+    setProjectForm({
+      ...emptyProject,
+      ...selectedProject,
+      short_description: selectedProject.short_description || '',
+      description: selectedProject.description || '',
+      poster_url: selectedProject.poster_url || '',
+      poster_alt: selectedProject.poster_alt || '',
+      live_url: selectedProject.live_url || '',
+      github_url: selectedProject.github_url || '',
+      docs_url: selectedProject.docs_url || '',
+      source_repo: selectedProject.source_repo || '',
+      tech_stack: selectedProject.tech_stack || [],
+      tags: selectedProject.tags || [],
+    })
+  }, [selectedProject])
 
-  const loadPosters = async (nextToken = token) => {
+  const loadProjects = async (nextToken = token) => {
+    if (!nextToken) {
+      return
+    }
+
+    const response = await fetch('/api/admin/projects', {
+      headers: { 'x-admin-token': nextToken },
+    })
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || 'โหลด projects ไม่สำเร็จ')
+    }
+
+    const nextProjects = (data.projects || []) as PortfolioProject[]
+    setProjects(nextProjects)
+    setSelectedProjectId((current) => current || nextProjects[0]?.id || '')
+  }
+
+  const unlockDashboard = async (nextToken = token) => {
     if (!nextToken) {
       setStatus('ใส่ admin token ก่อน')
       toast.warning('ใส่ admin token ก่อน')
@@ -163,20 +226,7 @@ export default function AdminPage() {
     const toastId = toast.loading('กำลังโหลด dashboard...')
 
     try {
-      const response = await fetch('/api/admin/project-posters', {
-        headers: { 'x-admin-token': nextToken },
-      })
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'โหลด poster ไม่สำเร็จ')
-      }
-
-      const nextPosters = Object.fromEntries(
-        ((data.posters || []) as ProjectPoster[]).map((poster) => [poster.repo_name, poster])
-      )
-
-      setPosters(nextPosters)
+      await loadProjects(nextToken)
       window.localStorage.setItem(TOKEN_STORAGE_KEY, nextToken)
       setIsAuthenticated(true)
       setStatus('โหลดข้อมูลแล้ว')
@@ -190,42 +240,40 @@ export default function AdminPage() {
     }
   }
 
-  const savePoster = async () => {
-    if (!selectedRepo || !posterUrl.trim()) {
-      setStatus('เลือก repo และใส่ URL รูปก่อน')
-      toast.warning('เลือก repo และใส่ URL รูปก่อน')
+  const updateProjectField = <K extends keyof PortfolioProject>(key: K, value: PortfolioProject[K]) => {
+    setProjectForm((current) => ({ ...current, [key]: value }))
+  }
+
+  const saveProject = async () => {
+    if (!projectForm.slug.trim() || !projectForm.title.trim()) {
+      setStatus('ใส่ slug และ title ก่อน')
+      toast.warning('ใส่ slug และ title ก่อน')
       return
     }
 
     setIsLoading(true)
     setStatus('')
-    const toastId = toast.loading('กำลังบันทึก poster...')
+    const toastId = toast.loading('กำลังบันทึก project...')
 
     try {
-      const response = await fetch('/api/admin/project-posters', {
+      const response = await fetch('/api/admin/projects', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-admin-token': token,
         },
-        body: JSON.stringify({
-          repo_name: selectedRepo,
-          poster_url: posterUrl.trim(),
-          enabled,
-        }),
+        body: JSON.stringify(projectForm),
       })
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'บันทึกไม่สำเร็จ')
+        throw new Error(data.error || 'บันทึก project ไม่สำเร็จ')
       }
 
-      setPosters((current) => ({
-        ...current,
-        [selectedRepo]: data.poster,
-      }))
-      setStatus('บันทึกแล้ว')
-      toast.success('บันทึก poster แล้ว', { id: toastId })
+      await loadProjects(token)
+      setSelectedProjectId(data.project.id)
+      setStatus('บันทึก project แล้ว')
+      toast.success('บันทึก project แล้ว', { id: toastId })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'เกิดข้อผิดพลาด'
       setStatus(message)
@@ -235,82 +283,33 @@ export default function AdminPage() {
     }
   }
 
-  const uploadPoster = async () => {
-    if (!selectedRepo || !posterFile) {
-      setStatus('เลือก repo และเลือกรูปก่อน')
-      toast.warning('เลือก repo และเลือกรูปก่อน')
+  const deleteProject = async () => {
+    if (!projectForm.id) {
+      setProjectForm(emptyProject)
+      setSelectedProjectId('')
       return
     }
 
     setIsLoading(true)
     setStatus('')
-    const toastId = toast.loading('กำลังอัปโหลด poster ไป Supabase...')
+    const toastId = toast.loading('กำลังลบ project...')
 
     try {
-      const formData = new FormData()
-      formData.append('repo_name', selectedRepo)
-      formData.append('enabled', String(enabled))
-      formData.append('file', posterFile)
-
-      const response = await fetch('/api/admin/project-posters', {
-        method: 'POST',
-        headers: {
-          'x-admin-token': token,
-        },
-        body: formData,
-      })
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'อัปโหลดไม่สำเร็จ')
-      }
-
-      setPosters((current) => ({
-        ...current,
-        [selectedRepo]: data.poster,
-      }))
-      setPosterUrl(data.poster.poster_url)
-      setPosterFile(null)
-      setPosterInputKey((current) => current + 1)
-      setStatus('อัปโหลดแล้ว')
-      toast.success('อัปโหลด poster แล้ว', { id: toastId })
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'เกิดข้อผิดพลาด'
-      setStatus(message)
-      toast.error(message, { id: toastId })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const deletePoster = async () => {
-    if (!selectedRepo) {
-      return
-    }
-
-    setIsLoading(true)
-    setStatus('')
-    const toastId = toast.loading('กำลังลบ poster...')
-
-    try {
-      const response = await fetch(`/api/admin/project-posters?repo_name=${encodeURIComponent(selectedRepo)}`, {
+      const response = await fetch(`/api/admin/projects?id=${encodeURIComponent(projectForm.id)}`, {
         method: 'DELETE',
         headers: { 'x-admin-token': token },
       })
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'ลบไม่สำเร็จ')
+        throw new Error(data.error || 'ลบ project ไม่สำเร็จ')
       }
 
-      setPosters((current) => {
-        const next = { ...current }
-        delete next[selectedRepo]
-        return next
-      })
-      setPosterUrl('')
-      setStatus('ลบแล้ว')
-      toast.success('ลบ poster แล้ว', { id: toastId })
+      setSelectedProjectId('')
+      setProjectForm(emptyProject)
+      await loadProjects(token)
+      setStatus('ลบ project แล้ว')
+      toast.success('ลบ project แล้ว', { id: toastId })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'เกิดข้อผิดพลาด'
       setStatus(message)
@@ -323,7 +322,9 @@ export default function AdminPage() {
   const logout = () => {
     window.localStorage.removeItem(TOKEN_STORAGE_KEY)
     setToken('')
-    setPosters({})
+    setProjects([])
+    setSelectedProjectId('')
+    setProjectForm(emptyProject)
     setIsAuthenticated(false)
     setStatus('')
     toast.info('ออกจากระบบ admin แล้ว')
@@ -355,7 +356,7 @@ export default function AdminPage() {
               onChange={(event) => setToken(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
-                  loadPosters()
+                  unlockDashboard()
                 }
               }}
               placeholder="ADMIN_DASHBOARD_TOKEN"
@@ -363,7 +364,7 @@ export default function AdminPage() {
               className="mt-2 border-white/10 bg-white/[0.03]"
             />
 
-            <Button className="mt-4 w-full gap-2" onClick={() => loadPosters()} disabled={isLoading}>
+            <Button className="mt-4 w-full gap-2" onClick={() => unlockDashboard()} disabled={isLoading}>
               <LockKeyhole className="size-4" />
               Unlock dashboard
             </Button>
@@ -460,14 +461,9 @@ export default function AdminPage() {
                 <p className="text-2xl font-black">{repos.length}</p>
               </div>
               <div className="rounded-lg border border-white/10 bg-[#0b0b0b] p-5">
-                <ImagePlus className="size-5 text-accent" />
-                <p className="mt-5 text-sm text-white/45">Project posters</p>
-                <p className="text-2xl font-black">{Object.keys(posters).length}</p>
-              </div>
-              <div className="rounded-lg border border-white/10 bg-[#0b0b0b] p-5">
                 <Database className="size-5 text-accent" />
-                <p className="mt-5 text-sm text-white/45">Supabase modules</p>
-                <p className="text-2xl font-black">Active</p>
+                <p className="mt-5 text-sm text-white/45">Portfolio projects</p>
+                <p className="text-2xl font-black">{projects.length}</p>
               </div>
             </section>
 
@@ -511,43 +507,51 @@ export default function AdminPage() {
               </div>
             </section>
 
-            {activeModule === 'posters' ? (
+            {activeModule === 'projects' ? (
               <section className="grid gap-6 xl:grid-cols-[380px_1fr]">
                 <div className="rounded-lg border border-white/10 bg-[#0b0b0b]">
                   <div className="border-b border-white/10 p-4">
-                    <h2 className="font-black">Repositories</h2>
-                    <p className="mt-1 text-sm text-white/45">เลือก repo ที่ต้องการตั้งค่า poster</p>
+                    <h2 className="font-black">Portfolio Projects</h2>
+                    <p className="mt-1 text-sm text-white/45">ข้อมูลที่แสดงใน Featured Projects ด้านบน</p>
                   </div>
 
                   <div className="p-4">
-                    <Label htmlFor="token">Admin token</Label>
-                    <Input
-                      id="token"
-                      value={token}
-                      onChange={(event) => setToken(event.target.value)}
-                      placeholder="ADMIN_DASHBOARD_TOKEN"
-                      type="password"
-                      className="mt-2 border-white/10 bg-white/[0.03]"
-                    />
-                    <Button className="mt-4 w-full gap-2" onClick={() => loadPosters()} disabled={isLoading}>
+                    <Button
+                      className="w-full gap-2"
+                      onClick={() => {
+                        setSelectedProjectId('')
+                        setProjectForm(emptyProject)
+                      }}
+                    >
+                      <FileText className="size-4" />
+                      New project
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="mt-3 w-full gap-2 border-white/10 bg-white/[0.03] text-white"
+                      onClick={() => loadProjects(token)}
+                      disabled={isLoading}
+                    >
                       <RefreshCw className="size-4" />
-                      Refresh data
+                      Refresh projects
                     </Button>
 
-                    <div className="mt-5 max-h-[520px] space-y-2 overflow-auto pr-1">
-                      {repos.map((repo) => (
+                    <div className="mt-5 max-h-[620px] space-y-2 overflow-auto pr-1">
+                      {projects.map((project) => (
                         <button
-                          key={repo.name}
+                          key={project.id || project.slug}
                           type="button"
-                          onClick={() => setSelectedRepo(repo.name)}
-                          className={`flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm transition-colors ${
-                            selectedRepo === repo.name
+                          onClick={() => setSelectedProjectId(project.id || '')}
+                          className={`w-full rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+                            selectedProjectId === project.id
                               ? 'border-accent bg-accent/10 text-white'
                               : 'border-white/10 bg-white/[0.03] text-white/55 hover:text-white'
                           }`}
                         >
-                          <span className="truncate">{repo.name}</span>
-                          {posters[repo.name] ? <span className="text-xs text-accent">poster</span> : null}
+                          <span className="block truncate font-semibold">{project.title}</span>
+                          <span className="mt-1 block truncate text-xs text-white/35">
+                            {project.slug} · order {project.sort_order}
+                          </span>
                         </button>
                       ))}
                     </div>
@@ -557,80 +561,196 @@ export default function AdminPage() {
                 <div className="rounded-lg border border-white/10 bg-[#0b0b0b]">
                   <div className="flex items-center justify-between border-b border-white/10 p-4">
                     <div>
-                      <h2 className="font-black">Project Poster</h2>
-                      <p className="mt-1 text-sm text-white/45">รองรับ poster 4:5 สำหรับ Featured Projects</p>
+                      <h2 className="font-black">Project Editor</h2>
+                      <p className="mt-1 text-sm text-white/45">แก้ข้อมูลจากตาราง portfolio_projects</p>
                     </div>
-                    <ImagePlus className="size-5 text-accent" />
+                    <FileText className="size-5 text-accent" />
                   </div>
 
-                  <div className="grid gap-6 p-4 lg:grid-cols-[1fr_360px]">
-                    <div>
-                      <Label htmlFor="repo">Repository</Label>
-                      <Input id="repo" value={selectedRepo} readOnly className="mt-2 border-white/10 bg-white/[0.03]" />
-
-                      <Label htmlFor="poster-file" className="mt-5 block">
-                        Upload poster to Supabase
-                      </Label>
-                      <div className="mt-2 grid gap-3 rounded-md border border-white/10 bg-white/[0.03] p-3">
-                        <Input
-                          key={posterInputKey}
-                          id="poster-file"
-                          type="file"
-                          accept="image/png,image/jpeg,image/webp,image/avif,image/svg+xml,image/x-icon,.svg,.ico"
-                          onChange={(event) => setPosterFile(event.target.files?.[0] || null)}
-                          className="border-white/10 bg-[#050505]"
-                        />
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <p className="text-xs text-white/45">
-                            {posterFile ? `${posterFile.name} (${Math.round(posterFile.size / 1024)} KB)` : 'รองรับ png, jpg, webp, avif, svg, ico ขนาดไม่เกิน 8MB'}
-                          </p>
-                          <Button className="gap-2" onClick={uploadPoster} disabled={isLoading || !posterFile}>
-                            <Upload className="size-4" />
-                            Upload
-                          </Button>
+                  <div className="grid gap-6 p-4 xl:grid-cols-[1fr_320px]">
+                    <div className="grid gap-4">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <Label htmlFor="project-title">Title</Label>
+                          <Input
+                            id="project-title"
+                            value={projectForm.title}
+                            onChange={(event) => updateProjectField('title', event.target.value)}
+                            className="mt-2 border-white/10 bg-white/[0.03]"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="project-slug">Slug</Label>
+                          <Input
+                            id="project-slug"
+                            value={projectForm.slug}
+                            onChange={(event) => updateProjectField('slug', event.target.value)}
+                            className="mt-2 border-white/10 bg-white/[0.03]"
+                          />
                         </div>
                       </div>
 
-                      <Label htmlFor="poster-url" className="mt-5 block">
-                        Poster URL
-                      </Label>
-                      <Input
-                        id="poster-url"
-                        value={posterUrl}
-                        onChange={(event) => setPosterUrl(event.target.value)}
-                        placeholder="/porfilio/project-posters/repo-name.png"
-                        className="mt-2 border-white/10 bg-white/[0.03]"
-                      />
-
-                      <div className="mt-5 flex items-center gap-3">
-                        <Switch checked={enabled} onCheckedChange={setEnabled} />
-                        <span className="text-sm text-white/55">แสดง poster นี้บนหน้าเว็บ</span>
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <div>
+                          <Label htmlFor="project-category">Category</Label>
+                          <Input
+                            id="project-category"
+                            value={projectForm.category}
+                            onChange={(event) => updateProjectField('category', event.target.value)}
+                            className="mt-2 border-white/10 bg-white/[0.03]"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="project-status">Status</Label>
+                          <Input
+                            id="project-status"
+                            value={projectForm.status}
+                            onChange={(event) => updateProjectField('status', event.target.value)}
+                            className="mt-2 border-white/10 bg-white/[0.03]"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="project-order">Sort order</Label>
+                          <Input
+                            id="project-order"
+                            type="number"
+                            value={projectForm.sort_order}
+                            onChange={(event) => updateProjectField('sort_order', Number(event.target.value))}
+                            className="mt-2 border-white/10 bg-white/[0.03]"
+                          />
+                        </div>
                       </div>
 
-                      <div className="mt-6 flex flex-wrap gap-3">
-                        <Button className="gap-2" onClick={savePoster} disabled={isLoading}>
+                      <div>
+                        <Label htmlFor="project-short">Short description</Label>
+                        <Input
+                          id="project-short"
+                          value={projectForm.short_description}
+                          onChange={(event) => updateProjectField('short_description', event.target.value)}
+                          className="mt-2 border-white/10 bg-white/[0.03]"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="project-description">Description</Label>
+                        <textarea
+                          id="project-description"
+                          value={projectForm.description}
+                          onChange={(event) => updateProjectField('description', event.target.value)}
+                          rows={4}
+                          className="mt-2 w-full rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white outline-none focus:border-accent/50"
+                        />
+                      </div>
+
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <Label htmlFor="project-poster">Poster URL</Label>
+                          <Input
+                            id="project-poster"
+                            value={projectForm.poster_url}
+                            onChange={(event) => updateProjectField('poster_url', event.target.value)}
+                            className="mt-2 border-white/10 bg-white/[0.03]"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="project-poster-alt">Poster alt</Label>
+                          <Input
+                            id="project-poster-alt"
+                            value={projectForm.poster_alt}
+                            onChange={(event) => updateProjectField('poster_alt', event.target.value)}
+                            className="mt-2 border-white/10 bg-white/[0.03]"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <div>
+                          <Label htmlFor="project-live">Live URL</Label>
+                          <Input
+                            id="project-live"
+                            value={projectForm.live_url}
+                            onChange={(event) => updateProjectField('live_url', event.target.value)}
+                            className="mt-2 border-white/10 bg-white/[0.03]"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="project-github">GitHub URL</Label>
+                          <Input
+                            id="project-github"
+                            value={projectForm.github_url}
+                            onChange={(event) => updateProjectField('github_url', event.target.value)}
+                            className="mt-2 border-white/10 bg-white/[0.03]"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="project-docs">Docs URL</Label>
+                          <Input
+                            id="project-docs"
+                            value={projectForm.docs_url}
+                            onChange={(event) => updateProjectField('docs_url', event.target.value)}
+                            className="mt-2 border-white/10 bg-white/[0.03]"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <Label htmlFor="project-tech">Tech stack</Label>
+                          <Input
+                            id="project-tech"
+                            value={projectForm.tech_stack.join(', ')}
+                            onChange={(event) => updateProjectField('tech_stack', event.target.value.split(',').map((item) => item.trim()).filter(Boolean))}
+                            placeholder="Next.js, Supabase, TypeScript"
+                            className="mt-2 border-white/10 bg-white/[0.03]"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="project-tags">Tags</Label>
+                          <Input
+                            id="project-tags"
+                            value={projectForm.tags.join(', ')}
+                            onChange={(event) => updateProjectField('tags', event.target.value.split(',').map((item) => item.trim()).filter(Boolean))}
+                            placeholder="dashboard, api, web"
+                            className="mt-2 border-white/10 bg-white/[0.03]"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-5">
+                        <label className="flex items-center gap-3 text-sm text-white/55">
+                          <Switch checked={projectForm.enabled} onCheckedChange={(value) => updateProjectField('enabled', value)} />
+                          Enabled
+                        </label>
+                        <label className="flex items-center gap-3 text-sm text-white/55">
+                          <Switch checked={projectForm.featured} onCheckedChange={(value) => updateProjectField('featured', value)} />
+                          Featured
+                        </label>
+                      </div>
+
+                      <div className="flex flex-wrap gap-3">
+                        <Button className="gap-2" onClick={saveProject} disabled={isLoading}>
                           <Save className="size-4" />
-                          Save poster
+                          Save project
                         </Button>
-                        <Button variant="outline" className="gap-2 border-white/10 bg-white/[0.03] text-white" onClick={deletePoster} disabled={isLoading || !selectedPoster}>
+                        <Button variant="outline" className="gap-2 border-white/10 bg-white/[0.03] text-white" onClick={deleteProject} disabled={isLoading}>
                           <Trash2 className="size-4" />
                           Delete
                         </Button>
                       </div>
 
                       {status ? (
-                        <p className="mt-4 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/60">
+                        <p className="rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/60">
                           {status}
                         </p>
                       ) : null}
                     </div>
 
                     <div>
-                      <p className="mb-2 text-sm font-semibold text-white/55">Preview 4:5</p>
+                      <p className="mb-2 text-sm font-semibold text-white/55">Poster preview</p>
                       <div className="aspect-[4/5] overflow-hidden rounded-md border border-white/10 bg-white/[0.03]">
-                        {posterUrl ? (
+                        {projectForm.poster_url ? (
                           <img
-                            src={posterUrl}
+                            src={projectForm.poster_url}
                             alt=""
                             draggable={false}
                             onContextMenu={(event) => event.preventDefault()}

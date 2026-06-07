@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Geist_Mono, Kanit } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AosProvider } from '@/components/aos-provider'
 import { LanguageProvider } from '@/components/language-provider'
@@ -8,9 +8,10 @@ import { Toaster } from '@/components/ui/sonner'
 import 'aos/dist/aos.css'
 import './globals.css'
 
-const geistSans = Geist({
-  subsets: ['latin'],
-  variable: '--font-geist-sans',
+const kanit = Kanit({
+  subsets: ['latin', 'thai'],
+  variable: '--font-kanit',
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
 })
 
 const geistMono = Geist_Mono({
@@ -49,7 +50,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} bg-background`}
+      className={`${kanit.variable} ${geistMono.variable} bg-background`}
       suppressHydrationWarning
     >
       <head>

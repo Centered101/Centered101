@@ -19,40 +19,10 @@ type CachedLanguage = {
   color?: string
 }
 
-type ProjectPosterRow = {
-  repo_name: string
-  poster_url: string
-}
-
 function normalizeLanguageColors(languages: CachedLanguage[] | null | undefined) {
   return (languages || []).map((language) => ({
     ...language,
     color: getLanguageColor(language.name),
-  }))
-}
-
-async function getProjectPosterMap(supabase: Awaited<ReturnType<typeof createClient>> | null) {
-  if (!supabase) {
-    return new Map<string, string>()
-  }
-
-  const { data, error } = await supabase
-    .from('portfolio_project_posters')
-    .select('repo_name, poster_url')
-    .eq('enabled', true)
-
-  if (error) {
-    console.warn('Project poster cache read failed:', error)
-    return new Map<string, string>()
-  }
-
-  return new Map((data as ProjectPosterRow[] | null || []).map((poster) => [poster.repo_name, poster.poster_url]))
-}
-
-function attachProjectPosters<T extends { name: string }>(repos: T[], posters: Map<string, string>) {
-  return repos.map((repo) => ({
-    ...repo,
-    poster_url: posters.get(repo.name) || null,
   }))
 }
 
@@ -103,8 +73,6 @@ export async function GET() {
           .order('stargazers_count', { ascending: false })
 
         if (!reposError) {
-          const projectPosters = await getProjectPosterMap(supabase)
-
           return NextResponse.json({
             user: {
               login: cachedProfile.username,
@@ -119,7 +87,7 @@ export async function GET() {
               following: cachedProfile.following,
               public_repos: cachedProfile.public_repos,
             },
-            repositories: attachProjectPosters(cachedRepos || [], projectPosters),
+            repositories: cachedRepos || [],
             socialAccounts,
             orcidId,
             totalStars: cachedProfile.total_stars,
@@ -145,7 +113,6 @@ export async function GET() {
     const totalStars = calculateTotalStars(repos)
     const topLanguages = calculateTopLanguages(repos)
     const orcidId = extractOrcidId(socialAccounts)
-    const projectPosters = await getProjectPosterMap(supabase)
 
     if (supabase) {
       // Update cache in Supabase. Cache failures should not break the API response.
@@ -210,7 +177,7 @@ export async function GET() {
 
     return NextResponse.json({
       user,
-      repositories: attachProjectPosters(repos, projectPosters),
+      repositories: repos,
       socialAccounts,
       orcidId,
       totalStars,
