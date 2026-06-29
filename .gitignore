@@ -52,4 +52,5 @@ AGENTS.md
 .tmp.driveupload/
 
 # Database dumps
+migrations/
 FullSQL.sql

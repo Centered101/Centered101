@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import type { SocialLink, SocialLinkIcon } from '@/lib/social-links/types'
+import type { SocialLink } from '@/lib/social-links/types'
 
 type SocialLinkRow = {
   id?: string | number
@@ -9,32 +9,17 @@ type SocialLinkRow = {
   label?: string | null
   href?: string | null
   url?: string | null
-  icon?: SocialLinkIcon | string | null
+  icon?: string | null
   sort_order?: number | null
   is_active?: boolean | null
 }
-
-const VALID_ICONS = new Set([
-  'github',
-  'twitter',
-  'instagram',
-  'website',
-  'email',
-  'orcid',
-  'line',
-  'globe',
-])
 
 function cleanEnv(value: string | undefined) {
   return value?.trim().replace(/^['"]|['"]$/g, '')
 }
 
-function normalizeIcon(icon: string | null | undefined): SocialLinkIcon {
-  if (icon && VALID_ICONS.has(icon)) {
-    return icon as SocialLinkIcon
-  }
-
-  return 'globe'
+function normalizeIcon(icon: string | null | undefined): string {
+  return (icon || '').trim()
 }
 
 function normalizeRow(row: SocialLinkRow, index: number): SocialLink | null {

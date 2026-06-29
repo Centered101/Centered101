@@ -1,7 +1,9 @@
 export interface PortfolioTool {
   id: string
   name: string
-  category: 'Frontend' | 'Backend' | 'Database' | 'DevOps' | 'Tools' | 'Cloud'
+  // Free-form so custom categories can be added in the admin. Common values:
+  // Language, Library, Editor, Design, Gaming, Software, Cloud, Database.
+  category: string
   icon: string | null
 }
 

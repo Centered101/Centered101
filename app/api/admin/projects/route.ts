@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
+import { requireAnyAdminPermission, writeAdminAuditLog } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { writeNotification } from '@/lib/admin-notifications'
 
 type PortfolioProjectPayload = {
   id?: string
@@ -23,13 +25,6 @@ type PortfolioProjectPayload = {
   sort_order?: number
 }
 
-function isAuthorized(request: Request) {
-  const token = process.env.ADMIN_DASHBOARD_TOKEN || process.env.ADMIN_TOKEN
-  const providedToken = request.headers.get('x-admin-token') || ''
-
-  return Boolean(token && providedToken && token === providedToken)
-}
-
 function normalizeText(value: unknown) {
   const text = typeof value === 'string' ? value.trim() : ''
   return text || null
@@ -48,7 +43,8 @@ function normalizeList(value: unknown) {
 }
 
 export async function GET(request: Request) {
-  if (!isAuthorized(request)) {
+  const auth = await requireAnyAdminPermission(request, ['manage_portfolio', 'view_portfolio'])
+  if (!auth) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -71,7 +67,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!isAuthorized(request)) {
+  const auth = await requireAnyAdminPermission(request, ['manage_portfolio', 'create_portfolio', 'edit_portfolio'])
+  if (!auth) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -118,14 +115,39 @@ export async function POST(request: Request) {
     .single()
 
   if (error) {
+    await writeAdminAuditLog(request, auth, {
+      action: 'portfolio_project.save',
+      resource: 'portfolio_projects',
+      resourceId: payload.id || slug,
+      outcome: 'failed',
+      metadata: { slug, title, error: error.message },
+    })
+
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+
+  await writeAdminAuditLog(request, auth, {
+    action: payload.id ? 'portfolio_project.update' : 'portfolio_project.create',
+    resource: 'portfolio_projects',
+    resourceId: data?.id || slug,
+    metadata: { slug, title },
+  })
+
+  await writeNotification({
+    type: 'info',
+    title: payload.id ? `Project updated: ${title}` : `New project created: ${title}`,
+    message: slug,
+    resource: 'portfolio_projects',
+    resourceId: data?.id || slug,
+    actorUserId: auth.adminUserId,
+  })
 
   return NextResponse.json({ project: data })
 }
 
 export async function DELETE(request: Request) {
-  if (!isAuthorized(request)) {
+  const auth = await requireAnyAdminPermission(request, ['manage_portfolio', 'delete_portfolio'])
+  if (!auth) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -146,8 +168,50 @@ export async function DELETE(request: Request) {
   const { error } = id ? await query.eq('id', id) : await query.eq('slug', slug)
 
   if (error) {
+    await writeAdminAuditLog(request, auth, {
+      action: 'portfolio_project.delete',
+      resource: 'portfolio_projects',
+      resourceId: id || slug,
+      outcome: 'failed',
+      metadata: { id, slug, error: error.message },
+    })
+
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  await writeAdminAuditLog(request, auth, {
+    action: 'portfolio_project.delete',
+    resource: 'portfolio_projects',
+    resourceId: id || slug,
+    metadata: { id, slug },
+  })
+
+  await writeNotification({
+    type: 'warning',
+    title: `Project deleted`,
+    message: `id: ${id || slug}`,
+    resource: 'portfolio_projects',
+    resourceId: (id || slug) ?? undefined,
+    actorUserId: auth.adminUserId,
+  })
+
   return NextResponse.json({ ok: true })
+}
+
+// Quick toggle: featured / enabled / sort_order
+export async function PATCH(request: Request) {
+  const auth = await requireAnyAdminPermission(request, ['manage_portfolio', 'edit_portfolio'])
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const supabase = createAdminClient()
+  if (!supabase) return NextResponse.json({ error: 'DB not configured' }, { status: 503 })
+  const body = await request.json() as { id: string; featured?: boolean; enabled?: boolean; sort_order?: number }
+  if (!body.id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+  const patch: Record<string, unknown> = {}
+  if (body.featured !== undefined) patch.featured = body.featured
+  if (body.enabled !== undefined) patch.enabled = body.enabled
+  if (body.sort_order !== undefined) patch.sort_order = body.sort_order
+  const { data, error } = await supabase
+    .from('portfolio_projects').update(patch).eq('id', body.id).select('id,slug,title,featured,enabled,sort_order').single()
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ project: data })
 }

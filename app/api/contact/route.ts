@@ -6,7 +6,7 @@ import { buildContactLineMessage, pushLineMessage } from '@/lib/line/messaging'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, email, subject, message } = body
+    const { name, email, subject, message, source } = body
 
     // Validation
     if (!name || !email || !message) {
@@ -28,18 +28,30 @@ export async function POST(request: NextRequest) {
     let savedToDatabase = false
     let sentToLine = false
 
+    // Where the message came from: an explicit form label, else the page host.
+    let pageHost = ''
+    try {
+      const referer = request.headers.get('referer')
+      if (referer) pageHost = new URL(referer).host
+    } catch {
+      // ignore malformed referer
+    }
+    const rawSource = typeof source === 'string' && source.trim() ? source.trim() : pageHost
+    const messageSource = rawSource ? rawSource.slice(0, 120) : null
+
     try {
       const supabase = createAdminClient() || await createClient()
 
-      const { error } = await supabase.from('contact_messages').insert({
-        name,
-        email,
-        subject: subject || null,
-        message,
-      })
+      const base = { name, email, subject: subject || null, message }
+      let insertError = (await supabase.from('contact_messages').insert({ ...base, source: messageSource })).error
 
-      if (error) {
-        console.warn('Contact message database save skipped:', error)
+      // Gracefully handle databases where the `source` column hasn't been added yet.
+      if (insertError && /source/i.test(insertError.message || '')) {
+        insertError = (await supabase.from('contact_messages').insert(base)).error
+      }
+
+      if (insertError) {
+        console.warn('Contact message database save skipped:', insertError)
       } else {
         savedToDatabase = true
       }

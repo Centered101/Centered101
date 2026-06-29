@@ -13,6 +13,7 @@ export interface SocialLink {
   name: string
   label: string | null
   href: string
-  icon: SocialLinkIcon
+  /** Raw thesvg.org slug (optionally with a ":variant" suffix). */
+  icon: string
   sortOrder: number
 }
