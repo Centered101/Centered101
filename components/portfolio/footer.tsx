@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { motion, useMotionValueEvent, useScroll } from 'framer-motion'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Download, ArrowUp, MapPin, Sparkles } from 'lucide-react'
 import { useLanguage } from '@/components/language-provider'
@@ -20,11 +19,14 @@ export function Footer({ user, onResumeDownload }: FooterProps) {
   const { links: socialLinks } = useSocialLinks()
   const currentYear = new Date().getFullYear()
   const [showBackToTop, setShowBackToTop] = useState(false)
-  const { scrollY } = useScroll()
 
-  useMotionValueEvent(scrollY, 'change', (latest) => {
-    setShowBackToTop(latest > 500)
-  })
+  useEffect(() => {
+    const handleScroll = () => setShowBackToTop(window.scrollY > 500)
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const handleResumeClick = async () => {
     onResumeDownload?.()
@@ -51,42 +53,31 @@ export function Footer({ user, onResumeDownload }: FooterProps) {
 
   const profileName = user?.name || user?.login || 'centered101'
   const username = user?.login || 'centered101'
-  const resumeHref = '/porfilio/resume/centered101-resume.pdf'
+  const resumeHref = 'https://wwcduaaqtyopvofzlouw.supabase.co/storage/v1/object/public/general/Centered101-resume.pdf?download=Centered101-resume.pdf'
 
   return (
     <>
-      <motion.button
+      <button
         type="button"
         aria-label={copy.footer.backTop}
         onClick={scrollToTop}
-        initial={false}
-        animate={{
-          opacity: showBackToTop ? 1 : 0,
-          y: showBackToTop ? 0 : 16,
-          pointerEvents: showBackToTop ? 'auto' : 'none',
-        }}
-        transition={{ duration: 0.25 }}
-        className="fixed bottom-6 right-6 z-50 grid size-11 place-items-center rounded-full border border-border bg-card/90 text-muted-foreground shadow-[0_18px_60px_-28px_rgba(64,158,254,0.8)] backdrop-blur-xl transition-colors hover:border-accent/40 hover:text-accent"
+        className={`fixed bottom-6 right-6 z-50 grid size-11 place-items-center rounded-full border border-border bg-card/90 text-muted-foreground shadow-[0_18px_60px_-28px_rgba(64,158,254,0.8)] backdrop-blur-xl transition-colors hover:border-accent/40 hover:text-accent ${
+          showBackToTop ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+        }`}
       >
         <ArrowUp className="size-4" />
-      </motion.button>
+      </button>
 
-      <footer className="relative overflow-hidden border-t border-border/50 px-6 py-16" data-aos="fade-up">
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,rgba(64,158,254,0.035)_48%,rgba(5,6,7,0.9)_100%)]" />
+      <footer className="relative overflow-hidden border-t border-border/50 px-6 py-16">
+        <div className="absolute inset-0 grid-pattern opacity-45" />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
 
         <div className="relative mx-auto w-full max-w-[1400px]">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
           <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr_0.9fr]">
-            <div data-aos="fade-up">
+            <div>
               <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-secondary/50 px-3 py-1 text-xs text-muted-foreground">
                 <Sparkles className="size-3.5 text-accent" />
-                {copy.footer.builtWith}
+                {copy.footer.eyebrow}
               </div>
               <h3 className="mb-3 text-3xl font-bold">
                 <span className="gradient-text">{profileName}</span>
@@ -112,7 +103,9 @@ export function Footer({ user, onResumeDownload }: FooterProps) {
               </div>
             </div>
 
-            <nav className="grid grid-cols-2 gap-2" data-aos="fade-up" data-aos-delay="100">
+            <nav>
+              <p className="mb-3 text-sm font-semibold text-foreground">{copy.footer.navigation}</p>
+              <div className="grid grid-cols-2 gap-2">
               {navItems.map((item) => (
                 <button
                   key={item.id}
@@ -130,9 +123,11 @@ export function Footer({ user, onResumeDownload }: FooterProps) {
                   <span className="size-1.5 rounded-full bg-muted-foreground/30 transition-colors group-hover:bg-accent" />
                 </button>
               ))}
+              </div>
             </nav>
 
-            <div className="space-y-4" data-aos="fade-up" data-aos-delay="180">
+            <div className="space-y-4">
+              <p className="text-sm font-semibold text-foreground">{copy.footer.social}</p>
               <div className="flex flex-wrap gap-2">
                 {socialLinks.map((link) => {
                   const Icon = getSocialLinkIcon(link.icon)
@@ -163,9 +158,9 @@ export function Footer({ user, onResumeDownload }: FooterProps) {
                 className="w-full gap-2 glow-accent"
                 asChild
               >
-                <a href={resumeHref} download="centered101-resume.pdf">
+                <a href={resumeHref} download="Centered101-resume.pdf">
                   <Download className="size-4" />
-                  {copy.hero.resume}
+                  {copy.footer.resume}
                 </a>
               </Button>
 
@@ -187,7 +182,6 @@ export function Footer({ user, onResumeDownload }: FooterProps) {
               &copy; {currentYear} {profileName}. {copy.footer.rights}
             </p>
           </div>
-        </motion.div>
       </div>
       </footer>
     </>

@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -16,14 +17,38 @@ interface RepoCardProps {
 
 export function RepoCard({ repo, index, onRepoClick }: RepoCardProps) {
   const { copy } = useLanguage()
+  const [active, setActive] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
   const langColor = getLanguageColor(repo.language || '')
   const topics = Array.isArray(repo.topics) ? repo.topics.slice(0, 3) : []
   const homepage = repo.homepage || undefined
 
-  const handleClick = () => {
+  const openRepo = () => {
     onRepoClick?.(repo.name, repo.html_url)
     window.open(repo.html_url, '_blank', 'noopener,noreferrer')
   }
+
+  // On touch devices (no hover) the first tap only reveals the footer buttons
+  // so they become tappable; a second tap opens the repository.
+  const handleClick = () => {
+    if (!active && typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches) {
+      setActive(true)
+      return
+    }
+    openRepo()
+  }
+
+  // Collapse the buttons back to their idle state when tapping outside the card.
+  useEffect(() => {
+    if (!active) return
+    const handlePointerDown = (event: PointerEvent) => {
+      if (cardRef.current && !cardRef.current.contains(event.target as Node)) {
+        setActive(false)
+      }
+    }
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () => document.removeEventListener('pointerdown', handlePointerDown)
+  }, [active])
 
   return (
     <motion.div
@@ -36,6 +61,7 @@ export function RepoCard({ repo, index, onRepoClick }: RepoCardProps) {
       className="group"
     >
       <div
+        ref={cardRef}
         onClick={handleClick}
         className="glass-card rounded-2xl p-6 h-full flex flex-col cursor-pointer hover-lift relative overflow-hidden"
       >
@@ -107,7 +133,7 @@ export function RepoCard({ repo, index, onRepoClick }: RepoCardProps) {
               )}
             </div>
 
-            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className={`flex items-center gap-2 transition-opacity group-hover:opacity-100 ${active ? 'opacity-100' : 'opacity-0'}`}>
               <Button
                 size="sm"
                 variant="ghost"

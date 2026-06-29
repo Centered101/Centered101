@@ -1,12 +1,13 @@
 'use client'
 
-import { motion, useInView } from 'framer-motion'
-import { useRef } from 'react'
+import { AnimatePresence, motion, useInView } from 'framer-motion'
+import { useRef, useState } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useLanguage } from '@/components/language-provider'
 import { TheSvgIcon } from '@/components/the-svg-icon'
 import { usePortfolioTools } from '@/hooks/use-portfolio-tools'
 import type { LanguageStats } from '@/lib/github/types'
+import type { PortfolioTool } from '@/lib/portfolio/types'
 
 interface SkillsProps {
   topLanguages?: LanguageStats[]
@@ -21,6 +22,39 @@ const languageIcons: Record<string, string> = {
   CSS: 'css',
   'C++': 'cplusplus',
   C: 'c',
+}
+
+// Display taxonomy for the "Tools I work with" wall. Groups render in this order.
+const TOOL_GROUP_ORDER = [
+  'Language', 'Library', 'Editor', 'Design', 'Gaming', 'Software', 'Cloud', 'Database',
+  // legacy categories kept last so older data still renders sensibly
+  'Frontend', 'Backend', 'DevOps', 'Tools',
+]
+
+const NEW_GROUPS = new Set([
+  'Language', 'Library', 'Editor', 'Design', 'Gaming', 'Software', 'Cloud', 'Database',
+])
+
+// Curated tool → group map so existing tools sort into the new groups with no
+// manual re-categorising. Keyed by lower-cased tool name.
+const TOOL_NAME_GROUPS: Record<string, string> = {
+  html: 'Language', html5: 'Language', css: 'Language', css3: 'Language',
+  javascript: 'Language', typescript: 'Language', python: 'Language', 'c++': 'Language', c: 'Language',
+  react: 'Library', 'next.js': 'Library', nextjs: 'Library', jquery: 'Library', 'tailwind css': 'Library', tailwindcss: 'Library',
+  vscode: 'Editor', 'vs code': 'Editor', obsidian: 'Editor',
+  figma: 'Design', adobe: 'Design', blender: 'Design',
+  godot: 'Gaming',
+  cloudflare: 'Cloud', netlify: 'Cloud', vercel: 'Cloud', 'google cloud': 'Cloud', firebase: 'Cloud',
+  postgresql: 'Database', supabase: 'Database',
+  git: 'Software', github: 'Software', npm: 'Software', 'node.js': 'Software', nodejs: 'Software',
+  postman: 'Software', notion: 'Software', ubuntu: 'Software', windows: 'Software', 'kali linux': 'Software',
+}
+
+// An admin-set new-taxonomy category wins; otherwise use the curated map, then
+// fall back to whatever category is stored.
+function groupForTool(tool: PortfolioTool): string {
+  if (NEW_GROUPS.has(tool.category)) return tool.category
+  return TOOL_NAME_GROUPS[(tool.name || '').trim().toLowerCase()] ?? tool.category
 }
 
 function AnimatedProgressBar({ percentage, color, delay }: { percentage: number; color: string; delay: number }) {
@@ -48,15 +82,37 @@ export function Skills({ topLanguages = [], isLoading }: SkillsProps) {
     isLoading: toolsLoading,
     error: toolsError,
   } = usePortfolioTools()
+  const [toolsExpanded, setToolsExpanded] = useState(false)
 
   if (isLoading && toolsLoading) {
     return <SkillsSkeleton />
   }
 
-  const visibleLanguages = isLoading ? [] : topLanguages.slice(0, 9)
+  const visibleLanguages = isLoading ? [] : topLanguages.slice(0, 15)
   const visibleTools = !toolsLoading && toolsConfigured && !toolsError ? tools : []
   const showLanguageCard = Boolean(isLoading || visibleLanguages.length > 0)
   const showToolsCard = Boolean(toolsLoading || visibleTools.length > 0)
+
+  // Split the tools into labelled groups (Language, Library, Editor, …) and
+  // order them. A running index lets the mobile collapse hide the overflow.
+  const groupMap = new Map<string, PortfolioTool[]>()
+  for (const tool of visibleTools) {
+    const group = groupForTool(tool)
+    const bucket = groupMap.get(group)
+    if (bucket) bucket.push(tool)
+    else groupMap.set(group, [tool])
+  }
+  const toolGroups = Array.from(groupMap.entries())
+    .sort(([a], [b]) => {
+      const ia = TOOL_GROUP_ORDER.indexOf(a)
+      const ib = TOOL_GROUP_ORDER.indexOf(b)
+      return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib)
+    })
+    .map(([name, items]) => ({ name, items }))
+  // A long tool list collapses behind a Show more / Show less toggle with a soft
+  // fade at the bottom edge, instead of stretching the card to match Languages.
+  const toolsCollapsible = visibleTools.length > 12
+  const toolsCollapsed = toolsCollapsible && !toolsExpanded
 
   if (!showLanguageCard && !showToolsCard) {
     return null
@@ -97,7 +153,7 @@ export function Skills({ topLanguages = [], isLoading }: SkillsProps) {
           </p>
         </motion.div>
 
-        <div className={showLanguageCard && showToolsCard ? 'grid lg:grid-cols-2 gap-12' : 'mx-auto grid w-full max-w-[1400px] gap-12'}>
+        <div className={showLanguageCard && showToolsCard ? 'grid gap-12 lg:grid-cols-2 lg:items-start' : 'mx-auto grid w-full max-w-[1400px] gap-12'}>
           {/* Language proficiency */}
           {isLoading ? (
             <LanguageCardSkeleton />
@@ -150,53 +206,67 @@ export function Skills({ topLanguages = [], isLoading }: SkillsProps) {
               className="glass-card rounded-2xl p-8"
             >
               <h3 className="text-xl font-semibold mb-8">{copy.skills.stack}</h3>
-              <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                className="flex flex-wrap gap-3"
-              >
-                {visibleTools.map((tech) => (
-                  <motion.div key={tech.name} variants={itemVariants}>
-                    <div className="flex items-center gap-3 rounded-xl border border-border bg-secondary/60 px-3 py-2 text-sm font-medium transition-colors hover:border-accent/30 hover:bg-accent/10">
-                      <TheSvgIcon label={tech.name} slug={tech.icon} className="size-9" />
-                      <span>{tech.name}</span>
-                    </div>
+              <div className="relative">
+                <motion.div
+                  initial={false}
+                  animate={{ height: toolsCollapsed ? 420 : 'auto' }}
+                  transition={{ duration: 0.45, ease: [0.25, 0.1, 0.25, 1] }}
+                  className="overflow-hidden"
+                >
+                  <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
+                    className="space-y-6"
+                  >
+                    {toolGroups.map((group) => (
+                      <div key={group.name}>
+                        <div className="mb-3 flex items-center gap-2">
+                          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            {group.name}
+                          </h4>
+                          <span className="text-xs text-muted-foreground/70">({group.items.length})</span>
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                          {group.items.map((tool) => (
+                            <motion.div key={tool.name} variants={itemVariants}>
+                              <div className="flex items-center gap-3 rounded-xl border border-border bg-secondary/60 px-3 py-2 text-sm font-medium transition-colors hover:border-accent/30 hover:bg-accent/10">
+                                <TheSvgIcon label={tool.name} slug={tool.icon} className="size-9" />
+                                <span>{tool.name}</span>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </motion.div>
-                ))}
-                {topLanguages.slice(0, 4).map((lang) => (
-                  <motion.div key={`lang-${lang.name}`} variants={itemVariants}>
-                    <div
-                      className="flex items-center gap-3 rounded-xl border px-3 py-2 text-sm font-medium transition-transform hover:scale-105"
-                      style={{
-                        backgroundColor: `${lang.color}20`,
-                        borderColor: `${lang.color}40`,
-                        color: lang.color,
-                      }}
-                    >
-                      <TheSvgIcon label={lang.name} slug={languageIcons[lang.name]} className="size-9" />
-                      <span>{lang.name}</span>
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
+                </motion.div>
 
-              {/* Categories */}
-              <div className="mt-8 pt-6 border-t border-border/50">
-                <h4 className="text-sm text-muted-foreground mb-4">{copy.skills.categories}</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  {['Frontend', 'Backend', 'Database', 'DevOps'].map((category) => (
-                    <div key={category} className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-accent" />
-                      <span className="text-sm">{category}</span>
-                      <span className="text-xs text-muted-foreground">
-                        ({visibleTools.filter(t => t.category === category).length})
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                {/* Soft fade at the collapsed edge */}
+                <AnimatePresence>
+                  {toolsCollapsed && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-card via-card/85 to-transparent"
+                    />
+                  )}
+                </AnimatePresence>
               </div>
+
+              {toolsCollapsible && (
+                <button
+                  type="button"
+                  onClick={() => setToolsExpanded((open) => !open)}
+                  aria-expanded={toolsExpanded}
+                  className="mx-auto mt-5 block text-sm font-medium text-accent transition-colors hover:text-accent/80"
+                >
+                  {toolsExpanded ? copy.skills.showLess : copy.skills.showMore}
+                </button>
+              )}
             </motion.div>
           ) : null}
         </div>

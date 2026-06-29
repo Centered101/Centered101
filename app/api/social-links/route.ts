@@ -148,7 +148,7 @@ export async function GET() {
     const supabase = createAdminClient() || await createClient()
     const { data, error } = await supabase
       .from('social_links')
-      .select('id,name,label,href,url,icon,sort_order,is_active')
+      .select('id,name,label,href,icon,sort_order,is_active')
       .eq('is_active', true)
       .order('sort_order', { ascending: true })
       .order('name', { ascending: true })

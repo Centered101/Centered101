@@ -4,6 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --admin-accent: #409EFE;
   --primary-color: #409EFE;
   --secondary-color: #84D4FA;
   --accent-color: #E3F2FD;
@@ -66,6 +67,38 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* ─── Supabase dashboard design tokens ─── */
+  /* Backgrounds */
+  --color-dash-canvas: #09090b;
+  --color-dash-sidebar: #0d0d0f;
+  --color-surface-75: #111113;
+  --color-surface-100: #18181b;
+  --color-surface-200: #1e1e21;
+  --color-surface-300: #27272a;
+  --color-surface-400: #3f3f46;
+  --color-alternative: #141416;
+  --color-overlay: #18181b;
+  /* Foreground / text */
+  --color-foreground-light: #a1a1aa;
+  --color-foreground-lighter: #71717a;
+  --color-foreground-muted: #52525b;
+  --color-foreground-faint: #3f3f46;
+  /* Borders */
+  --color-border-strong: #3f3f46;
+  --color-border-stronger: #52525b;
+  --color-border-overlay: #1f1f23;
+  --color-border-control: #27272a;
+  /* Brand (Supabase green — for brand moments) */
+  --color-brand: #3ecf8e;
+  --color-brand-400: #5cd4a0;
+  --color-brand-600: #2db87a;
+  /* Semantic states */
+  --color-warning: #f59e0b;
+  --color-warning-foreground: #ffffff;
+  --color-warning-200: rgba(245, 158, 11, 0.12);
+  --color-success: var(--success);
+  --color-success-foreground: #ffffff;
 }
 
 @layer base {
@@ -114,8 +147,8 @@ html,
   color: var(--primary-color);
 }
 
-html, select { cursor: url(https://sweezy-cursors.com/wp-content/uploads/cursor/old-roblox/old-roblox-cursor-32x32.png), auto !important; }
-a, button, label, .cursor-pointer, [class^="btn-"] { cursor: url(https://sweezy-cursors.com/wp-content/uploads/cursor/old-roblox/old-roblox-pointer-32x32.png), pointer !important; }
+html, select { cursor: url(/cursors/old-roblox-cursor-32x32.png), auto !important; }
+a, button, label, .cursor-pointer, [class^="btn-"] { cursor: url(/cursors/old-roblox-pointer-32x32.png), pointer !important; }
 
 /* Gradient text utility */
 .gradient-text {
@@ -192,6 +225,106 @@ a, button, label, .cursor-pointer, [class^="btn-"] { cursor: url(https://sweezy-
   background-image:
     linear-gradient(to right, rgba(9, 12, 19, 0.025) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(9, 12, 19, 0.025) 1px, transparent 1px);
+}
+
+.admin-supabase-theme {
+  --primary: #3ecf8e;
+  --accent: #3ecf8e;
+  --ring: #3ecf8e;
+  --background: #0b0b0b;
+  --foreground: #ededed;
+  --card: #121212;
+  --card-foreground: #ededed;
+  --secondary: #171717;
+  --secondary-foreground: #ededed;
+  --muted: #171717;
+  --muted-foreground: #a1a1a1;
+  --border: #2e2e2e;
+  --input: #171717;
+  --sb-bg: #0b0b0b;
+  --sb-sidebar: #101010;
+  --sb-surface: #121212;
+  --sb-surface-2: #171717;
+  --sb-border: #2e2e2e;
+  --sb-border-strong: #3a3a3a;
+  --sb-text: #ededed;
+  --sb-muted: #a1a1a1;
+  --sb-faint: #737373;
+  --sb-green: #3ecf8e;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(62, 207, 142, 0.08), transparent 28rem),
+    linear-gradient(180deg, #0b0b0b 0%, #0f0f0f 100%);
+  color: var(--sb-text);
+}
+
+.admin-supabase-theme [class*="bg-[#050505]"] {
+  background-color: var(--sb-bg) !important;
+}
+
+.admin-supabase-theme [class*="bg-[#080808]"] {
+  background-color: var(--sb-sidebar) !important;
+}
+
+.admin-supabase-theme [class*="bg-[#0b0b0b]"] {
+  background-color: var(--sb-surface) !important;
+}
+
+.admin-supabase-theme [class*="bg-white/[0.03]"],
+.admin-supabase-theme [class*="bg-white/[0.04]"] {
+  background-color: var(--sb-surface-2) !important;
+}
+
+.admin-supabase-theme [class*="border-white/10"] {
+  border-color: var(--sb-border) !important;
+}
+
+.admin-supabase-theme [class*="text-white/35"],
+.admin-supabase-theme [class*="text-white/40"],
+.admin-supabase-theme [class*="text-white/45"],
+.admin-supabase-theme [class*="text-white/50"],
+.admin-supabase-theme [class*="text-white/55"],
+.admin-supabase-theme [class*="text-white/60"],
+.admin-supabase-theme [class*="text-white/70"] {
+  color: var(--sb-muted) !important;
+}
+
+.admin-supabase-theme [class*="text-accent"] {
+  color: var(--sb-green) !important;
+}
+
+.admin-supabase-theme [class*="bg-accent/"] {
+  background-color: rgba(62, 207, 142, 0.12) !important;
+}
+
+.admin-supabase-theme [class*="border-accent"] {
+  border-color: rgba(62, 207, 142, 0.45) !important;
+}
+
+.admin-supabase-theme input,
+.admin-supabase-theme textarea {
+  border-color: var(--sb-border) !important;
+  background-color: var(--sb-surface-2) !important;
+  color: var(--sb-text) !important;
+}
+
+.admin-supabase-theme input::placeholder,
+.admin-supabase-theme textarea::placeholder {
+  color: var(--sb-faint) !important;
+}
+
+.admin-supabase-theme input:focus,
+.admin-supabase-theme textarea:focus {
+  border-color: rgba(62, 207, 142, 0.65) !important;
+  box-shadow: 0 0 0 1px rgba(62, 207, 142, 0.22) !important;
+}
+
+.admin-supabase-theme button,
+.admin-supabase-theme a {
+  transition-duration: 150ms;
+}
+
+.admin-supabase-theme [class*="shadow-[0_30px_120px"] {
+  box-shadow: none !important;
 }
 
 /* Glow effects */
@@ -354,6 +487,16 @@ a, button, label, .cursor-pointer, [class^="btn-"] { cursor: url(https://sweezy-
 .stagger-4 { animation-delay: 0.4s; }
 .stagger-5 { animation-delay: 0.5s; }
 .stagger-6 { animation-delay: 0.6s; }
+
+/* Reduced motion — toggled via js: document.documentElement.classList.toggle('reduce-motion', ...) */
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
 
 /* Progress bar shine effect */
 @keyframes progress-shine {

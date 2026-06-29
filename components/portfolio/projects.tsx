@@ -1,12 +1,13 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { useEffect, useMemo, useState } from 'react'
+import Image from 'next/image'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { RepoCard } from './repo-card'
-import { Clock, ExternalLink, Github, Sparkles } from 'lucide-react'
+import { ExternalLink, Github, Sparkles } from 'lucide-react'
 import { getLanguageColor, getRelativeTime, getTopRepositories } from '@/lib/github/api'
 import { useLanguage } from '@/components/language-provider'
 import type { GitHubRepo } from '@/lib/github/types'
@@ -52,6 +53,9 @@ function ProjectCard({
   index: number
   onRepoClick?: (repoName: string, repoUrl: string) => void
 }) {
+  const { copy } = useLanguage()
+  const [active, setActive] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
   const primaryUrl = project.live_url || project.github_url || project.docs_url
   const description = project.short_description || project.description
   const mainTech = project.tech_stack[0]
@@ -66,6 +70,28 @@ function ProjectCard({
     window.open(primaryUrl, '_blank', 'noopener,noreferrer')
   }
 
+  // On touch devices (no hover) the first tap only reveals the card overlay
+  // so the buttons become tappable; a second tap opens the project.
+  const handleCardClick = () => {
+    if (!active && typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches) {
+      setActive(true)
+      return
+    }
+    openProject()
+  }
+
+  // Collapse the overlay back to its idle state when tapping outside the card.
+  useEffect(() => {
+    if (!active) return
+    const handlePointerDown = (event: PointerEvent) => {
+      if (cardRef.current && !cardRef.current.contains(event.target as Node)) {
+        setActive(false)
+      }
+    }
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () => document.removeEventListener('pointerdown', handlePointerDown)
+  }, [active])
+
   if (project.poster_url) {
     return (
       <motion.div
@@ -78,31 +104,29 @@ function ProjectCard({
         className="group"
       >
         <div
-          onClick={openProject}
+          ref={cardRef}
+          onClick={handleCardClick}
           className={`glass-card relative aspect-[4/5] overflow-hidden rounded-2xl p-0 hover-lift ${
             primaryUrl ? 'cursor-pointer' : ''
           }`}
         >
-          <img
+          <Image
             src={project.poster_url}
             alt={project.poster_alt || `${project.title} poster`}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             draggable={false}
             onContextMenu={(event) => event.preventDefault()}
-            className="h-full w-full select-none object-cover transition-transform duration-700 group-hover:scale-105"
-            loading="lazy"
+            className="select-none object-cover transition-transform duration-700 group-hover:scale-105"
           />
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/52 to-black/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          <div className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/52 to-black/10 transition-opacity duration-300 group-hover:opacity-100 ${active ? 'opacity-100' : 'opacity-0'}`} />
 
-          <div className="absolute inset-x-0 bottom-0 translate-y-4 p-5 text-white opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 sm:p-6">
+          <div className={`absolute inset-x-0 bottom-0 p-5 text-white transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 sm:p-6 ${active ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
             <div className="mb-3 flex items-center justify-between gap-3">
               <Badge className="border-white/15 bg-white/15 text-white backdrop-blur" variant="secondary">
                 {project.category}
               </Badge>
-              <div className="flex items-center gap-2 text-xs text-white/70">
-                <Clock className="size-3" />
-                <span>{getRelativeTime(project.updated_at)}</span>
-              </div>
             </div>
 
             <h3 className="text-xl font-semibold leading-tight">{project.title}</h3>
@@ -152,7 +176,7 @@ function ProjectCard({
                   }}
                 >
                   <ExternalLink className="size-4" />
-                  Live
+                  {copy.projects.live}
                 </Button>
               ) : null}
             </div>
@@ -185,13 +209,14 @@ function ProjectCard({
         <div className="relative z-10 flex h-full flex-col">
           {project.poster_url ? (
             <div className="relative -mx-6 -mt-6 mb-5 aspect-[4/5] overflow-hidden border-b border-border/50 bg-secondary">
-              <img
+              <Image
                 src={project.poster_url}
                 alt={project.poster_alt || `${project.title} poster`}
+                fill
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 draggable={false}
                 onContextMenu={(event) => event.preventDefault()}
-                className="h-full w-full select-none object-cover transition-transform duration-500 group-hover:scale-105"
-                loading="lazy"
+                className="select-none object-cover transition-transform duration-500 group-hover:scale-105"
               />
               <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-card/80 to-transparent" />
             </div>
@@ -202,10 +227,6 @@ function ProjectCard({
               <h3 className="truncate text-lg font-semibold transition-colors group-hover:text-accent">
                 {project.title}
               </h3>
-              <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                <Clock className="size-3" />
-                <span>Updated {getRelativeTime(project.updated_at)}</span>
-              </div>
             </div>
             <Badge variant="secondary" className="shrink-0 capitalize">
               {project.category}
@@ -387,8 +408,8 @@ export function Projects({ repositories = [], isLoading, onRepoClick }: Projects
           <div>
             <div className="mb-8 flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">Portfolio</p>
-                <h3 className="mt-2 text-2xl font-bold">Selected work</h3>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">{copy.projects.portfolioLabel}</p>
+                <h3 className="mt-2 text-2xl font-bold">{copy.projects.selectedWork}</h3>
               </div>
             </div>
             <motion.div
@@ -414,8 +435,8 @@ export function Projects({ repositories = [], isLoading, onRepoClick }: Projects
           <div className={featuredProjects.length > 0 ? 'mt-16' : ''}>
             <div className="mb-8 flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">GitHub</p>
-                <h3 className="mt-2 text-2xl font-bold">Public repositories</h3>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">{copy.projects.githubLabel}</p>
+                <h3 className="mt-2 text-2xl font-bold">{copy.projects.publicRepositories}</h3>
               </div>
             </div>
             <motion.div

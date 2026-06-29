@@ -65,6 +65,18 @@ export function Timeline({ isLoading }: TimelineProps) {
     }
   }
 
+  // Group entries by year so items from the same year sit on the same side,
+  // flipping sides each time a new year first appears.
+  const yearToSide = new Map<string, boolean>()
+  let placeLeft = true
+  for (const item of timelineItems) {
+    const yearKey = String(item.year)
+    if (!yearToSide.has(yearKey)) {
+      yearToSide.set(yearKey, placeLeft)
+      placeLeft = !placeLeft
+    }
+  }
+
   return (
     <section id="timeline" className="px-6 py-24 relative overflow-hidden" data-aos="fade-up">
       {/* Background */}
@@ -94,6 +106,49 @@ export function Timeline({ isLoading }: TimelineProps) {
           <div className="space-y-12">
             {timelineItems.map((item, index) => {
               const Icon = getStoryIcon(item.icon, item.type)
+              const isFirst = index === 0
+              const isLeft = yearToSide.get(String(item.year)) ?? (index % 2 === 0)
+
+              const card = (
+                <div className={`glass-card rounded-2xl p-6 border ${getTypeBorderColor(item.type)} hover-lift`}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-sm font-mono text-muted-foreground">{item.year}</span>
+                    <div className="px-2 py-0.5 rounded text-xs font-medium capitalize bg-accent/10 text-accent">
+                      {item.type}
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{item.description}</p>
+                </div>
+              )
+
+              const iconCircle = (
+                <div className="w-10 h-10 rounded-full flex items-center justify-center glass-card border border-border">
+                  <Icon className="w-5 h-5 text-accent" />
+                </div>
+              )
+
+              // Starting year: centered card with the icon on the center line.
+              if (isFirst) {
+                return (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5 }}
+                    data-aos="fade-up"
+                    className="relative flex items-center md:flex-col md:items-center"
+                  >
+                    <div className="absolute left-0 z-10 md:static md:order-1 md:mb-5">
+                      {iconCircle}
+                    </div>
+                    <div className="w-full pl-12 md:order-2 md:max-w-xl md:pl-0">
+                      {card}
+                    </div>
+                  </motion.div>
+                )
+              }
 
               return (
               <motion.div
@@ -102,37 +157,20 @@ export function Timeline({ isLoading }: TimelineProps) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                data-aos={index % 2 === 0 ? 'fade-right' : 'fade-left'}
+                data-aos={isLeft ? 'fade-right' : 'fade-left'}
                 data-aos-delay={String(Math.min(index * 80, 320))}
                 className={`relative flex items-center ${
-                  index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'
+                  isLeft ? 'md:flex-row' : 'md:flex-row-reverse'
                 }`}
               >
                 {/* Content */}
-                <div className={`w-full md:w-1/2 ${index % 2 === 0 ? 'md:pr-12' : 'md:pl-12'} pl-12 md:pl-0`}>
-                  <div className={`glass-card rounded-2xl p-6 border ${getTypeBorderColor(item.type)} hover-lift`}>
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="text-sm font-mono text-muted-foreground">{item.year}</span>
-                      <div className={`px-2 py-0.5 rounded text-xs font-medium capitalize ${
-                        item.type === 'work' ? 'bg-accent/10 text-accent' :
-                        item.type === 'education' ? 'bg-accent/10 text-accent' :
-                        'bg-accent/10 text-accent'
-                      }`}>
-                        {item.type}
-                      </div>
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
-                    <p className="text-muted-foreground text-sm leading-relaxed">{item.description}</p>
-                  </div>
+                <div className={`w-full md:w-1/2 ${isLeft ? 'md:pr-12' : 'md:pl-12'} pl-12 md:pl-0`}>
+                  {card}
                 </div>
 
                 {/* Icon on line */}
-                <div className="absolute left-0 md:left-1/2 md:-translate-x-1/2 w-10 h-10 rounded-full flex items-center justify-center glass-card border border-border">
-                  <Icon className={`w-5 h-5 ${
-                    item.type === 'work' ? 'text-accent' :
-                    item.type === 'education' ? 'text-accent' :
-                    'text-accent'
-                  }`} />
+                <div className="absolute left-0 md:left-1/2 md:-translate-x-1/2">
+                  {iconCircle}
                 </div>
 
                 {/* Empty space for other side */}
