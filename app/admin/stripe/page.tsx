@@ -41,11 +41,11 @@ function formatAmount(amount: number, currency = 'thb') {
 function timeAgo(unix: number) {
   const diff = Date.now() - unix * 1000
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 1) return 'เมื่อสักครู่'
+  if (mins < 60) return `${mins} นาทีที่แล้ว`
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
+  if (hrs < 24) return `${hrs} ชั่วโมงที่แล้ว`
+  return `${Math.floor(hrs / 24)} วันที่แล้ว`
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -55,44 +55,44 @@ const STATUS_COLOR: Record<string, string> = {
 }
 
 export default function StripePage() {
-  usePageTitle('Payments')
+  usePageTitle('การชำระเงิน')
   const { data, loading, error, refetch } = useAdminApi<StripeData>('/api/admin/stripe')
 
-  if (loading) return <AdminLoading message="Loading Stripe data..." />
+  if (loading) return <AdminLoading message="กำลังโหลดข้อมูล Stripe..." />
   if (error) return <AdminError error={error} onRetry={refetch} />
-  if (!data) return <AdminEmpty title="No Stripe data available" />
+  if (!data) return <AdminEmpty title="ยังไม่มีข้อมูล Stripe" />
 
   const { balance, revenue, recentCharges, products, subscriptions } = data
   const currency = balance.currency
 
   const stats = [
     {
-      label: 'Available Balance',
+      label: 'ยอดคงเหลือที่ถอนได้',
       value: formatAmount(balance.available, currency),
       icon: DollarSign,
       color: '#22C55E',
-      sub: 'Ready to payout',
+      sub: 'พร้อมโอนออก',
     },
     {
-      label: 'Pending Balance',
+      label: 'ยอดรอดำเนินการ',
       value: formatAmount(balance.pending, currency),
       icon: TrendingUp,
       color: '#F59E0B',
-      sub: 'In transit',
+      sub: 'อยู่ระหว่างดำเนินการ',
     },
     {
-      label: 'Revenue This Month',
+      label: 'รายได้เดือนนี้',
       value: formatAmount(revenue.thisMonth, currency),
       icon: CreditCard,
       color: '#409EFE',
-      sub: `${revenue.transactionsThisMonth} transactions`,
+      sub: `${revenue.transactionsThisMonth} รายการ`,
     },
     {
-      label: 'Active Subscriptions',
+      label: 'สมาชิกที่ใช้งานอยู่',
       value: subscriptions.active.toString(),
       icon: Users,
       color: '#A855F7',
-      sub: `${subscriptions.trialing} trialing`,
+      sub: `ทดลองใช้ ${subscriptions.trialing} รายการ`,
     },
   ]
 
@@ -101,8 +101,8 @@ export default function StripePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-[#FAFAFA]">Payments</h1>
-          <p className="mt-0.5 text-sm text-[#52525b]">Stripe dashboard — {currency.toUpperCase()} mode</p>
+          <h1 className="text-xl font-bold text-[#FAFAFA]">การชำระเงิน</h1>
+          <p className="mt-0.5 text-sm text-[#52525b]">แดชบอร์ด Stripe · โหมด {currency.toUpperCase()}</p>
         </div>
         <div className="flex items-center gap-2">
           <a
@@ -112,7 +112,7 @@ export default function StripePage() {
             className="flex h-8 items-center gap-1.5 rounded-lg border border-[#27272A] bg-[#18181B] px-3 text-xs text-[#A1A1AA] hover:text-[#FAFAFA]"
           >
             <ArrowUpRight className="size-3" />
-            Stripe Dashboard
+            เปิด Stripe
           </a>
           <Button
             variant="outline"
@@ -148,11 +148,11 @@ export default function StripePage() {
         {/* Recent Charges */}
         <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
           <div className="border-b border-[#27272A] px-5 py-4">
-            <h2 className="text-sm font-semibold text-[#FAFAFA]">Recent Charges</h2>
-            <p className="mt-0.5 text-[11px] text-[#52525b]">Last 10 transactions</p>
+            <h2 className="text-sm font-semibold text-[#FAFAFA]">รายการชำระล่าสุด</h2>
+            <p className="mt-0.5 text-[11px] text-[#52525b]">10 รายการล่าสุด</p>
           </div>
           {recentCharges.length === 0 ? (
-            <div className="flex h-40 items-center justify-center text-[12px] text-[#3f3f46]">No charges yet</div>
+            <div className="flex h-40 items-center justify-center text-[12px] text-[#3f3f46]">ยังไม่มีรายการชำระ</div>
           ) : (
             <div className="divide-y divide-[#27272A]/60">
               {recentCharges.map((c) => (
@@ -174,7 +174,7 @@ export default function StripePage() {
                       {formatAmount(c.amount, c.currency)}
                     </p>
                     <p className="text-[10px]" style={{ color: STATUS_COLOR[c.status] ?? '#52525b' }}>
-                      {c.refunded ? 'refunded' : c.status}
+                      {c.refunded ? 'คืนเงินแล้ว' : c.status}
                     </p>
                   </div>
                 </div>
@@ -187,14 +187,14 @@ export default function StripePage() {
         <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
           <div className="flex items-center justify-between border-b border-[#27272A] px-5 py-4">
             <div>
-              <h2 className="text-sm font-semibold text-[#FAFAFA]">Products</h2>
-              <p className="mt-0.5 text-[11px] text-[#52525b]">Active Stripe products</p>
+              <h2 className="text-sm font-semibold text-[#FAFAFA]">สินค้า</h2>
+              <p className="mt-0.5 text-[11px] text-[#52525b]">สินค้าที่ใช้งานใน Stripe</p>
             </div>
             <Package className="size-4 text-[#3f3f46]" />
           </div>
           {products.length === 0 ? (
             <div className="flex h-40 items-center justify-center text-center text-[12px] text-[#3f3f46] px-4">
-              No products yet.<br />Create them in Stripe Dashboard.
+              ยังไม่มีสินค้า<br />สร้างสินค้าได้ใน Stripe Dashboard
             </div>
           ) : (
             <div className="divide-y divide-[#27272A]/60">
@@ -203,7 +203,7 @@ export default function StripePage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[12px] font-medium text-[#FAFAFA]">{p.name}</p>
                     <p className="text-[11px] text-[#52525b]">
-                      {p.interval ? `${p.interval}ly` : 'one-time'}
+                      {p.interval ? `ราย${p.interval}` : 'จ่ายครั้งเดียว'}
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
@@ -212,7 +212,7 @@ export default function StripePage() {
                         {formatAmount(p.price, p.currency)}
                       </p>
                     ) : (
-                      <p className="text-[12px] text-[#52525b]">no price</p>
+                      <p className="text-[12px] text-[#52525b]">ยังไม่มีราคา</p>
                     )}
                     <StatusBadge status={p.active ? 'active' : 'inactive'} />
                   </div>
@@ -228,7 +228,7 @@ export default function StripePage() {
               className="flex items-center gap-1.5 text-[11px] text-[#409EFE] hover:underline"
             >
               <ArrowUpRight className="size-3" />
-              Manage products in Stripe
+              จัดการสินค้าใน Stripe
             </a>
           </div>
         </div>

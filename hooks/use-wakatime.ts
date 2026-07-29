@@ -1,18 +1,23 @@
 'use client'
 
 import useSWR from 'swr'
+import { fetchJson } from '@/lib/api-fetcher'
 import type { WakaTimeStats } from '@/lib/wakatime/types'
 
-const fetcher = async (url: string) => {
-  const response = await fetch(url)
-  const data = await response.json()
-
-  if (!response.ok) {
-    throw new Error(data.error || 'Failed to fetch WakaTime stats')
-  }
-
-  return data
+const fallbackWakaTimeData: WakaTimeStats = {
+  configured: false,
+  range: 'last_7_days',
+  humanReadableTotal: '0 mins',
+  humanReadableDailyAverage: '0 mins',
+  totalSeconds: 0,
+  dailyAverageSeconds: 0,
+  bestDayText: null,
+  bestDayDate: null,
+  languages: [],
+  projects: [],
 }
+
+const fetcher = (url: string) => fetchJson<WakaTimeStats>(url, fallbackWakaTimeData, 'Failed to fetch WakaTime stats')
 
 export function useWakaTime(range = 'last_7_days') {
   const { data, error, isLoading, mutate } = useSWR<WakaTimeStats>(

@@ -1,6 +1,6 @@
 import { Inbox, Loader2, RefreshCw, ServerOff } from 'lucide-react'
 
-export function AdminLoading({ message = 'Loading...' }: { message?: string }) {
+export function AdminLoading({ message = 'กำลังโหลด...' }: { message?: string }) {
   return (
     <div className="flex min-h-[280px] flex-col items-center justify-center gap-3">
       <Loader2 className="size-6 animate-spin text-[#3f3f46]" />
@@ -28,7 +28,7 @@ export function AdminError({
           className="flex items-center gap-1.5 rounded-lg border border-[#27272A] bg-[#18181B] px-3 py-1.5 text-xs text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
         >
           <RefreshCw className="size-3" />
-          Retry
+          ลองอีกครั้ง
         </button>
       )}
     </div>

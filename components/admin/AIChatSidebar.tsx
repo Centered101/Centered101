@@ -51,10 +51,10 @@ const PROVIDERS: { id: Provider; label: string; free?: boolean; models: { id: st
 ]
 
 const QUICK = [
-  'Show featured portfolio projects SQL',
-  'Count unread contact messages',
-  'Recent visitors by country this week',
-  'Blog posts sorted by views',
+  'เขียน SQL สำหรับดูโปรเจกต์พอร์ตโฟลิโอที่ featured',
+  'นับข้อความติดต่อที่ยังไม่ได้อ่าน',
+  'สรุปผู้เข้าชมตามประเทศในสัปดาห์นี้',
+  'เรียงบทความตามยอดวิว',
 ]
 
 const PROVIDER_COLORS: Record<Provider, string> = {
@@ -66,7 +66,7 @@ const PROVIDER_COLORS: Record<Provider, string> = {
 function genId() { return `conv_${Date.now()}_${Math.random().toString(36).slice(2, 7)}` }
 
 function makeTitle(messages: Message[]) {
-  const first = messages.find((m) => m.role === 'user')?.content ?? 'New chat'
+  const first = messages.find((m) => m.role === 'user')?.content ?? 'แชตใหม่'
   return first.length > 40 ? first.slice(0, 40) + '…' : first
 }
 
@@ -150,7 +150,7 @@ export function AIChatSidebar({ onClose }: { onClose: () => void }) {
 
       const reader = res.body?.getReader()
       const decoder = new TextDecoder()
-      if (!reader) throw new Error('No response body')
+      if (!reader) throw new Error('ไม่มีข้อมูลตอบกลับ')
 
       let acc = ''
       while (true) {
@@ -181,7 +181,7 @@ export function AIChatSidebar({ onClose }: { onClose: () => void }) {
       const msg = (err as Error).message
       setMessages((prev) => {
         const u = [...prev]
-        u[u.length - 1] = { role: 'assistant', content: `Error: ${msg}` }
+        u[u.length - 1] = { role: 'assistant', content: `เกิดข้อผิดพลาด: ${msg}` }
         return u
       })
       toast.error(msg)
@@ -209,9 +209,9 @@ export function AIChatSidebar({ onClose }: { onClose: () => void }) {
       <div className="flex items-center justify-between border-b border-[#27272A] px-4 py-3">
         <div className="flex items-center gap-2">
           <Brain className="size-4" style={{ color }} />
-          <span className="text-sm font-semibold text-[#FAFAFA]">AI Assistant</span>
+          <span className="text-sm font-semibold text-[#FAFAFA]">ผู้ช่วย AI</span>
           {currentProvider.free && (
-            <span className="rounded border border-[#22C55E]/20 bg-[#22C55E]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#22C55E]">FREE</span>
+            <span className="rounded border border-[#22C55E]/20 bg-[#22C55E]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#22C55E]">ฟรี</span>
           )}
         </div>
         <div className="flex items-center gap-1">
@@ -219,7 +219,7 @@ export function AIChatSidebar({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             onClick={newChat}
-            title="New chat"
+            title="แชตใหม่"
             className="grid size-7 place-items-center rounded-lg border border-[#27272A] text-[#3f3f46] hover:border-[#3f3f46] hover:text-[#A1A1AA]"
           >
             <Plus className="size-3.5" />
@@ -229,7 +229,7 @@ export function AIChatSidebar({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               onClick={clearChat}
-              title="Clear chat"
+              title="ล้างแชต"
               className="grid size-7 place-items-center rounded-lg border border-[#27272A] text-[#3f3f46] hover:border-[#EF4444]/30 hover:text-[#EF4444]"
             >
               <Trash2 className="size-3" />
@@ -239,7 +239,7 @@ export function AIChatSidebar({ onClose }: { onClose: () => void }) {
           <Link
             href="/admin/ai"
             onClick={onClose}
-            title="Open AI Center"
+            title="เปิดศูนย์ AI"
             className="grid size-7 place-items-center rounded-lg border border-[#27272A] text-[#3f3f46] hover:border-[#409EFE]/30 hover:text-[#409EFE]"
           >
             <ExternalLink className="size-3.5" />
@@ -310,7 +310,7 @@ export function AIChatSidebar({ onClose }: { onClose: () => void }) {
       <div className="flex-1 overflow-y-auto px-4 py-3">
         {messages.length === 0 ? (
           <div className="flex flex-col gap-3">
-            <p className="text-center text-[11px] text-[#3f3f46]">Ask anything about your database</p>
+            <p className="text-center text-[11px] text-[#3f3f46]">ถามเรื่องฐานข้อมูล คอนเทนต์ หรือ SQL ได้เลย</p>
             <div className="space-y-1.5">
               {QUICK.map((q) => (
                 <button
@@ -331,7 +331,7 @@ export function AIChatSidebar({ onClose }: { onClose: () => void }) {
               className="mt-1 flex items-center justify-center gap-1.5 rounded-lg border border-[#27272A] px-3 py-2 text-[11px] text-[#52525b] transition-colors hover:border-[#409EFE]/30 hover:text-[#409EFE]"
             >
               <ArrowUpRight className="size-3" />
-              Open full AI Center
+              เปิดศูนย์ AI แบบเต็ม
             </Link>
           </div>
         ) : (
@@ -344,7 +344,7 @@ export function AIChatSidebar({ onClose }: { onClose: () => void }) {
                     <UserAvatar
                       avatarUrl={authInfo?.avatarUrl}
                       githubUsername={authInfo?.githubUsername}
-                      name={authInfo?.displayName || authInfo?.githubUsername || 'Me'}
+                      name={authInfo?.displayName || authInfo?.githubUsername || 'ฉัน'}
                       size="sm"
                     />
                   ) : (
@@ -381,7 +381,7 @@ export function AIChatSidebar({ onClose }: { onClose: () => void }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Ask or type SQL…"
+            placeholder="ถามหรือพิมพ์ SQL..."
             rows={1}
             className="flex-1 resize-none bg-transparent py-0.5 text-[12px] text-[#FAFAFA] placeholder:text-[#3f3f46] focus:outline-none"
             style={{ maxHeight: '80px' }}
@@ -402,14 +402,14 @@ export function AIChatSidebar({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <div className="mt-1.5 flex items-center justify-between">
-          <p className="text-[10px] text-[#3f3f46]">Enter · Shift+Enter new line</p>
+          <p className="text-[10px] text-[#3f3f46]">Enter เพื่อส่ง · Shift+Enter ขึ้นบรรทัดใหม่</p>
           {convId && (
             <Link
               href="/admin/ai"
               onClick={onClose}
               className="flex items-center gap-1 text-[10px] text-[#3f3f46] transition-colors hover:text-[#409EFE]"
             >
-              View in AI Center
+              ดูในศูนย์ AI
               <ArrowUpRight className="size-2.5" />
             </Link>
           )}

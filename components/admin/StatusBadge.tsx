@@ -5,9 +5,20 @@ const toneClasses = {
   info: 'border-[#409EFE]/30 bg-[#409EFE]/10 text-[#409EFE]',
   warning: 'border-[#F59E0B]/30 bg-[#F59E0B]/10 text-[#F59E0B]',
   danger: 'border-[#EF4444]/30 bg-[#EF4444]/10 text-[#EF4444]',
-  neutral: 'border-[#27272A] bg-[#18181B] text-[#A1A1AA]',
+  neutral: 'border-border bg-secondary text-muted-foreground',
   purple: 'border-violet-400/25 bg-violet-400/10 text-violet-300',
 } as const
+
+const statusLabels: Record<string, string> = {
+  active: 'ใช้งานอยู่',
+  published: 'เผยแพร่แล้ว',
+  draft: 'ฉบับร่าง',
+  pending: 'รอดำเนินการ',
+  paused: 'หยุดชั่วคราว',
+  archived: 'เก็บถาวร',
+  inactive: 'ปิดใช้งาน',
+  in_progress: 'กำลังทำ',
+}
 
 type Tone = keyof typeof toneClasses
 
@@ -48,7 +59,7 @@ export function StatusBadge({
         className
       )}
     >
-      {status.replace(/_/g, ' ')}
+      {statusLabels[status.toLowerCase()] ?? status.replace(/_/g, ' ')}
     </span>
   )
 }

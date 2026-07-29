@@ -13,6 +13,7 @@ type PortfolioProjectPayload = {
   status?: string
   poster_url?: string | null
   poster_alt?: string | null
+  logo_url?: string | null
   live_url?: string | null
   github_url?: string | null
   docs_url?: string | null
@@ -36,34 +37,39 @@ function normalizeList(value: unknown) {
   }
 
   if (typeof value === 'string') {
-    return value.split(',').map((item) => item.trim()).filter(Boolean)
+    return value.split(/,|\s{2,}/).map((item) => item.trim()).filter(Boolean)
   }
 
   return []
 }
 
 export async function GET(request: Request) {
-  const auth = await requireAnyAdminPermission(request, ['manage_portfolio', 'view_portfolio'])
-  if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  try {
+    const auth = await requireAnyAdminPermission(request, ['manage_portfolio', 'view_portfolio'])
+    if (!auth) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const supabase = createAdminClient()
+    if (!supabase) {
+      return NextResponse.json({ error: 'Supabase admin client is not configured' }, { status: 503 })
+    }
+
+    const { data, error } = await supabase
+      .from('portfolio_projects')
+      .select('*')
+      .order('sort_order', { ascending: true })
+      .order('updated_at', { ascending: false })
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ projects: data || [] })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to load projects'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
-
-  const supabase = createAdminClient()
-  if (!supabase) {
-    return NextResponse.json({ error: 'Supabase admin client is not configured' }, { status: 503 })
-  }
-
-  const { data, error } = await supabase
-    .from('portfolio_projects')
-    .select('*')
-    .order('sort_order', { ascending: true })
-    .order('updated_at', { ascending: false })
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  return NextResponse.json({ projects: data || [] })
 }
 
 export async function POST(request: Request) {
@@ -85,6 +91,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Supabase admin client is not configured' }, { status: 503 })
   }
 
+  let nextSortOrder = Number.isFinite(payload.sort_order) ? payload.sort_order : undefined
+
+  if (!payload.id && payload.sort_order === undefined) {
+    const { data: minRows, error: minError } = await supabase
+      .from('portfolio_projects')
+      .select('sort_order')
+      .order('sort_order', { ascending: true })
+      .limit(1)
+
+    if (minError) {
+      return NextResponse.json({ error: minError.message }, { status: 500 })
+    }
+
+    nextSortOrder = Number(minRows?.[0]?.sort_order ?? 100) - 100
+  }
+
   const record = {
     ...(payload.id ? { id: payload.id } : {}),
     slug,
@@ -95,6 +117,7 @@ export async function POST(request: Request) {
     status: payload.status?.trim() || 'published',
     poster_url: normalizeText(payload.poster_url),
     poster_alt: normalizeText(payload.poster_alt),
+    ...('logo_url' in payload ? { logo_url: normalizeText(payload.logo_url) } : {}),
     live_url: normalizeText(payload.live_url),
     github_url: normalizeText(payload.github_url),
     docs_url: normalizeText(payload.docs_url),
@@ -104,7 +127,7 @@ export async function POST(request: Request) {
     tags: normalizeList(payload.tags),
     featured: payload.featured ?? true,
     enabled: payload.enabled ?? true,
-    sort_order: Number.isFinite(payload.sort_order) ? payload.sort_order : 100,
+    ...(nextSortOrder !== undefined ? { sort_order: nextSortOrder } : {}),
     updated_at: new Date().toISOString(),
   }
 
@@ -135,7 +158,7 @@ export async function POST(request: Request) {
 
   await writeNotification({
     type: 'info',
-    title: payload.id ? `Project updated: ${title}` : `New project created: ${title}`,
+    title: payload.id ? `อัปเดตโปรเจกต์: ${title}` : `เพิ่มโปรเจกต์ใหม่: ${title}`,
     message: slug,
     resource: 'portfolio_projects',
     resourceId: data?.id || slug,
@@ -188,7 +211,7 @@ export async function DELETE(request: Request) {
 
   await writeNotification({
     type: 'warning',
-    title: `Project deleted`,
+    title: 'ลบโปรเจกต์แล้ว',
     message: `id: ${id || slug}`,
     resource: 'portfolio_projects',
     resourceId: (id || slug) ?? undefined,
@@ -204,12 +227,72 @@ export async function PATCH(request: Request) {
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = createAdminClient()
   if (!supabase) return NextResponse.json({ error: 'DB not configured' }, { status: 503 })
-  const body = await request.json() as { id: string; featured?: boolean; enabled?: boolean; sort_order?: number }
+  const body = await request.json() as { id?: string; featured?: boolean; enabled?: boolean; sort_order?: number; order?: { id: string; sort_order?: number }[] }
+
+  if (Array.isArray(body.order)) {
+    const updates = body.order
+      .filter((item) => item?.id)
+      .map((item, index) => ({
+        id: String(item.id),
+        sort_order: Number.isFinite(Number(item.sort_order)) ? Number(item.sort_order) : (index + 1) * 100,
+      }))
+
+    if (updates.length === 0) return NextResponse.json({ error: 'order required' }, { status: 400 })
+
+    const { data: maxRows, error: maxError } = await supabase
+      .from('portfolio_projects')
+      .select('sort_order')
+      .order('sort_order', { ascending: false })
+      .limit(1)
+
+    if (maxError) return NextResponse.json({ error: maxError.message }, { status: 500 })
+
+    const maxOrder = Number(maxRows?.[0]?.sort_order ?? 0)
+    const tempBase = Math.max(maxOrder, updates.length * 100) + 10000
+
+    for (let index = 0; index < updates.length; index += 1) {
+      const { error } = await supabase
+        .from('portfolio_projects')
+        .update({ sort_order: tempBase + index })
+        .eq('id', updates[index].id)
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    const savedProjects = []
+    for (const item of updates) {
+      const { data, error } = await supabase
+        .from('portfolio_projects')
+        .update({ sort_order: item.sort_order })
+        .eq('id', item.id)
+        .select('*')
+        .single()
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      savedProjects.push(data)
+    }
+
+    return NextResponse.json({ projects: savedProjects })
+  }
+
   if (!body.id) return NextResponse.json({ error: 'id required' }, { status: 400 })
   const patch: Record<string, unknown> = {}
-  if (body.featured !== undefined) patch.featured = body.featured
+  if (body.featured !== undefined) {
+    patch.featured = body.featured
+    if (body.featured) patch.enabled = true
+  }
   if (body.enabled !== undefined) patch.enabled = body.enabled
   if (body.sort_order !== undefined) patch.sort_order = body.sort_order
+
+  if (body.featured === true && body.sort_order === undefined) {
+    const { data: minRows, error: minError } = await supabase
+      .from('portfolio_projects')
+      .select('sort_order')
+      .order('sort_order', { ascending: true })
+      .limit(1)
+
+    if (minError) return NextResponse.json({ error: minError.message }, { status: 500 })
+    patch.sort_order = Number(minRows?.[0]?.sort_order ?? 0) - 100
+  }
+
   const { data, error } = await supabase
     .from('portfolio_projects').update(patch).eq('id', body.id).select('id,slug,title,featured,enabled,sort_order').single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

@@ -64,13 +64,14 @@ export function EcosystemHub() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.45, delay: Math.min(index * 0.04, 0.28) }}
-                className="glass-card group flex min-h-48 flex-col justify-between p-5 transition-transform hover:-translate-y-1"
+                data-touch-hover
+                className="glass-card group flex min-h-48 flex-col justify-between p-5 transition-transform hover-lift"
               >
                 <div className="flex items-start justify-between gap-4">
                   <span className="grid size-11 place-items-center border border-border bg-background/70">
                     <Icon className="size-5 text-accent" />
                   </span>
-                  <ArrowUpRight className="size-4 text-muted-foreground transition-colors group-hover:text-accent" />
+                  <ArrowUpRight className="touch-hover-accent size-4 text-muted-foreground transition-colors group-hover:text-accent" />
                 </div>
                 <div>
                   <div className="mb-3 flex items-center gap-2">
@@ -92,13 +93,13 @@ export function EcosystemHub() {
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-          <div className="glass-card p-6">
+          <div data-touch-hover className="glass-card p-6">
             <h3 className="text-xl font-bold">System Services</h3>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {ecosystemServices.map((service) => {
                 const Icon = service.icon
                 return (
-                  <div key={service.name} className="flex items-center justify-between border border-border bg-background/60 px-3 py-3">
+                  <div key={service.name} data-touch-hover className="flex items-center justify-between border border-border bg-background/60 px-3 py-3">
                     <span className="flex items-center gap-3 text-sm font-medium">
                       <Icon className="size-4 text-accent" />
                       {service.name}
@@ -112,7 +113,7 @@ export function EcosystemHub() {
             </div>
           </div>
 
-          <div className="glass-card p-6">
+          <div data-touch-hover className="glass-card p-6">
             <h3 className="text-xl font-bold">Subdomain Architecture</h3>
             <div className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {ecosystemSubdomains.map((domain) => (

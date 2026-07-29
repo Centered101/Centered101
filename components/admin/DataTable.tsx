@@ -22,7 +22,7 @@ export function DataTable<T extends { id: string }>({
   data,
   columns,
   loading = false,
-  emptyMessage = 'No records found',
+  emptyMessage = 'ไม่พบข้อมูล',
   emptyDescription,
   className,
 }: Props<T>) {
@@ -50,7 +50,7 @@ export function DataTable<T extends { id: string }>({
               <td colSpan={columns.length} className="px-4 py-14 text-center">
                 <div className="flex flex-col items-center gap-3">
                   <div className="size-5 animate-spin rounded-full border-2 border-[#27272A] border-t-[#409EFE]" />
-                  <p className="text-sm text-[#52525b]">Loading data...</p>
+                  <p className="text-sm text-[#52525b]">กำลังโหลดข้อมูล...</p>
                 </div>
               </td>
             </tr>

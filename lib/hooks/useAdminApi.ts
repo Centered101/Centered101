@@ -15,11 +15,32 @@ export function useAdminApi<T>(path: string) {
   const pathRef = useRef(path)
   pathRef.current = path
 
+  async function readJsonResponse(response: Response) {
+    try {
+      return await response.json()
+    } catch {
+      return { error: response.statusText || `HTTP ${response.status}` }
+    }
+  }
+
   const load = useCallback(async () => {
+    if (!auth.isAuthenticated) {
+      setState((s) => ({ ...s, loading: false, error: 'กรุณาเข้าสู่ระบบ admin ก่อน' }))
+      return
+    }
+
     setState((s) => ({ ...s, loading: true, error: null }))
     try {
-      const res = await fetch(pathRef.current, { headers: auth.getAdminHeaders() })
-      const json = await res.json()
+      let res = await fetch(pathRef.current, { headers: auth.getAdminHeaders() })
+      if (res.status === 401) {
+        const freshHeaders = await auth.refreshAdminHeaders()
+        if (freshHeaders) {
+          res = await fetch(pathRef.current, { headers: freshHeaders })
+        } else {
+          throw new Error('Session admin หมดอายุ กรุณาเข้าสู่ระบบใหม่')
+        }
+      }
+      const json = await readJsonResponse(res)
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`)
       setState({ data: json as T, loading: false, error: null })
     } catch (err) {
@@ -29,8 +50,12 @@ export function useAdminApi<T>(path: string) {
   }, [auth.isAuthenticated])
 
   useEffect(() => {
-    if (auth.isAuthenticated) load()
-  }, [auth.isAuthenticated, load])
+    if (auth.isAuthenticated) {
+      load()
+    } else {
+      setState((s) => ({ ...s, loading: false, error: null }))
+    }
+  }, [auth.isAuthenticated, load, path])
 
   return { ...state, refetch: load }
 }
@@ -39,7 +64,7 @@ export function useAdminMutation<TInput, TResult = unknown>(
   path: string,
   method: 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'POST'
 ) {
-  const { getAdminHeaders } = useAdminAuth()
+  const { getAdminHeaders, refreshAdminHeaders } = useAdminAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -55,7 +80,16 @@ export function useAdminMutation<TInput, TResult = unknown>(
           headers: { ...getAdminHeaders(), 'Content-Type': 'application/json' },
         }
         if (body !== undefined) init.body = JSON.stringify(body)
-        const res = await fetch(url, init)
+        let res = await fetch(url, init)
+        if (res.status === 401) {
+          const freshHeaders = await refreshAdminHeaders()
+          if (freshHeaders) {
+            res = await fetch(url, {
+              ...init,
+              headers: { ...freshHeaders, 'Content-Type': 'application/json' },
+            })
+          }
+        }
         const json = await res.json()
         if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`)
         return json as TResult
@@ -67,7 +101,7 @@ export function useAdminMutation<TInput, TResult = unknown>(
         setLoading(false)
       }
     },
-    [path, method, getAdminHeaders]
+    [path, method, getAdminHeaders, refreshAdminHeaders]
   )
 
   return { mutate, loading, error }

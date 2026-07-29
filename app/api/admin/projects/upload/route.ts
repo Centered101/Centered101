@@ -82,6 +82,7 @@ export async function POST(request: Request) {
   const formData = await request.formData()
   const file = formData.get('file')
   const slug = safeName(String(formData.get('slug') || 'project'))
+  const kind = safeName(String(formData.get('kind') || 'poster')) === 'logo' ? 'logo' : 'poster'
 
   if (!(file instanceof File)) {
     return NextResponse.json({ error: 'File is required' }, { status: 400 })
@@ -95,8 +96,8 @@ export async function POST(request: Request) {
   }
 
   const extension = EXTENSION_BY_TYPE[contentType] || inferredExtension || 'img'
-  const baseName = safeName(file.name.replace(/\.[^.]+$/, '')) || 'poster'
-  const filePath = `projects/${slug || 'project'}/${Date.now()}-${baseName}.${extension}`
+  const baseName = safeName(file.name.replace(/\.[^.]+$/, '')) || kind
+  const filePath = `projects/${slug || 'project'}/${kind}s/${Date.now()}-${baseName}.${extension}`
   const buffer = Buffer.from(await file.arrayBuffer())
 
   let uploadResult = await supabase.storage
@@ -125,7 +126,7 @@ export async function POST(request: Request) {
   if (uploadResult.error) {
     console.error('Portfolio project poster upload error:', uploadResult.error)
     await writeAdminAuditLog(request, auth, {
-      action: 'portfolio_project.poster_upload',
+      action: `portfolio_project.${kind}_upload`,
       resource: 'storage',
       resourceId: filePath,
       outcome: 'failed',
@@ -138,7 +139,7 @@ export async function POST(request: Request) {
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(filePath)
 
   await writeAdminAuditLog(request, auth, {
-    action: 'portfolio_project.poster_upload',
+    action: `portfolio_project.${kind}_upload`,
     resource: 'storage',
     resourceId: filePath,
     metadata: { slug, bucket: BUCKET, contentType },

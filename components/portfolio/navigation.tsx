@@ -61,10 +61,10 @@ export function Navigation({ user }: NavigationProps) {
         animate={{ y: 0 }}
         transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
         className={cn(
-          'fixed top-0 left-0 right-0 z-50 transition-all duration-500',
+          'fixed left-0 right-0 z-50 transition-all duration-500',
           isScrolled 
-            ? 'py-4' 
-            : 'py-8 bg-transparent'
+            ? 'top-0 py-4 pt-[max(1rem,var(--safe-top))]' 
+            : 'top-0 py-8 pt-[max(2rem,var(--safe-top))] bg-transparent'
         )}
       >
         <div className={cn(
@@ -74,7 +74,7 @@ export function Navigation({ user }: NavigationProps) {
             : 'bg-transparent'
         )} />
 
-        <nav className="relative mx-auto flex w-full max-w-[1400px] items-center justify-between px-6 md:px-0">
+        <nav className="relative mx-auto flex w-full max-w-[1400px] items-center justify-between px-4 sm:px-6 lg:px-8">
           <motion.button
             onClick={() => scrollTo('home')}
             className="relative z-10 flex items-center gap-3 text-left transition-colors select-none hover:text-accent group/logo"
@@ -216,7 +216,7 @@ export function Navigation({ user }: NavigationProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ delay: 0.1 }}
-              className="relative pt-24 px-6"
+              className="relative px-4 pt-24 sm:px-6"
             >
               <div className="flex flex-col items-center gap-2">
                 {navItems.map((item, index) => (

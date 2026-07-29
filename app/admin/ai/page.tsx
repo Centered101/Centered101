@@ -49,11 +49,11 @@ const PROVIDERS: { id: Provider; label: string; free?: boolean; color: string; m
 ]
 
 const QUICK = [
-  { label: 'Featured projects SQL', prompt: 'Write SQL to get my top featured portfolio projects ordered by sort_order' },
-  { label: 'Unread messages count', prompt: 'SQL to count contact_messages grouped by status' },
-  { label: 'Visitors by country', prompt: 'SQL to get visitor count by country from visitor_logs in the last 7 days' },
-  { label: 'Top blog posts', prompt: 'SQL to show blog_posts sorted by views descending' },
-  { label: 'Recent audit log', prompt: 'SQL to see last 20 admin actions from audit_logs' },
+  { label: 'SQL โปรเจกต์เด่น', prompt: 'Write SQL to get my top featured portfolio projects ordered by sort_order' },
+  { label: 'นับข้อความที่ยังไม่อ่าน', prompt: 'SQL to count contact_messages grouped by status' },
+  { label: 'ผู้เข้าชมตามประเทศ', prompt: 'SQL to get visitor count by country from visitor_logs in the last 7 days' },
+  { label: 'บทความยอดวิวสูงสุด', prompt: 'SQL to show blog_posts sorted by views descending' },
+  { label: 'Audit log ล่าสุด', prompt: 'SQL to see last 20 admin actions from audit_logs' },
 ]
 
 const STORAGE_KEY = 'admin_ai_conversations'
@@ -73,7 +73,7 @@ function saveConversations(convs: Conversation[]) {
 }
 
 function makeTitle(messages: Message[]) {
-  const first = messages.find((m) => m.role === 'user')?.content ?? 'New chat'
+  const first = messages.find((m) => m.role === 'user')?.content ?? 'แชตใหม่'
   return first.length > 40 ? first.slice(0, 40) + '…' : first
 }
 
@@ -81,14 +81,14 @@ function timeLabel(iso: string) {
   const d = new Date(iso)
   const now = new Date()
   const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000)
-  if (diffDays === 0) return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-  if (diffDays === 1) return 'Yesterday'
-  if (diffDays < 7) return d.toLocaleDateString('en-US', { weekday: 'short' })
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  if (diffDays === 0) return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+  if (diffDays === 1) return 'เมื่อวาน'
+  if (diffDays < 7) return d.toLocaleDateString('th-TH', { weekday: 'short' })
+  return d.toLocaleDateString('th-TH', { month: 'short', day: 'numeric' })
 }
 
 export default function AIPage() {
-  usePageTitle('AI Assistant')
+  usePageTitle('ผู้ช่วย AI')
   const { getAdminHeaders, authInfo } = useAdminAuth()
 
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -207,7 +207,7 @@ export default function AIPage() {
 
       const reader = res.body?.getReader()
       const decoder = new TextDecoder()
-      if (!reader) throw new Error('No response body')
+      if (!reader) throw new Error('ไม่มีข้อมูลตอบกลับ')
 
       let acc = ''
       while (true) {
@@ -228,7 +228,7 @@ export default function AIPage() {
       const msg = (err as Error).message
       setMessages((prev) => {
         const u = [...prev]
-        u[u.length - 1] = { role: 'assistant', content: `Error: ${msg}` }
+        u[u.length - 1] = { role: 'assistant', content: `เกิดข้อผิดพลาด: ${msg}` }
         return u
       })
       toast.error(msg)
@@ -252,13 +252,13 @@ export default function AIPage() {
             className="flex w-full items-center gap-2 rounded-lg border border-[#27272A] bg-[#18181B] px-3 py-2 text-xs font-medium text-[#A1A1AA] transition-colors hover:border-[#409EFE]/30 hover:bg-[#409EFE]/5 hover:text-[#409EFE]"
           >
             <Plus className="size-3.5" />
-            New chat
+            แชตใหม่
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto py-2">
           {conversations.length === 0 ? (
-            <p className="px-4 py-6 text-center text-[11px] text-[#3f3f46]">No history yet</p>
+            <p className="px-4 py-6 text-center text-[11px] text-[#3f3f46]">ยังไม่มีประวัติแชต</p>
           ) : (
             conversations.map((conv) => {
               const p = PROVIDERS.find((x) => x.id === conv.provider)!
@@ -349,7 +349,7 @@ export default function AIPage() {
                 {p.label}
                 {p.free && (
                   <span className="rounded px-1 py-px text-[9px] font-bold" style={{ backgroundColor: p.color + '20', color: p.color }}>
-                    FREE
+                    ฟรี
                   </span>
                 )}
               </button>
@@ -390,7 +390,7 @@ export default function AIPage() {
           </div>
 
           <span className="ml-auto text-[11px] text-[#3f3f46]">
-            {messages.length > 0 ? `${Math.ceil(messages.length / 2)} exchanges` : 'New conversation'}
+            {messages.length > 0 ? `${Math.ceil(messages.length / 2)} รอบสนทนา` : 'แชตใหม่'}
           </span>
         </div>
 
@@ -403,16 +403,16 @@ export default function AIPage() {
                   <Brain className="size-6" style={{ color }} />
                 </div>
                 <p className="text-sm font-semibold text-[#FAFAFA]">
-                  {currentProvider.label} Assistant
+                  ผู้ช่วย {currentProvider.label}
                 </p>
                 <p className="mt-1 text-[12px] text-[#52525b]">
-                  SQL queries · content · analytics · schema
+                  SQL · คอนเทนต์ · วิเคราะห์ข้อมูล · schema
                 </p>
               </div>
 
               <div className="w-full space-y-2">
                 <p className="text-center text-[10px] font-semibold uppercase tracking-widest text-[#3f3f46]">
-                  Quick prompts
+                  คำสั่งลัด
                 </p>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {QUICK.map((q) => (
@@ -439,7 +439,7 @@ export default function AIPage() {
                       <UserAvatar
                         avatarUrl={authInfo?.avatarUrl}
                         githubUsername={authInfo?.githubUsername}
-                        name={authInfo?.displayName || authInfo?.githubUsername || 'Me'}
+                        name={authInfo?.displayName || authInfo?.githubUsername || 'ฉัน'}
                         size="sm"
                       />
                     ) : (
@@ -481,7 +481,7 @@ export default function AIPage() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
                 }}
-                placeholder={`Ask ${currentProvider.label} about your database, generate SQL, write content…`}
+                placeholder={`ถาม ${currentProvider.label} เรื่องฐานข้อมูล สร้าง SQL หรือเขียนคอนเทนต์...`}
                 rows={1}
                 className="flex-1 resize-none bg-transparent py-0.5 text-sm text-[#FAFAFA] placeholder:text-[#3f3f46] focus:outline-none"
                 style={{ maxHeight: '120px' }}
@@ -505,7 +505,7 @@ export default function AIPage() {
               </button>
             </div>
             <p className="mt-2 text-center text-[10px] text-[#3f3f46]">
-              Enter to send · Shift+Enter for new line · history saved locally
+              Enter เพื่อส่ง · Shift+Enter ขึ้นบรรทัดใหม่ · ประวัติถูกเก็บในเครื่องนี้
             </p>
           </div>
         </div>

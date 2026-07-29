@@ -28,6 +28,7 @@ type AdminAuthContextValue = {
   setToken: (v: string) => void
   setAuthMode: (v: 'token' | 'github') => void
   getAdminHeaders: (nextToken?: string, mode?: 'token' | 'github', username?: string) => Record<string, string>
+  refreshAdminHeaders: () => Promise<Record<string, string> | null>
   unlockDashboard: (nextToken?: string, mode?: 'token' | 'github', username?: string) => Promise<void>
   loginWithGitHub: (next?: string) => Promise<void>
   logout: () => Promise<void>
@@ -38,6 +39,14 @@ const USERNAME_KEY = 'centered101_admin_username'
 
 export const AdminAuthContext = createContext<AdminAuthContextValue | null>(null)
 
+function getAuthErrorMessage(message: string) {
+  const normalized = message.toLowerCase()
+  if (normalized.includes('fetch failed') || normalized.includes('connect_timeout')) {
+    return 'เชื่อมต่อ Supabase ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง หรือตรวจสอบอินเทอร์เน็ต/Firewall/VPN ของเครื่อง dev server'
+  }
+  return message
+}
+
 export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const [adminUsername, setAdminUsername] = useState('')
   const [token, setToken] = useState('')
@@ -46,6 +55,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false)
   const [authMode, setAuthMode] = useState<'token' | 'github'>('token')
   const [authInfo, setAuthInfo] = useState<AdminAuthInfo | null>(null)
+  const refreshPromiseRef = React.useRef<Promise<Record<string, string> | null> | null>(null)
 
   function getAdminHeaders(
     nextToken = token,
@@ -96,10 +106,43 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  async function refreshAdminHeaders(): Promise<Record<string, string> | null> {
+    if (refreshPromiseRef.current) return refreshPromiseRef.current
+
+    refreshPromiseRef.current = (async () => {
+      const response = await fetch('/api/admin/auth/session', {
+        cache: 'no-store',
+        credentials: 'same-origin',
+      })
+      if (!response.ok) return null
+      const data = await response.json()
+      const accessToken = String(data.accessToken || '')
+      const nextAuthInfo = data.admin as AdminAuthInfo
+      if (!accessToken || !nextAuthInfo) return null
+      setToken(accessToken)
+      setAuthMode('github')
+      setAuthInfo(nextAuthInfo)
+      setIsAuthenticated(true)
+      return {
+        'x-admin-username': '',
+        'x-admin-token': '',
+        Authorization: `Bearer ${accessToken}`,
+      }
+    })()
+
+    try {
+      return await refreshPromiseRef.current
+    } catch {
+      return null
+    } finally {
+      refreshPromiseRef.current = null
+    }
+  }
+
   useEffect(() => {
     async function boot() {
       const authError = new URLSearchParams(window.location.search).get('auth_error')
-      if (authError) toast.error(`GitHub login failed: ${authError}`)
+      if (authError) toast.error(getAuthErrorMessage(authError))
 
       const restored = await restoreGitHubSession()
       if (!restored) {
@@ -198,6 +241,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         setToken,
         setAuthMode,
         getAdminHeaders,
+        refreshAdminHeaders,
         unlockDashboard,
         loginWithGitHub,
         logout,

@@ -53,13 +53,13 @@ function slugify(t: string) {
 }
 
 export default function ContentPage() {
-  usePageTitle('Content')
+  usePageTitle('บทความ')
   const { data, loading, error, refetch } = useAdminApi<{ posts: Post[] }>('/api/admin/content')
   const { mutate: savePost, loading: saving } = useAdminMutation<PostForm>('/api/admin/content', 'POST')
   const { mutate: deletePost } = useAdminMutation<undefined>('/api/admin/content', 'DELETE')
   const { getAdminHeaders } = useAdminAuth()
 
-  const [filter, setFilter] = useState('All')
+  const [filter, setFilter] = useState('ทั้งหมด')
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 15
   const [modalOpen, setModalOpen] = useState(false)
@@ -68,7 +68,7 @@ export default function ContentPage() {
   const [generating, setGenerating] = useState<'excerpt' | 'tags' | null>(null)
 
   async function handleGenerate(task: 'post_excerpt' | 'post_tags', field: 'excerpt' | 'tags') {
-    if (!form.title.trim()) { toast.error('Enter a title first'); return }
+    if (!form.title.trim()) { toast.error('กรุณากรอกชื่อบทความก่อน'); return }
     setGenerating(field)
     try {
       const res = await fetch('/api/admin/ai/generate', {
@@ -80,9 +80,9 @@ export default function ContentPage() {
         }),
       })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error || 'Generation failed')
+      if (!res.ok) throw new Error(json.error || 'สร้างด้วย AI ไม่สำเร็จ')
       setForm((p) => ({ ...p, [field]: json.result }))
-      toast.success(`${field === 'excerpt' ? 'Excerpt' : 'Tags'} generated`)
+      toast.success(field === 'excerpt' ? 'สร้างสรุปแล้ว' : 'สร้างแท็กแล้ว')
     } catch (err) {
       toast.error((err as Error).message)
     } finally {
@@ -90,19 +90,19 @@ export default function ContentPage() {
     }
   }
 
-  if (loading) return <AdminLoading message="Loading posts..." />
+  if (loading) return <AdminLoading message="กำลังโหลดบทความ..." />
   if (error) return <AdminError error={error} onRetry={refetch} />
 
   const posts = data?.posts ?? []
-  const categories = ['All', ...Array.from(new Set(posts.map((p) => p.category)))]
-  const filtered = filter === 'All' ? posts : posts.filter((p) => p.category === filter)
+  const categories = ['ทั้งหมด', ...Array.from(new Set(posts.map((p) => p.category)))]
+  const filtered = filter === 'ทั้งหมด' ? posts : posts.filter((p) => p.category === filter)
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const stats = [
-    { label: 'Published', count: posts.filter((p) => p.status === 'published').length, color: 'text-[#22C55E]' },
-    { label: 'Draft', count: posts.filter((p) => p.status === 'draft').length, color: 'text-[#F59E0B]' },
-    { label: 'Scheduled', count: posts.filter((p) => p.status === 'scheduled').length, color: 'text-[#409EFE]' },
-    { label: 'Archived', count: posts.filter((p) => p.status === 'archived').length, color: 'text-[#A1A1AA]' },
+    { label: 'เผยแพร่แล้ว', count: posts.filter((p) => p.status === 'published').length, color: 'text-[#22C55E]' },
+    { label: 'ฉบับร่าง', count: posts.filter((p) => p.status === 'draft').length, color: 'text-[#F59E0B]' },
+    { label: 'ตั้งเวลา', count: posts.filter((p) => p.status === 'scheduled').length, color: 'text-[#409EFE]' },
+    { label: 'เก็บถาวร', count: posts.filter((p) => p.status === 'archived').length, color: 'text-[#A1A1AA]' },
   ]
 
   function openNew() { setForm(BLANK); setModalOpen(true) }
@@ -117,10 +117,10 @@ export default function ContentPage() {
   }
 
   async function handleSave() {
-    if (!form.title.trim() || !form.slug.trim()) { toast.error('Title and slug are required'); return }
+    if (!form.title.trim() || !form.slug.trim()) { toast.error('กรุณากรอกชื่อบทความและ slug'); return }
     try {
       await savePost(form)
-      toast.success(form.id ? 'Post updated' : 'Post created')
+      toast.success(form.id ? 'อัปเดตบทความแล้ว' : 'สร้างบทความแล้ว')
       setModalOpen(false)
       refetch()
     } catch (err) { toast.error((err as Error).message) }
@@ -129,7 +129,7 @@ export default function ContentPage() {
   async function handleDelete(post: Post) {
     try {
       await deletePost(undefined, { id: post.id })
-      toast.success(`Deleted "${post.title}"`)
+      toast.success(`ลบ "${post.title}" แล้ว`)
       setDeleteTarget(null)
       refetch()
     } catch (err) { toast.error((err as Error).message) }
@@ -137,7 +137,7 @@ export default function ContentPage() {
 
   return (
     <AdminPageContainer>
-      <AdminPageHeader title="Content Manager" description={`Blog posts from Supabase · ${posts.length} total`}>
+      <AdminPageHeader title="จัดการบทความ" description={`บทความจาก Supabase · ทั้งหมด ${posts.length} รายการ`}>
         <Button
           size="sm"
           onClick={openNew}
@@ -145,7 +145,7 @@ export default function ContentPage() {
           style={{ backgroundColor: 'var(--admin-accent)' }}
         >
           <Plus className="size-3.5" />
-          New Post
+          เพิ่มบทความ
         </Button>
       </AdminPageHeader>
 
@@ -162,7 +162,7 @@ export default function ContentPage() {
       {/* Table */}
       <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#27272A] px-5 py-3.5">
-          <h2 className="text-sm font-semibold text-[#FAFAFA]">Posts ({filtered.length})</h2>
+          <h2 className="text-sm font-semibold text-[#FAFAFA]">บทความ ({filtered.length})</h2>
           <div className="flex flex-wrap gap-1.5">
             {categories.map((cat) => (
               <button
@@ -179,17 +179,17 @@ export default function ContentPage() {
         </div>
 
         {filtered.length === 0 ? (
-          <AdminEmpty title="No posts found" description="Create your first blog post to get started" />
+          <AdminEmpty title="ไม่พบบทความ" description="สร้างบทความแรกเพื่อเริ่มใช้งาน" />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-160 text-left text-[13px]">
               <thead>
                 <tr className="border-b border-[#27272A] text-[10px] font-semibold uppercase tracking-widest text-[#3f3f46]">
-                  <th className="px-5 py-3">Title</th>
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Views</th>
-                  <th className="px-4 py-3">Published</th>
+                  <th className="px-5 py-3">ชื่อบทความ</th>
+                  <th className="px-4 py-3">หมวดหมู่</th>
+                  <th className="px-4 py-3">สถานะ</th>
+                  <th className="px-4 py-3">ยอดดู</th>
+                  <th className="px-4 py-3">เผยแพร่</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -211,7 +211,7 @@ export default function ContentPage() {
                       ) : <span className="text-[#3f3f46]">—</span>}
                     </td>
                     <td className="px-4 py-3 text-[12px] text-[#52525b]">
-                      {post.published_at ? new Date(post.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                      {post.published_at ? new Date(post.published_at).toLocaleDateString('th-TH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1.5">
@@ -242,12 +242,12 @@ export default function ContentPage() {
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent aria-describedby={undefined} className="border-[#27272A] bg-[#18181B] text-[#FAFAFA] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-[#FAFAFA]">{form.id ? 'Edit Post' : 'New Post'}</DialogTitle>
+            <DialogTitle className="text-[#FAFAFA]">{form.id ? 'แก้ไขบทความ' : 'เพิ่มบทความ'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-1">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-[#A1A1AA]">Title *</Label>
+                <Label className="text-xs text-[#A1A1AA]">ชื่อบทความ *</Label>
                 <Input
                   value={form.title}
                   onChange={(e) => {
@@ -268,7 +268,7 @@ export default function ContentPage() {
             </div>
             <div>
               <div className="flex items-center justify-between">
-                <Label className="text-xs text-[#A1A1AA]">Excerpt</Label>
+                <Label className="text-xs text-[#A1A1AA]">สรุปสั้น</Label>
                 <button
                   type="button"
                   onClick={() => handleGenerate('post_excerpt', 'excerpt')}
@@ -276,18 +276,18 @@ export default function ContentPage() {
                   className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-[#409EFE] hover:bg-[#409EFE]/10 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {generating === 'excerpt' ? <Loader2 className="size-3 animate-spin" /> : <Sparkles className="size-3" />}
-                  {generating === 'excerpt' ? 'Generating...' : 'AI Generate'}
+                  {generating === 'excerpt' ? 'กำลังสร้าง...' : 'สร้างด้วย AI'}
                 </button>
               </div>
-              <Input value={form.excerpt} onChange={(e) => setForm((p) => ({ ...p, excerpt: e.target.value }))} className="mt-1 h-9 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30" placeholder="Short summary" />
+              <Input value={form.excerpt} onChange={(e) => setForm((p) => ({ ...p, excerpt: e.target.value }))} className="mt-1 h-9 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30" placeholder="สรุปสั้นของบทความ" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-[#A1A1AA]">Category</Label>
+                <Label className="text-xs text-[#A1A1AA]">หมวดหมู่</Label>
                 <Input value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))} className="mt-1 h-9 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30" />
               </div>
               <div>
-                <Label className="text-xs text-[#A1A1AA]">Status</Label>
+                <Label className="text-xs text-[#A1A1AA]">สถานะ</Label>
                 <select value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))} className="mt-1 h-9 w-full rounded-md border border-[#27272A] bg-[#09090B] px-2 text-sm text-[#FAFAFA] focus:outline-none focus:ring-1 focus:ring-[#409EFE]/30">
                   {['draft', 'published', 'scheduled', 'archived'].map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
@@ -295,7 +295,7 @@ export default function ContentPage() {
             </div>
             <div>
               <div className="flex items-center justify-between">
-                <Label className="text-xs text-[#A1A1AA]">Tags (comma-separated)</Label>
+                <Label className="text-xs text-[#A1A1AA]">แท็ก (คั่นด้วย comma)</Label>
                 <button
                   type="button"
                   onClick={() => handleGenerate('post_tags', 'tags')}
@@ -303,21 +303,21 @@ export default function ContentPage() {
                   className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-[#409EFE] hover:bg-[#409EFE]/10 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {generating === 'tags' ? <Loader2 className="size-3 animate-spin" /> : <Sparkles className="size-3" />}
-                  {generating === 'tags' ? 'Generating...' : 'AI Generate'}
+                  {generating === 'tags' ? 'กำลังสร้าง...' : 'สร้างด้วย AI'}
                 </button>
               </div>
               <Input value={form.tags} onChange={(e) => setForm((p) => ({ ...p, tags: e.target.value }))} className="mt-1 h-9 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30" placeholder="nextjs, typescript" />
             </div>
             <div>
-              <Label className="text-xs text-[#A1A1AA]">Read Time (minutes)</Label>
+              <Label className="text-xs text-[#A1A1AA]">เวลาอ่าน (นาที)</Label>
               <Input value={form.read_time_minutes} onChange={(e) => setForm((p) => ({ ...p, read_time_minutes: e.target.value }))} type="number" min="1" className="mt-1 h-9 w-28 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30" placeholder="5" />
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setModalOpen(false)} className="h-8 border-[#27272A] bg-transparent text-[#A1A1AA] hover:bg-[#27272A] hover:text-[#FAFAFA]">Cancel</Button>
+            <Button variant="outline" onClick={() => setModalOpen(false)} className="h-8 border-[#27272A] bg-transparent text-[#A1A1AA] hover:bg-[#27272A] hover:text-[#FAFAFA]">ยกเลิก</Button>
             <Button onClick={handleSave} disabled={saving} className="h-8 bg-[#409EFE] text-sm text-white hover:bg-[#60aeff] disabled:opacity-60">
               {saving && <Loader2 className="mr-1.5 size-3 animate-spin" />}
-              {form.id ? 'Save Changes' : 'Create Post'}
+              {form.id ? 'บันทึกการแก้ไข' : 'สร้างบทความ'}
             </Button>
           </div>
         </DialogContent>
@@ -326,9 +326,9 @@ export default function ContentPage() {
       <ConfirmModal
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title={`Delete "${deleteTarget?.title}"?`}
-        description="This post will be soft-deleted and archived."
-        confirmLabel="Delete"
+        title={`ลบ "${deleteTarget?.title}"?`}
+        description="บทความนี้จะถูกลบแบบ soft-delete และย้ายไปเก็บถาวร"
+        confirmLabel="ลบ"
         destructive
         onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
       />

@@ -3,7 +3,7 @@ import { requireAnyAdminPermission, writeAdminAuditLog } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function GET(request: Request) {
-  const auth = await requireAnyAdminPermission(request, ['manage_clients', 'view_users'])
+  const auth = await requireAnyAdminPermission(request, ['manage_clients', 'view_users', 'manage_portfolio', 'view_portfolio'])
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const supabase = createAdminClient()
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const auth = await requireAnyAdminPermission(request, ['manage_clients'])
+  const auth = await requireAnyAdminPermission(request, ['manage_clients', 'manage_portfolio', 'edit_portfolio'])
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const supabase = createAdminClient()
@@ -69,7 +69,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const auth = await requireAnyAdminPermission(request, ['manage_clients'])
+  const auth = await requireAnyAdminPermission(request, ['manage_clients', 'manage_portfolio', 'edit_portfolio'])
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const supabase = createAdminClient()

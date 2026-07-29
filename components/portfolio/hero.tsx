@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
+import Script from 'next/script'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -10,8 +11,9 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { CheckCircle2, Download, Github, Loader2, MapPin, Mail, Send } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Download, Github, Loader2, MapPin, Mail, Send } from 'lucide-react'
 import { useLanguage } from '@/components/language-provider'
+import { TURNSTILE_DEBUG, TURNSTILE_SITE_KEY, TURNSTILE_TEST_MODE, TurnstileBox } from '@/components/portfolio/contact'
 import type { GitHubUser, GitHubOrganization, LanguageStats } from '@/lib/github/types'
 
 interface HeroProps {
@@ -21,6 +23,24 @@ interface HeroProps {
   organizations?: GitHubOrganization[]
   isLoading?: boolean
   onResumeDownload?: () => void
+}
+
+type PortfolioVisualSettings = {
+  hero_image_url: string
+  hero_image_x: number
+  hero_image_y: number
+  hero_image_width: number
+  hero_image_max_width: number
+  hero_image_opacity: number
+}
+
+const DEFAULT_VISUAL_SETTINGS: PortfolioVisualSettings = {
+  hero_image_url: '/porfilio/images/bg-avatar-hero.png',
+  hero_image_x: 160,
+  hero_image_y: -12,
+  hero_image_width: 50,
+  hero_image_max_width: 760,
+  hero_image_opacity: 95,
 }
 
 function TypewriterText({ roles }: { roles: string[] }) {
@@ -60,12 +80,61 @@ export function Hero({ user, totalStars = 0, organizations = [], isLoading, onRe
   const [messageOpen, setMessageOpen] = useState(false)
   const [formState, setFormState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const [submitCount, setSubmitCount] = useState(0)
+  const [turnstileReady, setTurnstileReady] = useState(false)
+  const [turnstileFailed, setTurnstileFailed] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [visualSettings, setVisualSettings] = useState<PortfolioVisualSettings>(DEFAULT_VISUAL_SETTINGS)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     subject: '',
     message: '',
   })
+  const needsBotCheck = TURNSTILE_TEST_MODE || submitCount >= 6
+
+  const handleTurnstileVerify = useCallback((token: string) => {
+    setTurnstileToken(token)
+    setFormState((current) => (current === 'error' ? 'idle' : current))
+    setErrorMessage('')
+  }, [])
+
+  const handleTurnstileReset = useCallback(() => {
+    setTurnstileToken('')
+  }, [])
+
+  useEffect(() => {
+    const savedCount = Number(window.localStorage.getItem('portfolio_contact_submit_count') || 0)
+    if (Number.isFinite(savedCount)) setSubmitCount(savedCount)
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    fetch('/api/portfolio/settings', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : DEFAULT_VISUAL_SETTINGS))
+      .then((data) => {
+        if (!cancelled) setVisualSettings({ ...DEFAULT_VISUAL_SETTINGS, ...data })
+      })
+      .catch(() => {
+        if (!cancelled) setVisualSettings(DEFAULT_VISUAL_SETTINGS)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!needsBotCheck || turnstileReady || turnstileFailed) return
+
+    const timeoutId = window.setTimeout(() => {
+      setTurnstileFailed(true)
+      if (TURNSTILE_DEBUG) setErrorMessage(copy.contact.botCheckTimeoutDebug)
+    }, 20000)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [needsBotCheck, turnstileReady, turnstileFailed])
 
   if (isLoading) {
     return <HeroSkeleton />
@@ -95,9 +164,18 @@ export function Hero({ user, totalStars = 0, organizations = [], isLoading, onRe
 
   const handleMessageSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
+    if (needsBotCheck && !turnstileToken) {
+      setFormState('error')
+      setErrorMessage(
+        turnstileFailed && TURNSTILE_DEBUG
+          ? copy.contact.botCheckFailedDebug
+          : copy.contact.botCheckRequired
+      )
+      return
+    }
     setFormState('loading')
     setErrorMessage('')
-    const toastId = toast.loading('กำลังส่งข้อความ...')
+    const toastId = toast.loading(copy.contact.sending)
 
     try {
       const response = await fetch('/api/contact', {
@@ -106,19 +184,26 @@ export function Hero({ user, totalStars = 0, organizations = [], isLoading, onRe
         body: JSON.stringify({
           ...formData,
           subject: formData.subject || 'Portfolio message',
+          source: 'Portfolio · Hero',
+          turnstileToken,
         }),
       })
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to send message')
+        throw new Error(data.error || copy.contact.sendError)
       }
 
       setFormState('success')
       setFormData({ name: '', email: '', subject: '', message: '' })
-      toast.success('ส่งข้อความแล้ว', { id: toastId })
+      setTurnstileToken('')
+      window.turnstile?.reset()
+      const nextSubmitCount = submitCount + 1
+      setSubmitCount(nextSubmitCount)
+      window.localStorage.setItem('portfolio_contact_submit_count', String(nextSubmitCount))
+      toast.success(copy.contact.successTitle, { id: toastId })
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Something went wrong'
+      const message = error instanceof Error ? error.message : copy.contact.unknownError
       setFormState('error')
       setErrorMessage(message)
       toast.error(message, { id: toastId })
@@ -135,37 +220,49 @@ export function Hero({ user, totalStars = 0, organizations = [], isLoading, onRe
   }
 
   return (
-    <section id="home" className="relative flex min-h-screen items-end overflow-hidden px-4 pb-8 pt-28 sm:px-6 sm:pb-24 lg:pb-28">
+    <section id="home" className="relative flex min-h-screen min-h-[100svh] items-end overflow-hidden px-4 pb-8 pt-28 sm:px-6 sm:pb-24 md:pb-28 lg:px-8">
+      <Script
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&language=th"
+        strategy="afterInteractive"
+        onLoad={() => {
+          setTurnstileReady(true)
+          setTurnstileFailed(false)
+        }}
+        onError={() => setTurnstileFailed(true)}
+      />
       <div className="absolute inset-0 z-0 grid-pattern" />
       <div className="pointer-events-none absolute inset-0 z-0 bg-[url('/porfilio/images/bg-portfolio.png')] bg-cover bg-center opacity-75" />
       <div className="pointer-events-none absolute inset-0 z-0 bg-background/62" />
+      {/* Desktop + Tablet: avatar on the right side */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute bottom-0 right-64 z-0 hidden h-[min(82vh,760px)] w-[54vw] max-w-[820px] select-none opacity-95 lg:block"
+        className="pointer-events-none absolute z-0 hidden h-[min(76vh,700px)] select-none opacity-45 md:block lg:h-[min(80vh,740px)] lg:opacity-95"
+        style={{
+          bottom: `${visualSettings.hero_image_y}px`,
+          right: `clamp(40px, ${visualSettings.hero_image_x}px, 14vw)`,
+          width: `min(${visualSettings.hero_image_width}vw, ${visualSettings.hero_image_max_width}px)`,
+          maxWidth: `${visualSettings.hero_image_max_width}px`,
+          opacity: visualSettings.hero_image_opacity / 100,
+        }}
       >
-        <Image
-          src="/porfilio/images/bg-avatar-hero.png"
+        <img
+          src={visualSettings.hero_image_url}
           alt=""
-          fill
-          priority
-          sizes="54vw"
           draggable={false}
           onContextMenu={(event) => event.preventDefault()}
-          className="object-contain object-right-bottom"
+          className="size-full object-contain object-right-bottom"
         />
       </div>
+      {/* Mobile only: avatar centered at top */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-14 z-0 h-[48vh] w-[92vw] -translate-x-1/2 opacity-95 lg:hidden"
+        className="pointer-events-none absolute left-1/2 top-14 z-0 h-[48vh] w-[92vw] -translate-x-1/2 opacity-95 md:hidden"
       >
-        <Image
-          src="/porfilio/images/bg-avatar-hero.png"
+        <img
+          src={visualSettings.hero_image_url}
           alt=""
-          fill
-          priority
-          sizes="92vw"
           draggable={false}
-          className="object-contain object-top"
+          className="size-full object-contain object-top"
         />
       </div>
       <div className="z-10 mx-auto w-full max-w-[1400px]">
@@ -174,13 +271,13 @@ export function Hero({ user, totalStars = 0, organizations = [], isLoading, onRe
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           data-aos="fade-up"
-          className="mx-auto w-full px-0"
+          className="w-full px-0 md:max-w-[58%] xl:max-w-none"
         >
           <div className="grid gap-5 sm:grid-cols-[128px_1fr] sm:gap-8 lg:grid-cols-[160px_1fr]">
-            <div className="flex items-start justify-center sm:justify-start">
+            <div className="flex items-start justify-start">
               <div className="relative">
                 <div className="absolute inset-1.5 rounded-3xl bg-accent/35 opacity-80 blur-xl" />
-                <Avatar className="relative size-42 md:rounded border border-primary bg-card sm:size-32 lg:size-36">
+                <Avatar className="relative size-24 rounded border border-primary bg-card sm:size-28 lg:size-36">
                   <AvatarImage src={user?.avatar_url} alt={profileName} />
                   <AvatarFallback className="rounded-3xl bg-card text-3xl font-bold">
                     {username.slice(0, 2).toUpperCase()}
@@ -244,7 +341,8 @@ export function Hero({ user, totalStars = 0, organizations = [], isLoading, onRe
                         rel="noopener noreferrer"
                         title={org.description || org.login}
                         aria-label={org.login}
-                        className="block size-9 overflow-hidden rounded-lg border border-border bg-card transition-transform hover:scale-105 hover:border-accent/40"
+                        data-touch-hover
+                        className="touch-hover-scale block size-9 overflow-hidden rounded-lg border border-border bg-card transition-transform hover:scale-105 hover:border-accent/40"
                       >
                         <Image
                           src={org.avatar_url}
@@ -346,10 +444,22 @@ export function Hero({ user, totalStars = 0, organizations = [], isLoading, onRe
                       rows={6}
                       required
                       disabled={formState === 'loading'}
-                      className="resize-none rounded-lg border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-accent/50"
+                      className="h-[132px] resize-none overflow-y-auto rounded-lg border-slate-200 bg-white text-slate-900 [field-sizing:fixed] placeholder:text-slate-400 focus:border-accent/50"
                     />
-                    {formState === 'error' ? (
+                    {needsBotCheck ? (
+                      <TurnstileBox
+                        ready={turnstileReady}
+                        failed={turnstileFailed}
+                        siteKey={TURNSTILE_SITE_KEY}
+                        loadingText={copy.contact.botCheckLoading}
+                        failedText={copy.contact.botCheckFailed}
+                        onVerify={handleTurnstileVerify}
+                        onReset={handleTurnstileReset}
+                      />
+                    ) : null}
+                    {formState === 'error' && !(needsBotCheck && turnstileFailed) ? (
                       <p className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+                        <AlertCircle className="mr-2 inline size-4 align-text-bottom" />
                         {errorMessage}
                       </p>
                     ) : null}
@@ -387,19 +497,18 @@ export function Hero({ user, totalStars = 0, organizations = [], isLoading, onRe
 
 function HeroSkeleton() {
   return (
-    <section className="relative flex min-h-screen items-end overflow-hidden px-4 pb-8 pt-28 sm:px-6 sm:pb-24 lg:pb-28">
+    <section className="relative flex min-h-screen min-h-[100svh] items-end overflow-hidden px-4 pb-8 pt-28 sm:px-6 sm:pb-24 lg:pb-28">
       <div className="absolute inset-0 z-0 grid-pattern" />
       <div className="pointer-events-none absolute inset-0 z-0 bg-[url('/porfilio/images/bg-portfolio.png')] bg-cover bg-center opacity-75" />
       <div className="pointer-events-none absolute inset-0 z-0 bg-background/62" />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute bottom-0 right-64 z-0 hidden h-[min(82vh,760px)] w-[54vw] max-w-[820px] select-none opacity-95 lg:block"
+        className="pointer-events-none absolute bottom-0 right-64 z-0 hidden h-[min(82vh,760px)] w-[54vw] max-w-205 select-none opacity-95 lg:block"
       >
         <Image
           src="/porfilio/images/bg-avatar-hero.png"
           alt=""
           fill
-          priority
           sizes="54vw"
           draggable={false}
           onContextMenu={(event) => event.preventDefault()}
@@ -414,7 +523,6 @@ function HeroSkeleton() {
           src="/porfilio/images/bg-avatar-hero.png"
           alt=""
           fill
-          priority
           sizes="92vw"
           draggable={false}
           className="object-contain object-top"
@@ -422,11 +530,11 @@ function HeroSkeleton() {
       </div>
       <div className="relative z-10 mx-auto w-full max-w-[1400px]">
         <div className="mx-auto w-full px-0">
-          <div className="grid gap-5 sm:grid-cols-[128px_1fr] sm:gap-8 lg:grid-cols-[160px_1fr]">
-            <div className="flex items-start justify-center sm:justify-start">
+          <div className="grid grid-cols-[72px_1fr] gap-4 sm:grid-cols-[128px_1fr] sm:gap-8 lg:grid-cols-[160px_1fr]">
+            <div className="flex items-start justify-start">
               <div className="relative">
                 <div className="absolute inset-1.5 rounded bg-accent/35 opacity-80 blur-xl" />
-                <Skeleton className="relative mx-auto size-64 rounded-3xl border border-primary bg-card sm:mx-0 sm:size-32 lg:size-36" />
+                <Skeleton className="relative size-18 rounded-3xl border border-primary bg-card sm:size-28 lg:size-36" />
               </div>
             </div>
             <div className="min-w-0">

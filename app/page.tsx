@@ -34,14 +34,44 @@ const Footer = dynamic(() => import('@/components/portfolio/footer').then((modul
   loading: () => null,
   ssr: false,
 })
+const AdminEditMode = dynamic(() => import('@/components/portfolio/admin-edit-mode').then((module) => module.AdminEditMode), {
+  loading: () => null,
+  ssr: false,
+})
 
 export default function Home() {
   const { data, isLoading } = useGitHub()
   const { trackRepoClick, trackContactSubmit, trackResumeDownload } = useAnalytics()
+  const [homepageResolved, setHomepageResolved] = useState(false)
   const [isSupabaseReady, setIsSupabaseReady] = useState(false)
   const [showPortfolio, setShowPortfolio] = useState(false)
 
   useEffect(() => {
+    let isMounted = true
+
+    async function resolveHomepage() {
+      try {
+        const res = await fetch('/api/site/homepage', { cache: 'no-store' })
+        const data = await res.json()
+        const path = typeof data.path === 'string' ? data.path : '/'
+        if (path && path !== '/') {
+          window.location.replace(path)
+          return
+        }
+      } catch {
+        // Keep the portfolio as the safe default homepage.
+      }
+      if (isMounted) setHomepageResolved(true)
+    }
+
+    resolveHomepage()
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!homepageResolved) return
     let isMounted = true
 
     const preload = async () => {
@@ -66,21 +96,31 @@ export default function Home() {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [homepageResolved])
 
   useEffect(() => {
-    if (!isLoading && isSupabaseReady) {
+    if (homepageResolved && !isLoading && isSupabaseReady) {
       const timeout = window.setTimeout(() => setShowPortfolio(true), 120)
       return () => window.clearTimeout(timeout)
     }
-  }, [isLoading, isSupabaseReady])
+  }, [homepageResolved, isLoading, isSupabaseReady])
+
+  useEffect(() => {
+    if (!showPortfolio) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [showPortfolio])
 
   return (
-    <div className="portfolio-classic-theme min-h-screen bg-background text-foreground">
+    <>
       <AnimatePresence>
-        {!showPortfolio ? <PortfolioBootScreen /> : null}
+        {!homepageResolved || !showPortfolio ? <PortfolioBootScreen /> : null}
       </AnimatePresence>
 
+      <div className="portfolio-classic-theme min-h-screen bg-background text-foreground">
       <motion.div
         initial={false}
         animate={{
@@ -134,8 +174,10 @@ export default function Home() {
         user={data?.user}
         onResumeDownload={trackResumeDownload}
       />
+      <AdminEditMode />
       </motion.div>
-    </div>
+      </div>
+    </>
   )
 }
 
@@ -149,10 +191,10 @@ function PortfolioBootScreen() {
     >
       {/* Backdrop */}
       <div className="absolute inset-0 grid-pattern opacity-60" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_38%,rgba(64,158,254,0.18),transparent_36rem)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(64,158,254,0.18),transparent_36rem)]" />
       <div
         aria-hidden
-        className="absolute left-1/2 top-[38%] size-[26rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-3xl"
+        className="absolute left-1/2 top-1/2 size-[26rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-3xl"
       />
 
       <motion.div

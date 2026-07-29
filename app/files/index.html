@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Portal - Stripe Payment Only</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#8b5cf6',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .status-badge {
+            @apply px-3 py-1 rounded-full text-xs font-semibold uppercase;
+        }
+
+        .btn {
+            @apply px-6 py-3 rounded-lg font-medium transition-all duration-300 inline-flex items-center gap-2;
+        }
+
+        .btn-primary {
+            @apply bg-primary text-white hover:bg-blue-600 hover:shadow-lg;
+        }
+
+        .btn-success {
+            @apply bg-success text-white hover:bg-green-600 hover:shadow-lg;
+        }
+
+        .card {
+            @apply bg-white rounded-xl shadow-lg p-6 border border-gray-100;
+        }
+
+        .step-item {
+            @apply relative pl-8 pb-8 border-l-2 border-gray-200;
+        }
+
+        .step-item:last-child {
+            @apply border-l-0;
+        }
+
+        .step-circle {
+            @apply absolute left-0 -ml-3 w-6 h-6 rounded-full border-2 border-gray-300 bg-white flex items-center justify-center;
+        }
+
+        .step-circle.active {
+            @apply border-primary bg-primary text-white;
+        }
+
+        .step-circle.completed {
+            @apply border-success bg-success text-white;
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .demo-preview {
+            border: 3px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen">
+
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="spinner mx-auto mb-4"></div>
+            <p class="text-gray-600">กำลังโหลดข้อมูล...</p>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div id="mainContent" class="hidden">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b border-gray-200">
+            <div class="container mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-rocket text-primary text-2xl"></i>
+                        <h1 class="text-2xl font-bold text-gray-800">Client Portal</h1>
+                    </div>
+                    <div id="projectStatus" class="status-badge bg-gray-100 text-gray-600">
+                        <i class="fas fa-circle-notch fa-spin mr-1"></i> กำลังโหลด
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-8 max-w-6xl">
+
+            <!-- Project Information -->
+            <section class="card mb-8">
+                <div class="flex items-start gap-4 mb-6">
+                    <div
+                        class="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center text-white text-2xl">
+                        <i class="fas fa-briefcase"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h2 id="projectTitle" class="text-2xl font-bold text-gray-800 mb-2">กำลังโหลด...</h2>
+                        <p id="projectDescription" class="text-gray-600 leading-relaxed"></p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-100">
+                    <div class="text-center">
+                        <p class="text-gray-500 text-sm mb-1">ราคารวม</p>
+                        <p id="totalPrice" class="text-2xl font-bold text-primary">฿0</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-gray-500 text-sm mb-1">ประเภทการชำระ</p>
+                        <p id="paymentType" class="text-lg font-semibold text-gray-800">-</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-gray-500 text-sm mb-1">ความคืบหน้า</p>
+                        <p id="progressText" class="text-lg font-semibold text-gray-800">0%</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Demo Preview -->
+            <section class="card mb-8">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="fas fa-eye text-primary text-xl"></i>
+                    <h3 class="text-xl font-bold text-gray-800">ดูตัวอย่างงาน (Demo)</h3>
+                </div>
+                <div id="demoPreview" class="demo-preview bg-gray-50 h-96 flex items-center justify-center">
+                    <p class="text-gray-500">กำลังโหลดตัวอย่าง...</p>
+                </div>
+            </section>
+
+            <!-- Payment Section -->
+            <section class="card mb-8">
+                <div class="flex items-center gap-2 mb-6">
+                    <i class="fas fa-credit-card text-primary text-xl"></i>
+                    <h3 class="text-xl font-bold text-gray-800">ชำระเงิน</h3>
+                </div>
+
+                <!-- Payment Steps (for installment) -->
+                <div id="installmentSection" class="hidden">
+                    <div id="paymentSteps" class="mb-6">
+                        <!-- Steps will be generated by JS -->
+                    </div>
+                </div>
+
+                <!-- Full Payment Section -->
+                <div id="fullPaymentSection" class="hidden">
+                    <div class="bg-gradient-to-r from-primary to-secondary text-white rounded-lg p-6 mb-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm opacity-90 mb-1">ชำระครั้งเดียวจบ</p>
+                                <p class="text-3xl font-bold" id="fullPaymentAmount">฿0</p>
+                            </div>
+                            <i class="fas fa-wallet text-4xl opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Button (Stripe Only) -->
+                <div id="paymentButton" class="hidden text-center">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                        <div class="flex items-center justify-center gap-4 mb-4">
+                            <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow">
+                                <i class="fab fa-cc-stripe text-3xl" style="color: #635BFF;"></i>
+                            </div>
+                            <div class="text-left">
+                                <p class="font-semibold text-gray-800">ชำระเงินผ่าน Stripe</p>
+                                <p class="text-sm text-gray-600">PromptPay · บัตร · Google Pay</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-center gap-6 mb-4 text-sm text-gray-600">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-qrcode text-primary"></i>
+                                <span>QR Code</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-credit-card text-primary"></i>
+                                <span>Visa/MasterCard</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fab fa-google-pay text-primary"></i>
+                                <span>Google Pay</span>
+                            </div>
+                        </div>
+
+                        <button onclick="startPayment()"
+                            class="w-full max-w-md mx-auto bg-gradient-to-r from-primary to-secondary text-white font-bold py-4 px-8 rounded-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3">
+                            <i class="fas fa-lock"></i>
+                            <span>ชำระเงิน <span id="paymentButtonAmount">฿0</span></span>
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+
+                        <p class="text-xs text-gray-500 mt-4">
+                            <i class="fas fa-shield-alt text-success mr-1"></i>
+                            การชำระเงินปลอดภัย 100% โดย Stripe
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Completed Message -->
+                <div id="completedMessage" class="hidden">
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                        <i class="fas fa-check-circle text-success text-4xl mb-3"></i>
+                        <h4 class="font-bold text-gray-800 mb-2">ชำระเงินสำเร็จ!</h4>
+                        <p class="text-gray-600">คุณสามารถดาวน์โหลดไฟล์ได้แล้ว</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Download Section -->
+            <section class="card">
+                <div class="flex items-center gap-2 mb-6">
+                    <i class="fas fa-download text-primary text-xl"></i>
+                    <h3 class="text-xl font-bold text-gray-800">ดาวน์โหลดไฟล์</h3>
+                </div>
+
+                <div id="downloadList">
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-file-archive text-4xl mb-3 opacity-30"></i>
+                        <p>กำลังโหลดรายการไฟล์...</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-white border-t border-gray-200 mt-12">
+            <div class="container mx-auto px-4 py-6 text-center text-gray-600">
+                <p class="text-sm flex items-center justify-center gap-2">
+                    <i class="fas fa-shield-alt text-primary"></i>
+                    <span>ชำระเงินผ่าน</span>
+                    <i class="fab fa-cc-stripe text-2xl" style="color: #635BFF;"></i>
+                    <span>Stripe · PromptPay · Card · Google Pay</span>
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-4 right-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl border-l-4 border-primary p-4 min-w-[300px]">
+            <div class="flex items-start gap-3">
+                <i id="toastIcon" class="fas fa-info-circle text-primary text-xl"></i>
+                <div class="flex-1">
+                    <p id="toastMessage" class="font-medium text-gray-800"></p>
+                </div>
+                <button onclick="hideToast()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/payment.js"></script>
+    <script src="assets/js/app.js"></script>
+</body>
+
+</html>

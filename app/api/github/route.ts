@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import {
   fetchGitHubUser,
   fetchGitHubRepos,
   fetchGitHubSocialAccounts,
+  fetchGitHubOrganizations,
   extractOrcidId,
   calculateTotalStars,
   calculateTopLanguages,
@@ -19,6 +20,26 @@ type CachedLanguage = {
   color?: string
 }
 
+type CachedRepository = {
+  github_id: number
+  name: string
+  full_name: string
+  description: string | null
+  html_url: string
+  homepage: string | null
+  language: string | null
+  stargazers_count: number
+  forks_count: number
+  watchers_count: number
+  open_issues_count: number
+  is_fork: boolean
+  is_archived: boolean
+  topics: string[]
+  created_at: string
+  updated_at: string
+  pushed_at: string
+}
+
 function normalizeLanguageColors(languages: CachedLanguage[] | null | undefined) {
   return (languages || []).map((language) => ({
     ...language,
@@ -26,26 +47,60 @@ function normalizeLanguageColors(languages: CachedLanguage[] | null | undefined)
   }))
 }
 
+function normalizeCachedRepositories(repositories: CachedRepository[] | null | undefined) {
+  return (repositories || []).map((repo) => ({
+    id: repo.github_id,
+    name: repo.name,
+    full_name: repo.full_name,
+    description: repo.description,
+    html_url: repo.html_url,
+    homepage: repo.homepage,
+    language: repo.language,
+    stargazers_count: repo.stargazers_count,
+    forks_count: repo.forks_count,
+    watchers_count: repo.watchers_count,
+    open_issues_count: repo.open_issues_count,
+    fork: repo.is_fork,
+    archived: repo.is_archived,
+    topics: repo.topics || [],
+    created_at: repo.created_at,
+    updated_at: repo.updated_at,
+    pushed_at: repo.pushed_at,
+  }))
+}
+
+function isInvalidApiKeyError(error: { message?: string } | null | undefined) {
+  return (error?.message || '').toLowerCase().includes('invalid api key')
+}
+
+function isMissingCacheTableError(error: { code?: string; message?: string } | null | undefined) {
+  const message = (error?.message || '').toLowerCase()
+  return error?.code === 'PGRST205' || message.includes('could not find the table')
+}
+
 export async function GET() {
   try {
-    let supabase: Awaited<ReturnType<typeof createClient>> | null = null
+    let supabase = createAdminClient()
 
-    try {
-      supabase = await createClient()
-    } catch (error) {
-      console.warn('Supabase cache unavailable:', error)
+    if (!supabase) {
+      console.warn('Supabase GitHub cache skipped: service role client is not configured')
     }
 
     // Check cache first
     if (supabase) {
-      const { data: cachedProfile, error: profileError } = await supabase
+      const cacheClient = supabase
+      const { data: cachedProfile, error: profileError } = await cacheClient
         .from('github_profiles')
         .select('*')
         .eq('username', GITHUB_USERNAME)
         .single()
 
+      const cacheReadFailed = Boolean(profileError && profileError.code !== 'PGRST116')
       if (profileError && profileError.code !== 'PGRST116') {
         console.warn('GitHub cache read failed:', profileError)
+        if (isInvalidApiKeyError(profileError) || isMissingCacheTableError(profileError)) {
+          supabase = null
+        }
       }
 
       const now = new Date()
@@ -53,20 +108,27 @@ export async function GET() {
         ? cachedProfile.top_languages
         : []
       const cacheValid =
+        !cacheReadFailed &&
         cachedProfile &&
         cachedProfile.cached_at &&
         now.getTime() - new Date(cachedProfile.cached_at).getTime() < CACHE_DURATION_MS &&
         cachedLanguages.length >= 9
 
       if (cacheValid && cachedProfile) {
-        const socialAccounts = await fetchGitHubSocialAccounts(GITHUB_USERNAME).catch((error) => {
-          console.warn('GitHub social accounts fetch failed:', error)
-          return []
-        })
+        const [socialAccounts, organizations] = await Promise.all([
+          fetchGitHubSocialAccounts(GITHUB_USERNAME).catch((error) => {
+            console.warn('GitHub social accounts fetch failed:', error)
+            return []
+          }),
+          fetchGitHubOrganizations(GITHUB_USERNAME).catch((error) => {
+            console.warn('GitHub organizations fetch failed:', error)
+            return []
+          }),
+        ])
         const orcidId = extractOrcidId(socialAccounts)
 
         // Return cached data
-        const { data: cachedRepos, error: reposError } = await supabase
+        const { data: cachedRepos, error: reposError } = await cacheClient
           .from('github_repositories')
           .select('*')
           .eq('username', GITHUB_USERNAME)
@@ -87,8 +149,9 @@ export async function GET() {
               following: cachedProfile.following,
               public_repos: cachedProfile.public_repos,
             },
-            repositories: cachedRepos || [],
+            repositories: normalizeCachedRepositories(cachedRepos as CachedRepository[] | null),
             socialAccounts,
+            organizations,
             orcidId,
             totalStars: cachedProfile.total_stars,
             topLanguages: normalizeLanguageColors(cachedProfile.top_languages),
@@ -105,16 +168,23 @@ export async function GET() {
       fetchGitHubUser(GITHUB_USERNAME),
       fetchGitHubRepos(GITHUB_USERNAME),
     ])
-    const socialAccounts = await fetchGitHubSocialAccounts(GITHUB_USERNAME).catch((error) => {
-      console.warn('GitHub social accounts fetch failed:', error)
-      return []
-    })
+    const [socialAccounts, organizations] = await Promise.all([
+      fetchGitHubSocialAccounts(GITHUB_USERNAME).catch((error) => {
+        console.warn('GitHub social accounts fetch failed:', error)
+        return []
+      }),
+      fetchGitHubOrganizations(GITHUB_USERNAME).catch((error) => {
+        console.warn('GitHub organizations fetch failed:', error)
+        return []
+      }),
+    ])
 
     const totalStars = calculateTotalStars(repos)
-    const topLanguages = calculateTopLanguages(repos)
+    const topLanguages = calculateTopLanguages(repos, 15)
     const orcidId = extractOrcidId(socialAccounts)
 
     if (supabase) {
+      let cacheWritable = true
       // Update cache in Supabase. Cache failures should not break the API response.
       const { error: profileUpsertError } = await supabase.from('github_profiles').upsert(
         {
@@ -140,10 +210,11 @@ export async function GET() {
 
       if (profileUpsertError) {
         console.warn('GitHub profile cache write failed:', profileUpsertError)
+        cacheWritable = !isInvalidApiKeyError(profileUpsertError) && !isMissingCacheTableError(profileUpsertError)
       }
 
       // Update repos cache
-      for (const repo of repos) {
+      for (const repo of cacheWritable ? repos : []) {
         const { error: repoUpsertError } = await supabase.from('github_repositories').upsert(
           {
             github_id: repo.id,
@@ -171,6 +242,9 @@ export async function GET() {
 
         if (repoUpsertError) {
           console.warn(`GitHub repo cache write failed for ${repo.full_name}:`, repoUpsertError)
+          if (isInvalidApiKeyError(repoUpsertError) || isMissingCacheTableError(repoUpsertError)) {
+            break
+          }
         }
       }
     }
@@ -179,6 +253,7 @@ export async function GET() {
       user,
       repositories: repos,
       socialAccounts,
+      organizations,
       orcidId,
       totalStars,
       topLanguages,

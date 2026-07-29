@@ -22,6 +22,7 @@ type PortfolioProject = {
   status: string
   poster_url: string | null
   poster_alt: string | null
+  logo_url: string | null
   live_url: string | null
   github_url: string | null
   docs_url: string | null
@@ -106,7 +107,7 @@ function ProjectCard({
         <div
           ref={cardRef}
           onClick={handleCardClick}
-          className={`glass-card relative aspect-[4/5] overflow-hidden rounded-2xl p-0 hover-lift ${
+        className={`glass-card relative isolate aspect-[4/5] overflow-hidden rounded-2xl p-0 hover-lift ${
             primaryUrl ? 'cursor-pointer' : ''
           }`}
         >
@@ -117,16 +118,32 @@ function ProjectCard({
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             draggable={false}
             onContextMenu={(event) => event.preventDefault()}
-            className="select-none object-cover transition-transform duration-700 group-hover:scale-105"
+            className={`select-none object-cover transition-transform duration-700 group-hover:scale-105 ${active ? 'scale-105' : ''}`}
           />
 
           <div className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/52 to-black/10 transition-opacity duration-300 group-hover:opacity-100 ${active ? 'opacity-100' : 'opacity-0'}`} />
 
-          <div className={`absolute inset-x-0 bottom-0 p-5 text-white transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 sm:p-6 ${active ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <Badge className="border-white/15 bg-white/15 text-white backdrop-blur" variant="secondary">
-                {project.category}
-              </Badge>
+          <div className={`absolute inset-x-0 bottom-0 p-4 text-white transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 sm:p-6 ${active ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+            <div className="mb-3 flex items-center gap-3">
+              {project.logo_url ? (
+                <span className="relative isolate grid size-12 shrink-0 place-items-center overflow-hidden rounded-xl border border-white/30 bg-white/25 text-sm font-black text-white shadow-[0_12px_34px_-18px_rgba(0,0,0,0.85)] backdrop-blur-xl">
+                  <span className="absolute inset-0 bg-white/15" />
+                  <Image
+                    src={project.logo_url}
+                    alt=""
+                    fill
+                    sizes="48px"
+                    draggable={false}
+                    onContextMenu={(event) => event.preventDefault()}
+                    className="relative z-10 object-cover"
+                  />
+                </span>
+              ) : null}
+              <div className="min-w-0">
+                <Badge className="rounded-md border border-white/35 bg-white/25 px-2.5 py-1 text-white shadow-[0_10px_24px_-18px_rgba(0,0,0,0.85)] backdrop-blur-xl" variant="secondary">
+                  {project.category}
+                </Badge>
+              </div>
             </div>
 
             <h3 className="text-xl font-semibold leading-tight">{project.title}</h3>
@@ -197,12 +214,13 @@ function ProjectCard({
       className="group"
     >
       <div
-        onClick={openProject}
-        className={`glass-card relative flex h-full flex-col overflow-hidden rounded-2xl p-6 hover-lift ${
+        ref={cardRef}
+        onClick={handleCardClick}
+        className={`glass-card relative flex h-full flex-col overflow-hidden rounded-2xl p-4 hover-lift sm:p-6 ${
           primaryUrl ? 'cursor-pointer' : ''
         }`}
       >
-        <div className="absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+        <div className={`absolute inset-0 transition-opacity duration-500 group-hover:opacity-100 ${active ? 'opacity-100' : 'opacity-0'}`}>
           <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-accent/20 via-white/5 to-accent/20 blur-xl" />
         </div>
 
@@ -216,7 +234,7 @@ function ProjectCard({
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 draggable={false}
                 onContextMenu={(event) => event.preventDefault()}
-                className="select-none object-cover transition-transform duration-500 group-hover:scale-105"
+                className={`select-none object-cover transition-transform duration-500 group-hover:scale-105 ${active ? 'scale-105' : ''}`}
               />
               <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-card/80 to-transparent" />
             </div>
@@ -224,7 +242,7 @@ function ProjectCard({
 
           <div className="mb-4 flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
-              <h3 className="truncate text-lg font-semibold transition-colors group-hover:text-accent">
+              <h3 className={`truncate text-lg font-semibold transition-colors group-hover:text-accent ${active ? 'text-accent' : ''}`}>
                 {project.title}
               </h3>
             </div>
@@ -278,7 +296,7 @@ function ProjectCard({
               ))}
             </div>
 
-            <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+            <div className={`flex items-center gap-2 transition-opacity group-hover:opacity-100 ${active ? 'opacity-100' : 'opacity-0'}`}>
               {project.github_url ? (
                 <Button
                   size="sm"
@@ -317,6 +335,129 @@ function ProjectCard({
   )
 }
 
+function ProjectLogoLink({
+  project,
+  index,
+  onRepoClick,
+}: {
+  project: PortfolioProject
+  index: number
+  onRepoClick?: (repoName: string, repoUrl: string) => void
+}) {
+  const primaryUrl = project.live_url || project.github_url || project.docs_url
+  const githubUrl = project.github_url
+  const [active, setActive] = useState(false)
+  const cardRef = useRef<HTMLButtonElement>(null)
+
+  const openProject = () => {
+    if (!primaryUrl) {
+      return
+    }
+
+    onRepoClick?.(project.title, primaryUrl)
+    window.open(primaryUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  const handleProjectClick = () => {
+    if (!active && githubUrl && typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches) {
+      setActive(true)
+      return
+    }
+    openProject()
+  }
+
+  const openGithub = (event: React.MouseEvent<HTMLSpanElement> | React.KeyboardEvent<HTMLSpanElement>) => {
+    event.stopPropagation()
+    if (!githubUrl) return
+    onRepoClick?.(project.title, githubUrl)
+    window.open(githubUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  useEffect(() => {
+    if (!active) return
+    const handlePointerDown = (event: PointerEvent) => {
+      if (cardRef.current && !cardRef.current.contains(event.target as Node)) {
+        setActive(false)
+      }
+    }
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () => document.removeEventListener('pointerdown', handlePointerDown)
+  }, [active])
+
+  return (
+    <motion.button
+      ref={cardRef}
+      type="button"
+      initial={{ opacity: 0, y: 12 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.38, delay: index * 0.04 }}
+      onClick={handleProjectClick}
+      disabled={!primaryUrl}
+      title={project.title}
+      aria-label={`Open ${project.title}`}
+      className={`group relative isolate flex min-w-0 items-center gap-3 overflow-hidden rounded-xl border p-2.5 text-left transition-all hover:border-accent/35 hover:bg-accent/10 disabled:pointer-events-none disabled:opacity-50 ${active ? 'border-accent/35 bg-accent/10' : 'border-border bg-secondary/35'}`}
+      data-gsap-item
+    >
+      {project.poster_url ? (
+        <>
+          <img
+            src={project.poster_url}
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+            onContextMenu={(event) => event.preventDefault()}
+            className={`absolute inset-0 h-full w-full object-cover opacity-90 transition-transform duration-500 group-hover:scale-110 ${active ? 'scale-110' : 'scale-105'}`}
+          />
+          <span className={`absolute inset-0 transition-colors group-hover:bg-background/52 ${active ? 'bg-background/52' : 'bg-background/62'}`} />
+        </>
+      ) : null}
+      <span className="relative isolate grid size-12 shrink-0 place-items-center overflow-hidden rounded-xl border border-white/45 bg-white/35 text-sm font-black text-accent shadow-[0_10px_28px_-18px_rgba(15,23,42,0.75)] backdrop-blur-xl">
+        <span className="absolute inset-0 bg-white/25" />
+        {project.logo_url ? (
+          <img
+            src={project.logo_url}
+            alt=""
+            draggable={false}
+            onContextMenu={(event) => event.preventDefault()}
+            className="relative z-10 h-full w-full object-cover"
+          />
+        ) : null}
+      </span>
+      <span className="relative min-w-0 flex-[9]">
+        <span className="block truncate text-sm font-semibold text-foreground">{project.title}</span>
+        <span
+          className={`mt-1 inline-flex max-w-full truncate rounded-md px-2 py-0.5 text-xs font-medium ${
+            project.poster_url
+              ? 'border border-white/35 bg-white/25 text-foreground shadow-[0_10px_24px_-18px_rgba(15,23,42,0.75)] backdrop-blur-xl'
+              : 'text-muted-foreground'
+          }`}
+        >
+          {project.category}
+        </span>
+      </span>
+      <span className="relative ml-auto flex flex-[1] shrink-0 items-center justify-end">
+        {githubUrl ? (
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={openGithub}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') openGithub(event)
+            }}
+            className={`grid size-9 place-items-center rounded-lg border border-border bg-background/90 text-muted-foreground transition-all duration-200 hover:border-accent/40 hover:bg-accent/10 hover:text-accent group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100 ${active ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'}`}
+            aria-label={`Open ${project.title} GitHub`}
+          >
+            <Github className="size-4" />
+          </span>
+        ) : (
+          <ExternalLink className={`size-4 transition-colors group-hover:text-accent ${active ? 'text-accent' : 'text-muted-foreground'}`} />
+        )}
+      </span>
+    </motion.button>
+  )
+}
+
 export function Projects({ repositories = [], isLoading, onRepoClick }: ProjectsProps) {
   const { copy } = useLanguage()
   const [projects, setProjects] = useState<PortfolioProject[]>([])
@@ -325,7 +466,7 @@ export function Projects({ repositories = [], isLoading, onRepoClick }: Projects
   useEffect(() => {
     let isMounted = true
 
-    fetch('/api/projects')
+    fetch('/api/projects', { cache: 'no-store' })
       .then((response) => {
         if (!response.ok) {
           return { projects: [] }
@@ -355,6 +496,8 @@ export function Projects({ repositories = [], isLoading, onRepoClick }: Projects
   }, [])
 
   const featuredProjects = projects.slice(0, 6)
+  const selectedProjectCards = featuredProjects.slice(0, 3)
+  const compactProjects = featuredProjects.slice(3).filter((project) => project.logo_url)
   const githubRepos = useMemo(() => getTopRepositories(repositories, 6), [repositories])
 
   if (isLoading || isProjectsLoading) {
@@ -376,7 +519,7 @@ export function Projects({ repositories = [], isLoading, onRepoClick }: Projects
   }
 
   return (
-    <section id="projects" className="relative px-6 py-24" data-aos="fade-up">
+    <section id="projects" className="relative px-4 py-16 sm:px-6 sm:py-24" data-aos="fade-up">
       <div className="absolute inset-0 bg-gradient-to-b from-accent/[0.02] via-transparent to-transparent" />
 
       <div className="relative mx-auto w-full max-w-[1400px]">
@@ -417,9 +560,9 @@ export function Projects({ repositories = [], isLoading, onRepoClick }: Projects
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
-              className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+              className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3"
             >
-              {featuredProjects.map((project, index) => (
+              {selectedProjectCards.map((project, index) => (
                 <ProjectCard
                   key={project.id}
                   project={project}
@@ -428,6 +571,18 @@ export function Projects({ repositories = [], isLoading, onRepoClick }: Projects
                 />
               ))}
             </motion.div>
+            {compactProjects.length > 0 ? (
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-6 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+                {compactProjects.map((project, index) => (
+                  <ProjectLogoLink
+                    key={project.id}
+                    project={project}
+                    index={index}
+                    onRepoClick={onRepoClick}
+                  />
+                ))}
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -444,7 +599,7 @@ export function Projects({ repositories = [], isLoading, onRepoClick }: Projects
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
-              className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+              className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3"
             >
               {githubRepos.map((repo, index) => (
                 <RepoCard
@@ -464,7 +619,7 @@ export function Projects({ repositories = [], isLoading, onRepoClick }: Projects
 
 function ProjectsSkeleton() {
   return (
-    <section className="px-6 py-24">
+    <section className="px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto w-full max-w-[1400px]">
         <div className="mb-16 text-center">
           <Skeleton className="mx-auto mb-6 h-8 w-32 rounded-full" />
@@ -474,7 +629,7 @@ function ProjectsSkeleton() {
         <div className="mb-10 flex justify-center">
           <Skeleton className="h-12 w-72 rounded-full" />
         </div>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-[520px] rounded-2xl" />
           ))}

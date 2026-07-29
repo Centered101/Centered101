@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import Script from 'next/script'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,12 +11,93 @@ import { Spinner } from '@/components/ui/spinner'
 import { Send, CheckCircle2, AlertCircle, MapPin, Sparkles } from 'lucide-react'
 import { useLanguage } from '@/components/language-provider'
 import { useSocialLinks } from '@/hooks/use-social-links'
-import { getSocialLinkIcon } from '@/components/social-link-icon'
+import { TheSvgIcon } from '@/components/the-svg-icon'
 import type { GitHubUser } from '@/lib/github/types'
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (
+        element: HTMLElement,
+        options: {
+          sitekey: string
+          theme?: 'light' | 'dark' | 'auto'
+          callback?: (token: string) => void
+          'expired-callback'?: () => void
+          'error-callback'?: () => void
+          language?: string
+          size?: 'normal' | 'compact' | 'flexible'
+        }
+      ) => string
+      reset: (widgetId?: string) => void
+      remove: (widgetId?: string) => void
+    }
+  }
+}
 
 interface ContactProps {
   user?: GitHubUser
   onSubmit?: () => void
+}
+
+export const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAADIdsIUovLuqQ8sL'
+export const TURNSTILE_TEST_MODE =
+  process.env.NEXT_PUBLIC_CONTACT_TURNSTILE_TEST_MODE === 'true' ||
+  process.env.NEXT_PUBLIC_TURNSTILE_TEST_MODE === 'true'
+export const TURNSTILE_DEBUG = process.env.NEXT_PUBLIC_CONTACT_TURNSTILE_DEBUG === 'true'
+
+export function TurnstileBox({
+  ready,
+  failed,
+  siteKey,
+  loadingText,
+  failedText,
+  onVerify,
+  onReset,
+}: {
+  ready: boolean
+  failed: boolean
+  siteKey: string
+  loadingText: string
+  failedText: string
+  onVerify: (token: string) => void
+  onReset: () => void
+}) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const widgetIdRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!ready || !containerRef.current || widgetIdRef.current || !window.turnstile) return
+
+    widgetIdRef.current = window.turnstile.render(containerRef.current, {
+      sitekey: siteKey,
+      theme: 'light',
+      language: 'th',
+      size: 'flexible',
+      callback: onVerify,
+      'expired-callback': onReset,
+      'error-callback': onReset,
+    })
+
+    return () => {
+      if (widgetIdRef.current) {
+        window.turnstile?.remove(widgetIdRef.current)
+        widgetIdRef.current = null
+      }
+    }
+  }, [ready, siteKey, onVerify, onReset])
+
+  return (
+    <div className="w-full">
+      <div ref={containerRef} className="min-h-[65px] w-full" />
+      {!ready || failed ? (
+        <div className="flex h-[65px] w-full items-center gap-3 rounded-md border border-border bg-background px-4 text-sm font-semibold text-muted-foreground">
+          {failed ? <AlertCircle className="size-5 text-destructive" /> : <Spinner className="size-5" />}
+          {failed ? failedText : loadingText}
+        </div>
+      ) : null}
+    </div>
+  )
 }
 
 export function Contact({ user, onSubmit }: ContactProps) {
@@ -23,15 +105,55 @@ export function Contact({ user, onSubmit }: ContactProps) {
   const { links: socialLinks } = useSocialLinks()
   const [formState, setFormState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const [submitCount, setSubmitCount] = useState(0)
+  const [turnstileReady, setTurnstileReady] = useState(false)
+  const [turnstileFailed, setTurnstileFailed] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState('')
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     subject: '',
     message: '',
   })
+  const needsBotCheck = TURNSTILE_TEST_MODE || submitCount >= 6
+
+  const handleTurnstileVerify = useCallback((token: string) => {
+    setTurnstileToken(token)
+    setFormState((current) => (current === 'error' ? 'idle' : current))
+    setErrorMessage('')
+  }, [])
+
+  const handleTurnstileReset = useCallback(() => {
+    setTurnstileToken('')
+  }, [])
+
+  useEffect(() => {
+    const savedCount = Number(window.localStorage.getItem('portfolio_contact_submit_count') || 0)
+    if (Number.isFinite(savedCount)) setSubmitCount(savedCount)
+  }, [])
+
+  useEffect(() => {
+    if (!needsBotCheck || turnstileReady || turnstileFailed) return
+
+    const timeoutId = window.setTimeout(() => {
+      setTurnstileFailed(true)
+      if (TURNSTILE_DEBUG) setErrorMessage(copy.contact.botCheckTimeoutDebug)
+    }, 20000)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [needsBotCheck, turnstileReady, turnstileFailed])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (needsBotCheck && !turnstileToken) {
+      setFormState('error')
+      setErrorMessage(
+        turnstileFailed && TURNSTILE_DEBUG
+          ? copy.contact.botCheckFailedDebug
+          : copy.contact.botCheckRequired
+      )
+      return
+    }
     setFormState('loading')
     setErrorMessage('')
 
@@ -39,21 +161,26 @@ export function Contact({ user, onSubmit }: ContactProps) {
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, source: 'Portfolio · Contact', turnstileToken }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to send message')
+        throw new Error(data.error || copy.contact.sendError)
       }
 
       setFormState('success')
       setFormData({ name: '', email: '', subject: '', message: '' })
+      setTurnstileToken('')
+      window.turnstile?.reset()
+      const nextSubmitCount = submitCount + 1
+      setSubmitCount(nextSubmitCount)
+      window.localStorage.setItem('portfolio_contact_submit_count', String(nextSubmitCount))
       onSubmit?.()
     } catch (error) {
       setFormState('error')
-      setErrorMessage(error instanceof Error ? error.message : 'Something went wrong')
+      setErrorMessage(error instanceof Error ? error.message : copy.contact.unknownError)
     }
   }
 
@@ -66,7 +193,16 @@ export function Contact({ user, onSubmit }: ContactProps) {
   }
 
   return (
-    <section id="contact" className="px-6 py-24 relative overflow-hidden" data-aos="fade-up">
+    <section id="contact" className="px-4 py-16 sm:px-6 sm:py-24 relative overflow-hidden" data-aos="fade-up">
+      <Script
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&language=th"
+        strategy="afterInteractive"
+        onLoad={() => {
+          setTurnstileReady(true)
+          setTurnstileFailed(false)
+        }}
+        onError={() => setTurnstileFailed(true)}
+      />
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-t from-accent/[0.03] to-transparent" />
       
@@ -90,7 +226,7 @@ export function Contact({ user, onSubmit }: ContactProps) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-10 sm:mb-16"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
@@ -109,7 +245,7 @@ export function Contact({ user, onSubmit }: ContactProps) {
           </p>
         </motion.div>
 
-        <div className="grid lg:grid-cols-5 gap-8">
+        <div className="grid items-stretch gap-5 sm:gap-8 lg:grid-cols-5">
           {/* Contact info */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -117,54 +253,47 @@ export function Contact({ user, onSubmit }: ContactProps) {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
             data-aos="fade-right"
-            className="lg:col-span-2 space-y-6"
+            className="lg:col-span-2"
           >
-            <div className="glass-card rounded-2xl p-6">
+            <div className="glass-card flex h-full flex-col rounded-2xl p-4 sm:p-6">
               <h3 className="text-lg font-semibold mb-6">{copy.contact.connect}</h3>
               <div className="space-y-4">
-                {socialLinks.map((link) => {
-                  const Icon = getSocialLinkIcon(link.icon)
-
-                  return (
-                    <a
+                {socialLinks.map((link) => (
+                  <a
                     key={link.id}
                     href={link.href}
                     target="_blank"
                     rel="noopener noreferrer"
+                    data-touch-hover
                     className="flex items-center gap-4 text-muted-foreground hover:text-foreground transition-all group"
                   >
-                    <div className="w-12 h-12 rounded-xl bg-secondary/80 flex items-center justify-center group-hover:bg-accent/20 group-hover:scale-105 transition-all">
-                      <Icon className="w-5 h-5 group-hover:text-accent transition-colors" />
-                    </div>
+                    <TheSvgIcon
+                      label={link.name}
+                      slug={link.icon}
+                      className="touch-hover-bg touch-hover-scale size-12 border-0 bg-secondary/80 transition-all group-hover:scale-105 group-hover:bg-accent/20"
+                    />
                     <div>
                       <p className="font-medium text-foreground">{link.name}</p>
                       <p className="text-sm truncate max-w-[180px]">{link.label}</p>
                     </div>
                   </a>
-                  )
-                })}
+                ))}
               </div>
-            </div>
 
-            {user?.location && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="glass-card rounded-2xl p-6"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                    <MapPin className="w-5 h-5 text-accent" />
-                  </div>
-                  <div>
-                    <p className="font-medium">{copy.contact.location}</p>
-                    <p className="text-sm text-muted-foreground">{user.location}</p>
+              {user?.location && (
+                <div className="mt-auto border-t border-border/60 pt-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
+                      <MapPin className="w-5 h-5 text-accent" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{copy.contact.location}</p>
+                      <p className="text-sm text-muted-foreground">{user.location}</p>
+                    </div>
                   </div>
                 </div>
-              </motion.div>
-            )}
+              )}
+            </div>
           </motion.div>
 
           {/* Contact form */}
@@ -177,7 +306,7 @@ export function Contact({ user, onSubmit }: ContactProps) {
             data-aos-delay="120"
             className="lg:col-span-3"
           >
-            <div className="glass-card rounded-2xl p-8">
+            <div className="glass-card h-full rounded-2xl p-5 sm:p-8">
               <h3 className="text-lg font-semibold mb-2">{copy.contact.sendTitle}</h3>
               <p className="text-sm text-muted-foreground mb-6">{copy.contact.sendSubtitle}</p>
 
@@ -257,12 +386,23 @@ export function Contact({ user, onSubmit }: ContactProps) {
                         rows={5}
                         required
                         disabled={formState === 'loading'}
-                        className="bg-secondary/50 border-border/50 focus:border-accent/50 resize-none"
+                        className="h-[172px] resize-none overflow-y-auto border-border/50 bg-secondary/50 [field-sizing:fixed] focus:border-accent/50"
                       />
                     </Field>
+                    {needsBotCheck ? (
+                      <TurnstileBox
+                        ready={turnstileReady}
+                        failed={turnstileFailed}
+                        siteKey={TURNSTILE_SITE_KEY}
+                        loadingText={copy.contact.botCheckLoading}
+                        failedText={copy.contact.botCheckFailed}
+                        onVerify={handleTurnstileVerify}
+                        onReset={handleTurnstileReset}
+                      />
+                    ) : null}
                   </FieldGroup>
 
-                  {formState === 'error' && (
+                  {formState === 'error' && !(needsBotCheck && turnstileFailed) && (
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}

@@ -58,13 +58,13 @@ export default function WakaTimePage() {
   usePageTitle('WakaTime')
   const { data, loading, error, refetch } = useAdminApi<WakaData>('/api/admin/wakatime')
 
-  if (loading) return <AdminLoading message="Loading WakaTime stats..." />
+  if (loading) return <AdminLoading message="กำลังโหลดสถิติ WakaTime..." />
   if (error) return <AdminError error={error} onRetry={refetch} />
   if (data?.error) return <AdminError error={data.error} onRetry={refetch} />
 
   const { stats, summaries } = data!
 
-  if (!stats) return <AdminEmpty title="No data" description="WakaTime returned no stats for this period" />
+  if (!stats) return <AdminEmpty title="ยังไม่มีข้อมูล" description="WakaTime ยังไม่มีสถิติในช่วงเวลานี้" />
 
   const maxSummary = Math.max(...summaries.map((s) => s.grand_total.total_seconds), 1)
 
@@ -72,16 +72,16 @@ export default function WakaTimePage() {
     <AdminPageContainer>
       <AdminPageHeader
         title="WakaTime"
-        description={`Coding activity for @${stats.username}`}
+        description={`กิจกรรมเขียนโค้ดของ @${stats.username}`}
       />
 
       {/* Hero stats */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          { label: 'Total This Week', value: stats.human_readable_total, icon: Clock, color: ACCENT },
-          { label: 'Daily Average', value: stats.human_readable_daily_average, icon: TrendingUp, color: '#22C55E' },
-          { label: 'Languages', value: stats.languages.length, icon: Code2, color: '#A855F7' },
-          { label: 'Best Day', value: stats.best_day?.text ?? '—', icon: Zap, color: '#F59E0B' },
+          { label: 'รวมสัปดาห์นี้', value: stats.human_readable_total, icon: Clock, color: ACCENT },
+          { label: 'เฉลี่ยต่อวัน', value: stats.human_readable_daily_average, icon: TrendingUp, color: '#22C55E' },
+          { label: 'ภาษา', value: stats.languages.length, icon: Code2, color: '#A855F7' },
+          { label: 'วันที่ดีที่สุด', value: stats.best_day?.text ?? '—', icon: Zap, color: '#F59E0B' },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border border-surface-300 bg-surface-100 px-5 py-4">
             <div className="mb-2 flex items-center gap-2">
@@ -91,9 +91,9 @@ export default function WakaTimePage() {
             <p className="text-xl font-bold text-foreground-light" style={{ color: s.color }}>
               {s.value}
             </p>
-            {s.label === 'Best Day' && stats.best_day && (
+            {s.label === 'วันที่ดีที่สุด' && stats.best_day && (
               <p className="mt-0.5 text-[10px] text-foreground-faint">
-                {new Date(stats.best_day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                {new Date(stats.best_day.date).toLocaleDateString('th-TH', { weekday: 'short', month: 'short', day: 'numeric' })}
               </p>
             )}
           </div>
@@ -102,11 +102,11 @@ export default function WakaTimePage() {
 
       {/* Daily activity bar chart */}
       {summaries.length > 0 && (
-        <AdminPageSection title="Daily Activity" description="Last 7 days">
+        <AdminPageSection title="กิจกรรมรายวัน" description="ย้อนหลัง 7 วัน">
           <div className="flex items-end gap-2" style={{ height: 80 }}>
             {summaries.map((s) => {
               const heightPct = (s.grand_total.total_seconds / maxSummary) * 100
-              const day = new Date(s.range.date).toLocaleDateString('en-US', { weekday: 'short' })
+              const day = new Date(s.range.date).toLocaleDateString('th-TH', { weekday: 'short' })
               return (
                 <div key={s.range.date} className="group flex flex-1 flex-col items-center gap-1">
                   <div
@@ -127,7 +127,7 @@ export default function WakaTimePage() {
 
       <div className="grid gap-4 xl:grid-cols-2">
         {/* Languages */}
-        <AdminPageSection title="Languages" description={`${stats.languages.length} detected`}>
+        <AdminPageSection title="ภาษา" description={`พบ ${stats.languages.length} ภาษา`}>
           <div className="divide-y divide-surface-300/60">
             {stats.languages.slice(0, 8).map((l, i) => (
               <BarRow
@@ -142,7 +142,7 @@ export default function WakaTimePage() {
         </AdminPageSection>
 
         {/* Projects */}
-        <AdminPageSection title="Projects" description={`${stats.projects.length} active`}>
+        <AdminPageSection title="โปรเจกต์" description={`ใช้งาน ${stats.projects.length} โปรเจกต์`}>
           <div className="divide-y divide-surface-300/60">
             {stats.projects.slice(0, 8).map((p, i) => (
               <BarRow
@@ -157,7 +157,7 @@ export default function WakaTimePage() {
         </AdminPageSection>
 
         {/* Editors */}
-        <AdminPageSection title="Editors">
+        <AdminPageSection title="เอดิเตอร์">
           <div className="divide-y divide-surface-300/60">
             {stats.editors.map((e, i) => (
               <BarRow key={e.name} label={e.name} percent={e.percent} text={e.text} color={BAR_COLORS[i % BAR_COLORS.length]} />
@@ -166,7 +166,7 @@ export default function WakaTimePage() {
         </AdminPageSection>
 
         {/* Operating Systems */}
-        <AdminPageSection title="Operating Systems">
+        <AdminPageSection title="ระบบปฏิบัติการ">
           <div className="flex items-center gap-4 py-2">
             {stats.operating_systems.map((os, i) => (
               <div key={os.name} className="flex items-center gap-2">
@@ -183,7 +183,7 @@ export default function WakaTimePage() {
 
       {/* Projects full list if >8 */}
       {stats.projects.length > 8 && (
-        <AdminPageSection title="All Projects">
+        <AdminPageSection title="โปรเจกต์ทั้งหมด">
           <div className="divide-y divide-surface-300/60">
             {stats.projects.map((p, i) => (
               <div key={p.name} className="flex items-center justify-between py-2">

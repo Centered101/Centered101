@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 type PortfolioProjectRow = {
   id: string
   slug: string
@@ -11,6 +14,7 @@ type PortfolioProjectRow = {
   status: string
   poster_url: string | null
   poster_alt: string | null
+  logo_url: string | null
   live_url: string | null
   github_url: string | null
   docs_url: string | null
@@ -37,36 +41,9 @@ export async function GET() {
 
     const { data, error } = await supabase
       .from('portfolio_projects')
-      .select(
-        [
-          'id',
-          'slug',
-          'title',
-          'short_description',
-          'description',
-          'category',
-          'status',
-          'poster_url',
-          'poster_alt',
-          'live_url',
-          'github_url',
-          'docs_url',
-          'source_type',
-          'source_repo',
-          'tech_stack',
-          'tags',
-          'featured',
-          'enabled',
-          'sort_order',
-          'started_at',
-          'completed_at',
-          'created_at',
-          'updated_at',
-        ].join(', ')
-      )
+      .select('*')
       .eq('enabled', true)
       .eq('status', 'published')
-      .eq('featured', true)
       .order('sort_order', { ascending: true })
       .order('updated_at', { ascending: false })
 

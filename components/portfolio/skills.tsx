@@ -1,7 +1,8 @@
 'use client'
 
-import { AnimatePresence, motion, useInView } from 'framer-motion'
+import { motion, useInView } from 'framer-motion'
 import { useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useLanguage } from '@/components/language-provider'
 import { TheSvgIcon } from '@/components/the-svg-icon'
@@ -82,7 +83,10 @@ export function Skills({ topLanguages = [], isLoading }: SkillsProps) {
     isLoading: toolsLoading,
     error: toolsError,
   } = usePortfolioTools()
-  const [toolsExpanded, setToolsExpanded] = useState(false)
+  const [toolsPaused, setToolsPaused] = useState(false)
+  const toolsViewportRef = useRef<HTMLDivElement>(null)
+  const resumeToolsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const adjustingToolsScrollRef = useRef(false)
 
   if (isLoading && toolsLoading) {
     return <SkillsSkeleton />
@@ -109,32 +113,96 @@ export function Skills({ topLanguages = [], isLoading }: SkillsProps) {
       return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib)
     })
     .map(([name, items]) => ({ name, items }))
-  // A long tool list collapses behind a Show more / Show less toggle with a soft
-  // fade at the bottom edge, instead of stretching the card to match Languages.
-  const toolsCollapsible = visibleTools.length > 12
-  const toolsCollapsed = toolsCollapsible && !toolsExpanded
+  const toolsMarqueeDuration = Math.max(16, visibleTools.length * 1.25)
 
   if (!showLanguageCard && !showToolsCard) {
     return null
   }
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.05,
-      },
-    },
+  const pauseToolsLoop = () => {
+    if (resumeToolsTimerRef.current) {
+      clearTimeout(resumeToolsTimerRef.current)
+    }
+    setToolsPaused(true)
   }
 
-  const itemVariants = {
-    hidden: { opacity: 0, scale: 0.8 },
-    visible: { opacity: 1, scale: 1, transition: { duration: 0.3 } },
+  const centerToolsScrollWindow = () => {
+    const viewport = toolsViewportRef.current
+    if (!viewport || viewport.scrollTop > 0) return
+
+    const loopPoint = viewport.scrollHeight / 2
+    if (loopPoint > viewport.clientHeight) {
+      viewport.scrollTop = Math.max(1, loopPoint * 0.08)
+    }
   }
+
+  const queueToolsLoopResume = () => {
+    pauseToolsLoop()
+
+    resumeToolsTimerRef.current = setTimeout(() => {
+      setToolsPaused(false)
+    }, 1400)
+  }
+
+  const wrapToolsScroll = () => {
+    const viewport = toolsViewportRef.current
+    if (!viewport || adjustingToolsScrollRef.current) return
+
+    const loopPoint = viewport.scrollHeight / 2
+    if (loopPoint <= viewport.clientHeight) return
+
+    const bottomLimit = loopPoint - viewport.clientHeight * 0.18
+    const topLimit = viewport.clientHeight * 0.08
+    let nextScrollTop = viewport.scrollTop
+
+    if (viewport.scrollTop >= bottomLimit) {
+      nextScrollTop = viewport.scrollTop - loopPoint
+    } else if (viewport.scrollTop <= topLimit && viewport.scrollTop > 0) {
+      nextScrollTop = viewport.scrollTop + loopPoint
+    }
+
+    if (nextScrollTop !== viewport.scrollTop) {
+      adjustingToolsScrollRef.current = true
+      viewport.scrollTop = nextScrollTop
+      requestAnimationFrame(() => {
+        adjustingToolsScrollRef.current = false
+      })
+    }
+  }
+
+  const renderToolGroups = (instance: string) => (
+    <>
+      {toolGroups.map((group) => (
+        <div key={`${instance}-${group.name}`}>
+          <div className="mb-3 flex items-center gap-2">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {(copy.skills.groups as Record<string, string>)[group.name] ?? group.name}
+            </h4>
+            <span className="text-xs text-muted-foreground/70">({group.items.length})</span>
+          </div>
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            {group.items.map((tool, toolIndex) => (
+              <div
+                key={`${instance}-${group.name}-${tool.name}`}
+                title={tool.name}
+              >
+                <div data-touch-hover className="touch-hover-bg grid size-10 place-items-center rounded-xl border border-border bg-secondary/35 transition-colors hover:border-accent/35 hover:bg-accent/10 md:hidden">
+                  <TheSvgIcon label={tool.name} slug={tool.icon} className="size-7 border-0 bg-transparent" />
+                </div>
+                <div data-touch-hover className="touch-hover-bg hidden items-center gap-3 rounded-xl border border-border bg-secondary/60 px-3 py-2 text-sm font-medium transition-colors hover:border-accent/30 hover:bg-accent/10 md:flex">
+                  <TheSvgIcon label={tool.name} slug={tool.icon} className="size-9" />
+                  <span>{tool.name}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </>
+  )
 
   return (
-    <section id="skills" className="px-6 py-24 relative" data-aos="fade-up">
+    <section id="skills" className="px-4 py-16 sm:px-6 sm:py-24 relative" data-aos="fade-up">
       <div className="absolute inset-0 bg-gradient-to-t from-accent/[0.02] to-transparent" />
       
       <div className="relative mx-auto w-full max-w-[1400px]">
@@ -143,7 +211,7 @@ export function Skills({ topLanguages = [], isLoading }: SkillsProps) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-10 sm:mb-16"
         >
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
             <span className="gradient-text">{copy.skills.title}</span>
@@ -153,7 +221,7 @@ export function Skills({ topLanguages = [], isLoading }: SkillsProps) {
           </p>
         </motion.div>
 
-        <div className={showLanguageCard && showToolsCard ? 'grid gap-12 lg:grid-cols-2 lg:items-start' : 'mx-auto grid w-full max-w-[1400px] gap-12'}>
+        <div className={showLanguageCard && showToolsCard ? 'grid items-stretch gap-6 sm:gap-12 lg:grid-cols-2' : 'mx-auto grid w-full max-w-[1400px] items-stretch gap-6 sm:gap-12'}>
           {/* Language proficiency */}
           {isLoading ? (
             <LanguageCardSkeleton />
@@ -164,7 +232,7 @@ export function Skills({ topLanguages = [], isLoading }: SkillsProps) {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
               data-aos="fade-right"
-              className="glass-card rounded-2xl p-8"
+              className="glass-card h-full rounded-2xl p-5 sm:p-8"
             >
               <h3 className="text-xl font-semibold mb-8">{copy.skills.language}</h3>
               <div className="space-y-6">
@@ -203,70 +271,37 @@ export function Skills({ topLanguages = [], isLoading }: SkillsProps) {
               transition={{ duration: 0.6 }}
               data-aos="fade-left"
               data-aos-delay="120"
-              className="glass-card rounded-2xl p-8"
+              className="glass-card h-full rounded-2xl p-5 sm:p-8"
             >
               <h3 className="text-xl font-semibold mb-8">{copy.skills.stack}</h3>
-              <div className="relative">
-                <motion.div
-                  initial={false}
-                  animate={{ height: toolsCollapsed ? 420 : 'auto' }}
-                  transition={{ duration: 0.45, ease: [0.25, 0.1, 0.25, 1] }}
-                  className="overflow-hidden"
+              <div
+                ref={toolsViewportRef}
+                className={`tools-marquee-viewport relative h-[420px] [mask-image:linear-gradient(to_bottom,transparent,black_10%,black_90%,transparent)] ${toolsPaused ? 'is-paused' : ''}`}
+                onPointerDownCapture={(event) => {
+                  centerToolsScrollWindow()
+                  if (event.pointerType !== 'mouse') {
+                    queueToolsLoopResume()
+                  }
+                }}
+                onScroll={() => {
+                  wrapToolsScroll()
+                  queueToolsLoopResume()
+                }}
+                onFocus={pauseToolsLoop}
+                onBlur={queueToolsLoopResume}
+              >
+                <div
+                  className="tools-marquee-y flex flex-col gap-6"
+                  style={{ '--tools-marquee-duration': `${toolsMarqueeDuration}s` } as CSSProperties}
                 >
-                  <motion.div
-                    variants={containerVariants}
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true }}
-                    className="space-y-6"
-                  >
-                    {toolGroups.map((group) => (
-                      <div key={group.name}>
-                        <div className="mb-3 flex items-center gap-2">
-                          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                            {group.name}
-                          </h4>
-                          <span className="text-xs text-muted-foreground/70">({group.items.length})</span>
-                        </div>
-                        <div className="flex flex-wrap gap-3">
-                          {group.items.map((tool) => (
-                            <motion.div key={tool.name} variants={itemVariants}>
-                              <div className="flex items-center gap-3 rounded-xl border border-border bg-secondary/60 px-3 py-2 text-sm font-medium transition-colors hover:border-accent/30 hover:bg-accent/10">
-                                <TheSvgIcon label={tool.name} slug={tool.icon} className="size-9" />
-                                <span>{tool.name}</span>
-                              </div>
-                            </motion.div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </motion.div>
-                </motion.div>
-
-                {/* Soft fade at the collapsed edge */}
-                <AnimatePresence>
-                  {toolsCollapsed && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-card via-card/85 to-transparent"
-                    />
-                  )}
-                </AnimatePresence>
+                  <div className="space-y-6">
+                    {renderToolGroups('main')}
+                  </div>
+                  <div className="space-y-6" aria-hidden="true">
+                    {renderToolGroups('loop')}
+                  </div>
+                </div>
               </div>
-
-              {toolsCollapsible && (
-                <button
-                  type="button"
-                  onClick={() => setToolsExpanded((open) => !open)}
-                  aria-expanded={toolsExpanded}
-                  className="mx-auto mt-5 block text-sm font-medium text-accent transition-colors hover:text-accent/80"
-                >
-                  {toolsExpanded ? copy.skills.showLess : copy.skills.showMore}
-                </button>
-              )}
             </motion.div>
           ) : null}
         </div>
@@ -277,7 +312,7 @@ export function Skills({ topLanguages = [], isLoading }: SkillsProps) {
 
 function LanguageCardSkeleton() {
   return (
-    <div className="rounded-2xl border border-border p-8">
+    <div className="rounded-2xl border border-border p-5 sm:p-8">
       <Skeleton className="h-6 w-48 mb-8" />
       <div className="space-y-6">
         {Array.from({ length: 9 }).map((_, i) => (
@@ -296,7 +331,7 @@ function LanguageCardSkeleton() {
 
 function ToolsCardSkeleton() {
   return (
-    <div className="rounded-2xl border border-border p-8">
+    <div className="rounded-2xl border border-border p-5 sm:p-8">
       <Skeleton className="h-6 w-32 mb-8" />
       <div className="flex flex-wrap gap-3">
         {Array.from({ length: 12 }).map((_, i) => (
@@ -309,13 +344,13 @@ function ToolsCardSkeleton() {
 
 function SkillsSkeleton() {
   return (
-    <section className="px-6 py-24">
+    <section className="px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto w-full max-w-[1400px]">
-        <div className="text-center mb-16">
+        <div className="text-center mb-10 sm:mb-16">
           <Skeleton className="h-12 w-80 mx-auto mb-4" />
           <Skeleton className="h-6 w-96 mx-auto" />
         </div>
-        <div className="grid lg:grid-cols-2 gap-12">
+        <div className="grid gap-6 sm:gap-12 lg:grid-cols-2">
           <LanguageCardSkeleton />
           <ToolsCardSkeleton />
         </div>

@@ -64,15 +64,15 @@ type SecurityData = {
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 1) return 'เมื่อสักครู่'
+  if (mins < 60) return `${mins} นาทีที่แล้ว`
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
+  if (hrs < 24) return `${hrs} ชั่วโมงที่แล้ว`
+  return `${Math.floor(hrs / 24)} วันที่แล้ว`
 }
 
 export default function SecurityPage() {
-  usePageTitle('Security')
+  usePageTitle('ความปลอดภัย')
   const router = useRouter()
   const { getAdminHeaders } = useAdminAuth()
   const { data, loading, error, refetch } = useAdminApi<SecurityData>('/api/admin/security')
@@ -80,7 +80,7 @@ export default function SecurityPage() {
   const [actingId, setActingId] = useState<string | null>(null)
   useAdminRealtime(['admin_security_events', 'admin_login_logs'], refetch)
 
-  if (loading) return <AdminLoading message="Loading security data..." />
+  if (loading) return <AdminLoading message="กำลังโหลดข้อมูลความปลอดภัย..." />
   if (error) return <AdminError error={error} onRetry={refetch} />
 
   const { adminUsers, sessions, securityEvents, loginLogs } = data!
@@ -101,7 +101,7 @@ export default function SecurityPage() {
         body: JSON.stringify({ id }),
       })
       if (!res.ok) throw new Error((await res.json()).error)
-      toast.success('Session revoked')
+      toast.success('ยกเลิกเซสชันแล้ว')
       refetch()
     } catch (err) {
       toast.error((err as Error).message)
@@ -119,7 +119,7 @@ export default function SecurityPage() {
         body: JSON.stringify({ id }),
       })
       if (!res.ok) throw new Error((await res.json()).error)
-      toast.success('Event marked as resolved')
+      toast.success('ทำเครื่องหมายว่าแก้ไขแล้ว')
       refetch()
     } catch (err) {
       toast.error((err as Error).message)
@@ -130,21 +130,21 @@ export default function SecurityPage() {
 
   return (
     <AdminPageContainer>
-      <AdminPageHeader title="Security & Access" description="Admin users, sessions, and security events from Supabase" />
+      <AdminPageHeader title="ความปลอดภัยและสิทธิ์เข้าถึง" description="ผู้ดูแล เซสชัน และเหตุการณ์ความปลอดภัยจาก Supabase" />
 
       {/* Admin users */}
       <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
         <div className="flex items-center justify-between border-b border-[#27272A] px-5 py-4">
-          <h2 className="text-sm font-semibold text-[#FAFAFA]">Admin Users ({adminUsers.length})</h2>
+          <h2 className="text-sm font-semibold text-[#FAFAFA]">ผู้ดูแลระบบ ({adminUsers.length})</h2>
           <button
             onClick={() => router.push('/admin/users')}
             className="rounded-lg bg-[#409EFE] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#60aeff]"
           >
-            Manage Users
+            จัดการผู้ดูแล
           </button>
         </div>
         {adminUsers.length === 0 ? (
-          <AdminEmpty title="No admin users" description="Admin accounts will appear here after first login" />
+          <AdminEmpty title="ยังไม่มีผู้ดูแล" description="บัญชีผู้ดูแลจะแสดงที่นี่หลังเข้าสู่ระบบครั้งแรก" />
         ) : (
           <div className="divide-y divide-[#27272A]/50">
             {adminUsers.map((user) => (
@@ -164,10 +164,10 @@ export default function SecurityPage() {
                 </div>
                 <div className="text-right text-[11px]">
                   <p className="text-[#A1A1AA]">
-                    {sessions.filter((s) => s.admin_user_id === user.id).length} active session(s)
+                    {sessions.filter((s) => s.admin_user_id === user.id).length} เซสชันที่ใช้งานอยู่
                   </p>
                   <p className="text-[#3f3f46]">
-                    {user.last_login_at ? `Last login ${timeAgo(user.last_login_at)}` : 'Never logged in'}
+                    {user.last_login_at ? `เข้าสู่ระบบล่าสุด ${timeAgo(user.last_login_at)}` : 'ยังไม่เคยเข้าสู่ระบบ'}
                   </p>
                 </div>
               </div>
@@ -181,30 +181,30 @@ export default function SecurityPage() {
         {/* Sessions */}
         <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
           <div className="border-b border-[#27272A] px-5 py-4">
-            <h2 className="text-sm font-semibold text-[#FAFAFA]">Active Sessions ({sessions.length})</h2>
+            <h2 className="text-sm font-semibold text-[#FAFAFA]">เซสชันที่ใช้งานอยู่ ({sessions.length})</h2>
           </div>
           {sessions.length === 0 ? (
-            <AdminEmpty title="No active sessions" />
+            <AdminEmpty title="ยังไม่มีเซสชันที่ใช้งานอยู่" />
           ) : (
             <div className="divide-y divide-[#27272A]/50">
               {sessions.map((s) => (
                 <div key={s.id} className="flex items-center gap-3 px-5 py-3 hover:bg-[#27272A]/20">
                   <div className="min-w-0 flex-1">
                     <p className="text-[12px] font-medium text-[#FAFAFA] capitalize">{s.provider}</p>
-                    <p className="font-mono text-[10px] text-[#52525b]">{s.ip_address || 'unknown IP'}</p>
+                    <p className="font-mono text-[10px] text-[#52525b]">{s.ip_address || 'ไม่ทราบ IP'}</p>
                   </div>
                   <div className="text-right text-[11px]">
-                    <p className="text-[#A1A1AA]">Active {timeAgo(s.last_seen_at)}</p>
+                    <p className="text-[#A1A1AA]">ใช้งานล่าสุด {timeAgo(s.last_seen_at)}</p>
                     {s.expires_at && (
                       <p className="text-[#3f3f46]">
-                        Expires {new Date(s.expires_at).toLocaleDateString()}
+                        หมดอายุ {new Date(s.expires_at).toLocaleDateString('th-TH')}
                       </p>
                     )}
                   </div>
                   <button
                     onClick={() => revokeSession(s.id)}
                     disabled={actingId === s.id}
-                    title="Revoke session"
+                    title="ยกเลิกเซสชัน"
                     className="grid size-7 shrink-0 place-items-center rounded-lg border border-[#27272A] bg-[#09090B] text-[#52525b] hover:border-[#EF4444]/30 hover:text-[#EF4444] disabled:opacity-40"
                   >
                     <Ban className="size-3.5" />
@@ -218,10 +218,10 @@ export default function SecurityPage() {
         {/* Security events */}
         <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
           <div className="border-b border-[#27272A] px-5 py-4">
-            <h2 className="text-sm font-semibold text-[#FAFAFA]">Security Events</h2>
+            <h2 className="text-sm font-semibold text-[#FAFAFA]">เหตุการณ์ความปลอดภัย</h2>
           </div>
           {securityEvents.length === 0 ? (
-            <AdminEmpty title="No security events" description="Suspicious activity will appear here" />
+            <AdminEmpty title="ยังไม่มีเหตุการณ์ความปลอดภัย" description="กิจกรรมที่น่าสงสัยจะแสดงที่นี่" />
           ) : (
             <div className="divide-y divide-[#27272A]/50">
               {securityEvents.map((evt) => (
@@ -249,7 +249,7 @@ export default function SecurityPage() {
                     <button
                       onClick={() => resolveEvent(evt.id)}
                       disabled={actingId === evt.id}
-                      title="Mark as resolved"
+                      title="ทำเครื่องหมายว่าแก้ไขแล้ว"
                       className="grid size-7 shrink-0 place-items-center rounded-lg border border-[#27272A] bg-[#09090B] text-[#52525b] hover:border-[#22C55E]/30 hover:text-[#22C55E] disabled:opacity-40"
                     >
                       <ShieldCheck className="size-3.5" />
@@ -265,27 +265,27 @@ export default function SecurityPage() {
       {/* Login history */}
       <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
         <div className="border-b border-[#27272A] px-5 py-4">
-          <h2 className="text-sm font-semibold text-[#FAFAFA]">Login History</h2>
+          <h2 className="text-sm font-semibold text-[#FAFAFA]">ประวัติการเข้าสู่ระบบ</h2>
         </div>
         {loginLogs.length === 0 ? (
-          <AdminEmpty title="No login history" description="Login attempts will appear here" />
+          <AdminEmpty title="ยังไม่มีประวัติการเข้าสู่ระบบ" description="รายการพยายามเข้าสู่ระบบจะแสดงที่นี่" />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-[13px]">
               <thead>
                 <tr className="border-b border-[#27272A] text-[10px] font-semibold uppercase tracking-widest text-[#3f3f46]">
-                  <th className="px-5 py-3">Identity</th>
-                  <th className="px-4 py-3">Provider</th>
-                  <th className="px-4 py-3">Outcome</th>
+                  <th className="px-5 py-3">ผู้ใช้</th>
+                  <th className="px-4 py-3">ผู้ให้บริการ</th>
+                  <th className="px-4 py-3">ผลลัพธ์</th>
                   <th className="px-4 py-3">IP</th>
-                  <th className="px-4 py-3">Time</th>
+                  <th className="px-4 py-3">เวลา</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#27272A]/50">
                 {loginLogs.map((log) => (
                   <tr key={log.id} className="transition-colors hover:bg-[#27272A]/20">
                     <td className="px-5 py-3 text-[12px] text-[#A1A1AA]">
-                      {log.github_username || log.email || 'unknown'}
+                      {log.github_username || log.email || 'ไม่ทราบผู้ใช้'}
                     </td>
                     <td className="px-4 py-3 text-[12px] capitalize text-[#52525b]">{log.provider}</td>
                     <td className="px-4 py-3">

@@ -1,5 +1,5 @@
-import { EcosystemPage } from '@/components/ecosystem-page'
+import { NewTabDashboard } from '@/components/newtab/newtab-dashboard'
 
 export default function NewTabPage() {
-  return <EcosystemPage slug="/newtab" />
+  return <NewTabDashboard />
 }

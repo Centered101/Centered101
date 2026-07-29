@@ -47,11 +47,11 @@ type MonitoringData = {
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 1) return 'เมื่อสักครู่'
+  if (mins < 60) return `${mins} นาทีที่แล้ว`
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
+  if (hrs < 24) return `${hrs} ชั่วโมงที่แล้ว`
+  return `${Math.floor(hrs / 24)} วันที่แล้ว`
 }
 
 const severityIcon = { info: Info, warning: AlertTriangle, critical: XCircle } as const
@@ -59,11 +59,11 @@ const severityColor = { info: 'text-[#409EFE]', warning: 'text-[#F59E0B]', criti
 const outcomeColor = { success: 'text-[#22C55E]', failed: 'text-[#EF4444]', blocked: 'text-[#F59E0B]' } as const
 
 export default function MonitoringPage() {
-  usePageTitle('Monitoring')
+  usePageTitle('มอนิเตอร์ระบบ')
   const { data, loading, error, refetch } = useAdminApi<MonitoringData>('/api/admin/monitoring')
   useAdminRealtime(['admin_audit_log', 'admin_security_events'], refetch)
 
-  if (loading) return <AdminLoading message="Loading monitoring data..." />
+  if (loading) return <AdminLoading message="กำลังโหลดข้อมูลมอนิเตอร์..." />
   if (error) return <AdminError error={error} onRetry={refetch} />
 
   const { auditLogs, securityEvents, loginLogs } = data!
@@ -71,13 +71,13 @@ export default function MonitoringPage() {
 
   return (
     <AdminPageContainer>
-      <AdminPageHeader title="System Monitoring" description="Audit logs, security events, and login history from Supabase" />
+      <AdminPageHeader title="มอนิเตอร์ระบบ" description="บันทึกการทำงาน เหตุการณ์ความปลอดภัย และประวัติการเข้าสู่ระบบจาก Supabase" />
 
       {unresolved > 0 && (
         <div className="flex items-center gap-3 rounded-xl border border-[#EF4444]/20 bg-[#EF4444]/5 px-5 py-3.5">
           <AlertTriangle className="size-5 text-[#EF4444]" />
           <p className="text-sm font-semibold text-[#FAFAFA]">
-            {unresolved} unresolved security event{unresolved !== 1 ? 's' : ''}
+            มีเหตุการณ์ความปลอดภัยที่ยังไม่แก้ไข {unresolved} รายการ
           </p>
         </div>
       )}
@@ -85,9 +85,9 @@ export default function MonitoringPage() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Audit Events', value: auditLogs.length, color: 'text-[#FAFAFA]' },
-          { label: 'Security Events', value: securityEvents.length, color: unresolved > 0 ? 'text-[#EF4444]' : 'text-[#22C55E]' },
-          { label: 'Login Events', value: loginLogs.length, color: 'text-[#FAFAFA]' },
+          { label: 'บันทึกการทำงาน', value: auditLogs.length, color: 'text-[#FAFAFA]' },
+          { label: 'เหตุการณ์ความปลอดภัย', value: securityEvents.length, color: unresolved > 0 ? 'text-[#EF4444]' : 'text-[#22C55E]' },
+          { label: 'ประวัติเข้าสู่ระบบ', value: loginLogs.length, color: 'text-[#FAFAFA]' },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border border-[#27272A] bg-[#18181B] px-4 py-3">
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
@@ -100,11 +100,11 @@ export default function MonitoringPage() {
         {/* Audit logs */}
         <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
           <div className="border-b border-[#27272A] px-5 py-4">
-            <h2 className="text-sm font-semibold text-[#FAFAFA]">Audit Log</h2>
-            <p className="mt-0.5 text-[11px] text-[#52525b]">Latest {auditLogs.length} admin actions</p>
+            <h2 className="text-sm font-semibold text-[#FAFAFA]">บันทึกการทำงาน</h2>
+            <p className="mt-0.5 text-[11px] text-[#52525b]">การทำงานล่าสุด {auditLogs.length} รายการ</p>
           </div>
           {auditLogs.length === 0 ? (
-            <AdminEmpty title="No audit events" description="Admin actions will appear here" />
+            <AdminEmpty title="ยังไม่มีบันทึกการทำงาน" description="การทำงานของผู้ดูแลจะแสดงที่นี่" />
           ) : (
             <div className="max-h-96 divide-y divide-[#27272A]/50 overflow-y-auto">
               {auditLogs.map((log) => (
@@ -136,10 +136,10 @@ export default function MonitoringPage() {
           {/* Security events */}
           <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
             <div className="border-b border-[#27272A] px-5 py-4">
-              <h2 className="text-sm font-semibold text-[#FAFAFA]">Security Events</h2>
+              <h2 className="text-sm font-semibold text-[#FAFAFA]">เหตุการณ์ความปลอดภัย</h2>
             </div>
             {securityEvents.length === 0 ? (
-              <AdminEmpty title="No security events" />
+              <AdminEmpty title="ยังไม่มีเหตุการณ์ความปลอดภัย" />
             ) : (
               <div className="max-h-52 divide-y divide-[#27272A]/50 overflow-y-auto">
                 {securityEvents.map((evt) => {
@@ -154,9 +154,9 @@ export default function MonitoringPage() {
                       </div>
                       <div className="shrink-0 text-right">
                         {evt.resolved ? (
-                          <span className="text-[10px] text-[#22C55E]">Resolved</span>
+                          <span className="text-[10px] text-[#22C55E]">แก้ไขแล้ว</span>
                         ) : (
-                          <span className="text-[10px] text-[#EF4444]">Open</span>
+                          <span className="text-[10px] text-[#EF4444]">เปิดอยู่</span>
                         )}
                         <p className="text-[10px] text-[#3f3f46]">{timeAgo(evt.created_at)}</p>
                       </div>
@@ -170,10 +170,10 @@ export default function MonitoringPage() {
           {/* Login log */}
           <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
             <div className="border-b border-[#27272A] px-5 py-4">
-              <h2 className="text-sm font-semibold text-[#FAFAFA]">Login History</h2>
+              <h2 className="text-sm font-semibold text-[#FAFAFA]">ประวัติการเข้าสู่ระบบ</h2>
             </div>
             {loginLogs.length === 0 ? (
-              <AdminEmpty title="No login events" />
+              <AdminEmpty title="ยังไม่มีประวัติการเข้าสู่ระบบ" />
             ) : (
               <div className="max-h-52 divide-y divide-[#27272A]/50 overflow-y-auto">
                 {loginLogs.map((log) => {
@@ -185,7 +185,7 @@ export default function MonitoringPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[12px] text-[#A1A1AA]">
-                          {log.github_username || log.email || 'unknown'}
+                          {log.github_username || log.email || 'ไม่ทราบผู้ใช้'}
                         </p>
                         <p className="text-[10px] text-[#52525b]">{log.provider}</p>
                       </div>

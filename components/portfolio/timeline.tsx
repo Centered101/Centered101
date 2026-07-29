@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Briefcase, GraduationCap, Award, Code, Rocket, Zap } from 'lucide-react'
+import { Award, BookOpen, Briefcase, Building2, Code, Github, Globe2, GraduationCap, Lightbulb, Rocket, Terminal, Zap } from 'lucide-react'
 import { useLanguage } from '@/components/language-provider'
 import { useLearningStory } from '@/hooks/use-learning-story'
 import type { LearningStoryItem } from '@/lib/portfolio/types'
@@ -12,11 +12,18 @@ interface TimelineProps {
 }
 
 const storyIcons = {
-  briefcase: Briefcase,
-  graduation: GraduationCap,
   award: Award,
+  'book-open': BookOpen,
+  book: BookOpen,
+  briefcase: Briefcase,
+  building: Building2,
   code: Code,
+  github: Github,
+  globe: Globe2,
+  graduation: GraduationCap,
+  lightbulb: Lightbulb,
   rocket: Rocket,
+  terminal: Terminal,
   zap: Zap,
 }
 
@@ -78,7 +85,7 @@ export function Timeline({ isLoading }: TimelineProps) {
   }
 
   return (
-    <section id="timeline" className="px-6 py-24 relative overflow-hidden" data-aos="fade-up">
+    <section id="timeline" className="px-4 py-16 sm:px-6 sm:py-24 relative overflow-hidden" data-aos="fade-up">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-accent/[0.01] to-transparent" />
 
@@ -88,7 +95,7 @@ export function Timeline({ isLoading }: TimelineProps) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-10 sm:mb-16"
         >
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
             <span className="gradient-text">{copy.timeline.title}</span>
@@ -103,14 +110,14 @@ export function Timeline({ isLoading }: TimelineProps) {
           {/* Vertical line */}
           <div className="absolute left-0 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-border to-transparent md:-translate-x-1/2" />
 
-          <div className="space-y-12">
+          <div className="space-y-8 sm:space-y-12">
             {timelineItems.map((item, index) => {
               const Icon = getStoryIcon(item.icon, item.type)
               const isFirst = index === 0
               const isLeft = yearToSide.get(String(item.year)) ?? (index % 2 === 0)
 
               const card = (
-                <div className={`glass-card rounded-2xl p-6 border ${getTypeBorderColor(item.type)} hover-lift`}>
+                <div data-touch-hover className={`glass-card rounded-2xl p-4 border sm:p-6 ${getTypeBorderColor(item.type)} hover-lift`}>
                   <div className="flex items-center gap-3 mb-3">
                     <span className="text-sm font-mono text-muted-foreground">{item.year}</span>
                     <div className="px-2 py-0.5 rounded text-xs font-medium capitalize bg-accent/10 text-accent">
@@ -187,13 +194,13 @@ export function Timeline({ isLoading }: TimelineProps) {
 
 function TimelineSkeleton() {
   return (
-    <section className="px-6 py-24">
+    <section className="px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto w-full max-w-[1400px]">
-        <div className="text-center mb-16">
+        <div className="text-center mb-10 sm:mb-16">
           <Skeleton className="h-12 w-80 mx-auto mb-4" />
           <Skeleton className="h-6 w-64 mx-auto" />
         </div>
-        <div className="space-y-12">
+        <div className="space-y-8 sm:space-y-12">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="flex items-center">
               <div className="w-1/2 pr-12">

@@ -39,7 +39,7 @@ type DomainForm = {
 const BLANK: DomainForm = { name: '', type: 'subdomain', ssl_enabled: true }
 
 export default function SubdomainsPage() {
-  usePageTitle('Subdomains')
+  usePageTitle('ซับโดเมน')
   const { getAdminHeaders } = useAdminAuth()
   const { data, loading, error, refetch } = useAdminApi<SubdomainsData>('/api/admin/subdomains')
   const { mutate: saveDomain, loading: saving } = useAdminMutation<DomainForm>('/api/admin/subdomains', 'POST')
@@ -51,7 +51,7 @@ export default function SubdomainsPage() {
   const [checking, setChecking] = useState(false)
   const [checkingId, setCheckingId] = useState<string | null>(null)
 
-  if (loading) return <AdminLoading message="Loading subdomains..." />
+  if (loading) return <AdminLoading message="กำลังโหลดซับโดเมน..." />
   if (error) return <AdminError error={error} onRetry={refetch} />
 
   const subdomains = data?.subdomains ?? []
@@ -59,10 +59,10 @@ export default function SubdomainsPage() {
   const sslValid = subdomains.filter((s) => s.ssl_enabled).length
 
   async function handleAdd() {
-    if (!form.name.trim()) { toast.error('Domain name is required'); return }
+    if (!form.name.trim()) { toast.error('กรุณากรอกชื่อโดเมน'); return }
     try {
       await saveDomain(form)
-      toast.success(`Added ${form.name}`)
+      toast.success(`เพิ่ม ${form.name} แล้ว`)
       setModalOpen(false)
       setForm(BLANK)
       refetch()
@@ -72,7 +72,7 @@ export default function SubdomainsPage() {
   async function handleDelete(sd: Subdomain) {
     try {
       await deleteDomain(undefined, { id: sd.id })
-      toast.success(`Removed ${sd.name}`)
+      toast.success(`ลบ ${sd.name} แล้ว`)
       setDeleteTarget(null)
       refetch()
     } catch (err) { toast.error((err as Error).message) }
@@ -80,18 +80,18 @@ export default function SubdomainsPage() {
 
   async function checkAll() {
     setChecking(true)
-    const toastId = toast.loading('Checking all domains...')
+    const toastId = toast.loading('กำลังตรวจทุกโดเมน...')
     try {
       const res = await fetch('/api/admin/subdomains/check', {
         method: 'POST',
         headers: getAdminHeaders(),
       })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error || 'Check failed')
+      if (!res.ok) throw new Error(json.error || 'ตรวจไม่สำเร็จ')
       const results = json.results as { status: string; latency_ms: number | null }[]
       const up = results.filter((r) => r.status === 'active').length
       const down = results.length - up
-      toast.success(`${up} up · ${down} down`, { id: toastId })
+      toast.success(`ใช้งานได้ ${up} · ใช้งานไม่ได้ ${down}`, { id: toastId })
       refetch()
     } catch (err) {
       toast.error((err as Error).message, { id: toastId })
@@ -108,10 +108,10 @@ export default function SubdomainsPage() {
         headers: getAdminHeaders(),
       })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error || 'Check failed')
+      if (!res.ok) throw new Error(json.error || 'ตรวจไม่สำเร็จ')
       const r = json.results?.[0]
       if (r) {
-        toast.success(r.status === 'active' ? `${sd.name} — ${r.latency_ms}ms` : `${sd.name} — unreachable`)
+        toast.success(r.status === 'active' ? `${sd.name} — ${r.latency_ms}ms` : `${sd.name} — เข้าถึงไม่ได้`)
       }
       refetch()
     } catch (err) {
@@ -125,8 +125,8 @@ export default function SubdomainsPage() {
     <div className="space-y-6 p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-[#FAFAFA]">Subdomain Manager</h1>
-          <p className="mt-0.5 text-sm text-[#52525b]">DNS, SSL certificates, and domain health from Supabase</p>
+          <h1 className="text-xl font-bold text-[#FAFAFA]">จัดการซับโดเมน</h1>
+          <p className="mt-0.5 text-sm text-[#52525b]">DNS, SSL และสถานะโดเมนจาก Supabase</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -135,14 +135,14 @@ export default function SubdomainsPage() {
             className="flex items-center gap-1.5 rounded-lg border border-[#27272A] bg-[#18181B] px-3 py-1.5 text-xs font-semibold text-[#A1A1AA] hover:bg-[#27272A] hover:text-[#FAFAFA] disabled:opacity-50"
           >
             {checking ? <Loader2 className="size-3.5 animate-spin" /> : <Activity className="size-3.5" />}
-            Check Health
+            ตรวจสถานะ
           </button>
           <button
             onClick={() => { setForm(BLANK); setModalOpen(true) }}
             className="flex items-center gap-1.5 rounded-lg bg-[#409EFE] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#60aeff]"
           >
             <Globe className="size-3.5" />
-            Add Domain
+            เพิ่มโดเมน
           </button>
         </div>
       </div>
@@ -150,10 +150,10 @@ export default function SubdomainsPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Total Domains', value: subdomains.length, color: 'text-[#FAFAFA]' },
-          { label: 'Active', value: active, color: 'text-[#22C55E]' },
-          { label: 'SSL Enabled', value: sslValid, color: 'text-[#409EFE]' },
-          { label: 'Provider', value: 'Vercel', color: 'text-[#A1A1AA]' },
+          { label: 'โดเมนทั้งหมด', value: subdomains.length, color: 'text-[#FAFAFA]' },
+          { label: 'ใช้งานอยู่', value: active, color: 'text-[#22C55E]' },
+          { label: 'เปิด SSL', value: sslValid, color: 'text-[#409EFE]' },
+          { label: 'ผู้ให้บริการ', value: 'Vercel', color: 'text-[#A1A1AA]' },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border border-[#27272A] bg-[#18181B] px-4 py-3">
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
@@ -165,10 +165,10 @@ export default function SubdomainsPage() {
       {/* Domains table */}
       <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
         <div className="border-b border-[#27272A] px-5 py-4">
-          <h2 className="text-sm font-semibold text-[#FAFAFA]">Domains & Subdomains</h2>
+          <h2 className="text-sm font-semibold text-[#FAFAFA]">โดเมนและซับโดเมน</h2>
         </div>
         {subdomains.length === 0 ? (
-          <AdminEmpty title="No domains configured" description="Add domains to manage SSL and routing" />
+          <AdminEmpty title="ยังไม่มีโดเมน" description="เพิ่มโดเมนเพื่อจัดการ SSL และ routing" />
         ) : (
           <div className="divide-y divide-[#27272A]/50">
             {subdomains.map((sd) => (
@@ -195,11 +195,11 @@ export default function SubdomainsPage() {
                       <XCircle className="size-3.5 text-[#EF4444]" />
                     )}
                     <span className={`text-[11px] ${sd.ssl_enabled ? 'text-[#22C55E]' : 'text-[#EF4444]'}`}>
-                      SSL {sd.ssl_enabled ? 'Valid' : 'Off'}
+                      SSL {sd.ssl_enabled ? 'พร้อมใช้' : 'ปิดอยู่'}
                     </span>
                     {sd.ssl_expiry && (
                       <span className="text-[10px] text-[#3f3f46]">
-                        exp {new Date(sd.ssl_expiry).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                        หมดอายุ {new Date(sd.ssl_expiry).toLocaleDateString('th-TH', { month: 'short', year: 'numeric' })}
                       </span>
                     )}
                   </div>
@@ -211,14 +211,14 @@ export default function SubdomainsPage() {
                   )}
 
                   {sd.monthly_visits != null && (
-                    <span className="text-[11px] text-[#52525b]">{sd.monthly_visits.toLocaleString()} visits/mo</span>
+                    <span className="text-[11px] text-[#52525b]">{sd.monthly_visits.toLocaleString()} ครั้ง/เดือน</span>
                   )}
 
                   <div className="flex gap-1.5">
                     <button
                       onClick={() => checkOne(sd)}
                       disabled={checkingId === sd.id || checking}
-                      title="Ping domain"
+                      title="ตรวจโดเมน"
                       className="grid size-7 place-items-center rounded-lg border border-[#27272A] bg-[#09090B] text-[#52525b] hover:border-[#409EFE]/30 hover:text-[#409EFE] disabled:opacity-40"
                     >
                       {checkingId === sd.id
@@ -246,11 +246,11 @@ export default function SubdomainsPage() {
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="border-[#27272A] bg-[#18181B] text-[#FAFAFA] sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-[#FAFAFA]">Add Domain</DialogTitle>
+            <DialogTitle className="text-[#FAFAFA]">เพิ่มโดเมน</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-1">
             <div>
-              <Label className="text-xs text-[#A1A1AA]">Domain Name *</Label>
+              <Label className="text-xs text-[#A1A1AA]">ชื่อโดเมน *</Label>
               <Input
                 value={form.name}
                 onChange={(e) => setForm((p) => ({ ...p, name: e.target.value.toLowerCase() }))}
@@ -259,7 +259,7 @@ export default function SubdomainsPage() {
               />
             </div>
             <div>
-              <Label className="text-xs text-[#A1A1AA]">Type</Label>
+              <Label className="text-xs text-[#A1A1AA]">ประเภท</Label>
               <select
                 value={form.type}
                 onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}
@@ -269,15 +269,15 @@ export default function SubdomainsPage() {
               </select>
             </div>
             <div className="flex items-center justify-between rounded-lg border border-[#27272A] px-3 py-2.5">
-              <p className="text-sm text-[#FAFAFA]">SSL Enabled</p>
+              <p className="text-sm text-[#FAFAFA]">เปิด SSL</p>
               <Switch checked={form.ssl_enabled} onCheckedChange={(v) => setForm((p) => ({ ...p, ssl_enabled: v }))} />
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setModalOpen(false)} className="h-8 border-[#27272A] bg-transparent text-[#A1A1AA] hover:bg-[#27272A] hover:text-[#FAFAFA]">Cancel</Button>
+            <Button variant="outline" onClick={() => setModalOpen(false)} className="h-8 border-[#27272A] bg-transparent text-[#A1A1AA] hover:bg-[#27272A] hover:text-[#FAFAFA]">ยกเลิก</Button>
             <Button onClick={handleAdd} disabled={saving} className="h-8 bg-[#409EFE] text-sm text-white hover:bg-[#60aeff] disabled:opacity-60">
               {saving && <Loader2 className="mr-1.5 size-3 animate-spin" />}
-              Add Domain
+              เพิ่มโดเมน
             </Button>
           </div>
         </DialogContent>
@@ -286,9 +286,9 @@ export default function SubdomainsPage() {
       <ConfirmModal
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title={`Remove ${deleteTarget?.name}?`}
-        description="This domain record will be deleted from Supabase."
-        confirmLabel="Remove"
+        title={`ลบ ${deleteTarget?.name}?`}
+        description="รายการโดเมนนี้จะถูกลบออกจาก Supabase"
+        confirmLabel="ลบ"
         destructive
         onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
       />

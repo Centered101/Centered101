@@ -56,7 +56,7 @@ export function Stats({
   }
 
   return (
-    <section id="stats" className="px-6 py-24 relative overflow-hidden" data-aos="fade-up">
+    <section id="stats" className="px-4 py-16 sm:px-6 sm:py-24 relative overflow-hidden" data-aos="fade-up">
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-accent/[0.02] to-transparent" />
       
@@ -66,7 +66,7 @@ export function Stats({
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-10 sm:mb-16"
         >
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
             <span className="gradient-text">{copy.stats.title}</span>
@@ -82,16 +82,17 @@ export function Stats({
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4"
+          className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4"
         >
           {/* Total Stars - Large Card */}
           {hasRepositories ? (
             <motion.div
               variants={itemVariants}
               data-aos="fade-up"
-              className="col-span-2 row-span-2 glass-card rounded-2xl p-8 relative overflow-hidden group hover-lift"
+              data-touch-hover
+              className="col-span-2 row-span-2 glass-card rounded-2xl p-5 sm:p-8 relative overflow-hidden group hover-lift"
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full blur-3xl group-hover:bg-accent/20 transition-colors" />
+              <div className="touch-hover-bg absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full blur-3xl group-hover:bg-accent/20 transition-colors" />
               <Star className="w-10 h-10 text-accent mb-4" />
               <p className="text-6xl md:text-7xl font-bold mb-2">{totalStars.toLocaleString()}</p>
               <p className="text-muted-foreground text-lg">{copy.stats.totalStars}</p>
@@ -107,9 +108,10 @@ export function Stats({
               variants={itemVariants}
               data-aos="fade-up"
               data-aos-delay="80"
-              className="glass-card rounded-2xl p-6 relative overflow-hidden group hover-lift"
+              data-touch-hover
+              className="glass-card rounded-2xl p-4 sm:p-6 relative overflow-hidden group hover-lift"
             >
-              <div className="absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
+              <div className="touch-hover-bg absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
               <Code2 className="w-8 h-8 text-accent mb-3" />
               <p className="text-4xl font-bold mb-1">{user?.public_repos || 0}</p>
               <p className="text-sm text-muted-foreground">{copy.stats.repos}</p>
@@ -121,9 +123,10 @@ export function Stats({
               variants={itemVariants}
               data-aos="fade-up"
               data-aos-delay="120"
-              className="glass-card rounded-2xl p-6 relative overflow-hidden group hover-lift"
+              data-touch-hover
+              className="glass-card rounded-2xl p-4 sm:p-6 relative overflow-hidden group hover-lift"
             >
-              <div className="absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
+              <div className="touch-hover-bg absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
               <Users className="w-8 h-8 text-accent mb-3" />
               <p className="text-4xl font-bold mb-1">{(user?.followers || 0).toLocaleString()}</p>
               <p className="text-sm text-muted-foreground">{copy.stats.followers}</p>
@@ -135,9 +138,10 @@ export function Stats({
               variants={itemVariants}
               data-aos="fade-up"
               data-aos-delay="160"
-              className="glass-card rounded-2xl p-6 relative overflow-hidden group hover-lift"
+              data-touch-hover
+              className="glass-card rounded-2xl p-4 sm:p-6 relative overflow-hidden group hover-lift"
             >
-              <div className="absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
+              <div className="touch-hover-bg absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
               <GitFork className="w-8 h-8 text-accent mb-3" />
               <p className="text-4xl font-bold mb-1">{totalForks.toLocaleString()}</p>
               <p className="text-sm text-muted-foreground">{copy.stats.forks}</p>
@@ -149,9 +153,10 @@ export function Stats({
               variants={itemVariants}
               data-aos="fade-up"
               data-aos-delay="200"
-              className="glass-card rounded-2xl p-6 relative overflow-hidden group hover-lift"
+              data-touch-hover
+              className="glass-card rounded-2xl p-4 sm:p-6 relative overflow-hidden group hover-lift"
             >
-              <div className="absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
+              <div className="touch-hover-bg absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
               <Calendar className="w-8 h-8 text-accent mb-3" />
               <p className="text-4xl font-bold mb-1">{accountAge}+</p>
               <p className="text-sm text-muted-foreground">{copy.stats.years}</p>
@@ -163,7 +168,8 @@ export function Stats({
               variants={itemVariants}
               data-aos="fade-up"
               data-aos-delay="120"
-              className="col-span-2 glass-card rounded-2xl p-6 relative overflow-hidden group hover-lift"
+              data-touch-hover
+              className="col-span-2 glass-card rounded-2xl p-4 sm:p-6 relative overflow-hidden group hover-lift"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full blur-3xl" />
               <div className="flex items-center gap-2 mb-4">
@@ -206,9 +212,10 @@ export function Stats({
               variants={itemVariants}
               data-aos="fade-up"
               data-aos-delay="160"
-              className="glass-card rounded-2xl p-6 relative overflow-hidden group hover-lift"
+              data-touch-hover
+              className="glass-card rounded-2xl p-4 sm:p-6 relative overflow-hidden group hover-lift"
             >
-              <div className="absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
+              <div className="touch-hover-bg absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
               <Trophy className="w-8 h-8 text-accent mb-3" />
               <p className="text-4xl font-bold mb-1">{(user?.following || 0).toLocaleString()}</p>
               <p className="text-sm text-muted-foreground">{copy.stats.following}</p>
@@ -220,9 +227,10 @@ export function Stats({
               variants={itemVariants}
               data-aos="fade-up"
               data-aos-delay="200"
-              className="glass-card rounded-2xl p-6 relative overflow-hidden group hover-lift"
+              data-touch-hover
+              className="glass-card rounded-2xl p-4 sm:p-6 relative overflow-hidden group hover-lift"
             >
-              <div className="absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
+              <div className="touch-hover-bg absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
               <Star className="w-8 h-8 text-accent mb-3" />
               <p className="text-4xl font-bold mb-1">
                 {Math.max(...repositories.map(r => r.stargazers_count))}
@@ -238,13 +246,13 @@ export function Stats({
 
 function StatsSkeleton() {
   return (
-    <section className="px-6 py-24">
+    <section className="px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto w-full max-w-[1400px]">
-        <div className="text-center mb-16">
+        <div className="text-center mb-10 sm:mb-16">
           <Skeleton className="h-12 w-64 mx-auto mb-4" />
           <Skeleton className="h-6 w-96 mx-auto" />
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
           <div className="col-span-2 row-span-2">
             <Skeleton className="h-full min-h-[280px] rounded-2xl" />
           </div>

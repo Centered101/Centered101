@@ -52,10 +52,10 @@ const langColor: Record<string, string> = {
 }
 
 export default function OpenSourcePage() {
-  usePageTitle('Open Source')
+  usePageTitle('โอเพนซอร์ส')
   const { data, loading, error, refetch } = useAdminApi<OpenSourceData>('/api/admin/open-source')
 
-  if (loading) return <AdminLoading message="Loading GitHub data..." />
+  if (loading) return <AdminLoading message="กำลังโหลดข้อมูล GitHub..." />
   if (error) return <AdminError error={error} onRetry={refetch} />
 
   const { profile, repos } = data!
@@ -67,7 +67,7 @@ export default function OpenSourcePage() {
 
   return (
     <AdminPageContainer>
-      <AdminPageHeader title="Open Source Hub" description="GitHub repositories from Supabase cache" />
+      <AdminPageHeader title="ศูนย์โอเพนซอร์ส" description="Repository จาก GitHub ที่ cache ไว้ใน Supabase" />
 
       {/* Profile banner */}
       {profile && (
@@ -79,7 +79,7 @@ export default function OpenSourcePage() {
             <p className="font-semibold text-[#FAFAFA]">{profile.name || profile.username}</p>
             {profile.bio && <p className="mt-0.5 text-[12px] text-[#52525b]">{profile.bio}</p>}
             <p className="mt-1 font-mono text-[11px] text-[#3f3f46]">
-              {profile.public_repos} repos · {profile.followers} followers
+              {profile.public_repos} repo · ผู้ติดตาม {profile.followers} คน
             </p>
           </div>
           <a
@@ -89,7 +89,7 @@ export default function OpenSourcePage() {
             className="flex items-center gap-1.5 rounded-lg border border-[#27272A] bg-[#09090B] px-3 py-1.5 text-xs font-medium text-[#A1A1AA] hover:text-[#FAFAFA]"
           >
             <ExternalLink className="size-3.5" />
-            View GitHub
+            ดู GitHub
           </a>
         </div>
       )}
@@ -97,10 +97,10 @@ export default function OpenSourcePage() {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Total Stars', value: totalStars.toLocaleString(), color: 'text-[#F59E0B]' },
-          { label: 'Total Forks', value: totalForks, color: 'text-[#409EFE]' },
-          { label: 'Open Issues', value: totalIssues, color: 'text-[#EF4444]' },
-          { label: 'Public Repos', value: publicRepos, color: 'text-[#22C55E]' },
+          { label: 'ดาวทั้งหมด', value: totalStars.toLocaleString(), color: 'text-[#F59E0B]' },
+          { label: 'Fork ทั้งหมด', value: totalForks, color: 'text-[#409EFE]' },
+          { label: 'Issue ที่เปิดอยู่', value: totalIssues, color: 'text-[#EF4444]' },
+          { label: 'Repo สาธารณะ', value: publicRepos, color: 'text-[#22C55E]' },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border border-[#27272A] bg-[#18181B] px-4 py-3">
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
@@ -112,8 +112,8 @@ export default function OpenSourcePage() {
       {/* Repos */}
       {repos.length === 0 ? (
         <AdminEmpty
-          title="No repositories cached"
-          description="GitHub repositories will appear here after a sync"
+          title="ยังไม่มี repository ใน cache"
+          description="Repository จาก GitHub จะแสดงที่นี่หลัง sync"
         />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -128,7 +128,7 @@ export default function OpenSourcePage() {
                     <span className="text-sm font-semibold text-[#FAFAFA]">{repo.name}</span>
                     {repo.is_archived && (
                       <span className="rounded border border-[#27272A] bg-[#09090B] px-1 py-px text-[9px] text-[#3f3f46]">
-                        ARCHIVED
+                        เก็บถาวร
                       </span>
                     )}
                   </div>

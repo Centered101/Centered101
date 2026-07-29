@@ -54,7 +54,7 @@ export function NewTabTab() {
         body: JSON.stringify(body),
       })
       if (!res.ok) throw new Error((await res.json()).error)
-      toast.success('Settings saved')
+      toast.success('บันทึกการตั้งค่าแล้ว')
       setDirty(false)
       refetch()
     } catch (e) {
@@ -64,7 +64,7 @@ export function NewTabTab() {
     }
   }
 
-  if (loading) return <AdminLoading message="Loading settings..." />
+  if (loading) return <AdminLoading message="กำลังโหลดการตั้งค่า..." />
   if (error) return <AdminError error={error} onRetry={refetch} />
 
   return (
@@ -77,7 +77,7 @@ export function NewTabTab() {
           rel="noopener noreferrer"
           className="flex items-center gap-1.5 rounded-lg border border-[#27272A] px-3 py-1.5 text-xs text-[#52525b] transition-colors hover:text-[#FAFAFA]"
         >
-          <ExternalLink className="size-3.5" /> Preview NewTab
+          <ExternalLink className="size-3.5" /> พรีวิว NewTab
         </a>
         {dirty && (
           <button
@@ -85,18 +85,18 @@ export function NewTabTab() {
             disabled={saving}
             className="flex items-center gap-1.5 rounded-lg border border-[#409EFE]/30 bg-[#409EFE]/10 px-4 py-1.5 text-xs text-[#409EFE] transition-colors hover:bg-[#409EFE]/20 disabled:opacity-40"
           >
-            <Save className="size-3.5" /> Save changes
+            <Save className="size-3.5" /> บันทึกการแก้ไข
           </button>
         )}
       </div>
 
       {/* Toggle settings */}
-      <AdminPageSection title="Display" description="Control what's shown on the new tab page">
+      <AdminPageSection title="การแสดงผล" description="ควบคุมสิ่งที่จะแสดงบนหน้า new tab">
         <div className="divide-y divide-[#27272A]/40">
           {[
-            { key: 'newtab_enabled', label: 'Enable NewTab override', desc: 'Replace the browser new tab with this page' },
-            { key: 'newtab_show_clock', label: 'Show clock', desc: 'Display a large time/date widget' },
-            { key: 'newtab_show_weather', label: 'Show weather', desc: 'Display current weather conditions' },
+            { key: 'newtab_enabled', label: 'เปิดใช้งาน NewTab', desc: 'ใช้หน้านี้แทน new tab ของ browser' },
+            { key: 'newtab_show_clock', label: 'แสดงนาฬิกา', desc: 'แสดง widget เวลาและวันที่ขนาดใหญ่' },
+            { key: 'newtab_show_weather', label: 'แสดงสภาพอากาศ', desc: 'แสดงสภาพอากาศปัจจุบัน' },
           ].map(({ key, label, desc }) => (
             <div key={key} className="flex items-center justify-between py-3">
               <div>
@@ -113,14 +113,14 @@ export function NewTabTab() {
       </AdminPageSection>
 
       {/* Text settings */}
-      <AdminPageSection title="Content" description="Customize text and appearance">
+      <AdminPageSection title="เนื้อหา" description="ปรับข้อความและหน้าตาของหน้า new tab">
         <div className="space-y-4">
           {[
-            { key: 'newtab_greeting', label: 'Greeting', placeholder: 'Good morning, Centered101' },
-            { key: 'newtab_weather_city', label: 'Weather city', placeholder: 'Bangkok' },
-            { key: 'newtab_bg_url', label: 'Background image URL', placeholder: 'https://...' },
-            { key: 'newtab_accent_color', label: 'Accent color', placeholder: '#409EFE' },
-            { key: 'newtab_font', label: 'Font family', placeholder: 'Inter, sans-serif' },
+            { key: 'newtab_greeting', label: 'คำทักทาย', placeholder: 'สวัสดีตอนเช้า, Centered101' },
+            { key: 'newtab_weather_city', label: 'เมืองสำหรับสภาพอากาศ', placeholder: 'Bangkok' },
+            { key: 'newtab_bg_url', label: 'URL รูปพื้นหลัง', placeholder: 'https://...' },
+            { key: 'newtab_accent_color', label: 'สีหลัก', placeholder: '#409EFE' },
+            { key: 'newtab_font', label: 'ฟอนต์', placeholder: 'Inter, sans-serif' },
           ].map(({ key, label, placeholder }) => (
             <div key={key} className="space-y-1">
               <label className="text-[11px] text-[#52525b]">{label}</label>
@@ -143,7 +143,7 @@ export function NewTabTab() {
             disabled={saving}
             className="flex items-center gap-1.5 rounded-lg bg-[#409EFE] px-5 py-2 text-sm font-medium text-[#09090B] transition-opacity hover:opacity-90 disabled:opacity-40"
           >
-            <Save className="size-4" /> {saving ? 'Saving...' : 'Save changes'}
+            <Save className="size-4" /> {saving ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
           </button>
         </div>
       )}

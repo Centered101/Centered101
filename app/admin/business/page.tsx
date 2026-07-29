@@ -28,15 +28,15 @@ type ContactsData = {
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 1) return 'เมื่อสักครู่'
+  if (mins < 60) return `${mins} นาทีที่แล้ว`
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
+  if (hrs < 24) return `${hrs} ชั่วโมงที่แล้ว`
+  return `${Math.floor(hrs / 24)} วันที่แล้ว`
 }
 
 export default function BusinessPage() {
-  usePageTitle('Business')
+  usePageTitle('ข้อความติดต่อ')
   const { data, loading, error, refetch } = useAdminApi<ContactsData>('/api/admin/contacts')
   const { mutate: patchMsg } = useAdminMutation<{ id: string; is_read?: boolean; status?: string }>('/api/admin/contacts', 'PATCH')
   const { mutate: deleteMsg } = useAdminMutation<void>('/api/admin/contacts', 'DELETE')
@@ -46,7 +46,7 @@ export default function BusinessPage() {
   const PAGE_SIZE = 15
   useAdminRealtime(['contact_messages'], refetch)
 
-  if (loading) return <AdminLoading message="Loading messages..." />
+  if (loading) return <AdminLoading message="กำลังโหลดข้อความ..." />
   if (error) return <AdminError error={error} onRetry={refetch} />
 
   const messages = data?.messages ?? []
@@ -78,17 +78,17 @@ export default function BusinessPage() {
   return (
     <AdminPageContainer>
       <AdminPageHeader
-        title="Contact Messages"
-        description={`Inbox from contact_messages · ${messages.length} total · ${unread} unread`}
+        title="ข้อความติดต่อ"
+        description={`กล่องข้อความจาก contact_messages · ทั้งหมด ${messages.length} รายการ · ยังไม่อ่าน ${unread} รายการ`}
       />
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Total', value: messages.length, color: 'text-[#FAFAFA]' },
-          { label: 'Unread', value: unread, color: unread > 0 ? 'text-[#409EFE]' : 'text-[#52525b]' },
-          { label: 'Read', value: messages.filter((m) => m.is_read).length, color: 'text-[#22C55E]' },
-          { label: 'Archived', value: messages.filter((m) => m.status === 'archived').length, color: 'text-[#52525b]' },
+          { label: 'ทั้งหมด', value: messages.length, color: 'text-[#FAFAFA]' },
+          { label: 'ยังไม่อ่าน', value: unread, color: unread > 0 ? 'text-[#409EFE]' : 'text-[#52525b]' },
+          { label: 'อ่านแล้ว', value: messages.filter((m) => m.is_read).length, color: 'text-[#22C55E]' },
+          { label: 'เก็บถาวร', value: messages.filter((m) => m.status === 'archived').length, color: 'text-[#52525b]' },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border border-[#27272A] bg-[#18181B] px-4 py-3">
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
@@ -101,7 +101,7 @@ export default function BusinessPage() {
         {/* Message list */}
         <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
           <div className="flex items-center justify-between border-b border-[#27272A] px-4 py-3.5">
-            <h2 className="text-sm font-semibold text-[#FAFAFA]">Messages</h2>
+            <h2 className="text-sm font-semibold text-[#FAFAFA]">ข้อความ</h2>
             <div className="flex gap-1">
               {(['all', 'unread', 'read'] as const).map((f) => (
                 <button
@@ -111,13 +111,13 @@ export default function BusinessPage() {
                     filter === f ? 'bg-[#409EFE]/10 text-[#409EFE]' : 'text-[#52525b] hover:text-[#A1A1AA]'
                   }`}
                 >
-                  {f}
+                  {{ all: 'ทั้งหมด', unread: 'ยังไม่อ่าน', read: 'อ่านแล้ว' }[f]}
                 </button>
               ))}
             </div>
           </div>
           {filtered.length === 0 ? (
-            <AdminEmpty title="No messages" description="Contact form submissions will appear here" />
+            <AdminEmpty title="ยังไม่มีข้อความ" description="ข้อความจากฟอร์มติดต่อจะแสดงที่นี่" />
           ) : (
             <div className="divide-y divide-[#27272A]/50">
               {paged.map((msg) => (
@@ -194,7 +194,7 @@ export default function BusinessPage() {
           ) : (
             <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-2">
               <MailOpen className="size-8 text-[#27272A]" />
-              <p className="text-[13px] text-[#3f3f46]">Select a message to read it</p>
+              <p className="text-[13px] text-[#3f3f46]">เลือกข้อความเพื่ออ่านรายละเอียด</p>
             </div>
           )}
         </div>

@@ -17,11 +17,11 @@ export function ResumeTab() {
 
   async function handleUpload(file: File) {
     if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-      toast.error('Please select a PDF file')
+      toast.error('กรุณาเลือกไฟล์ PDF')
       return
     }
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('File too large (max 10MB)')
+      toast.error('ไฟล์ใหญ่เกินไป (สูงสุด 10MB)')
       return
     }
 
@@ -35,8 +35,8 @@ export function ResumeTab() {
         body: fd,
       })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error || 'Upload failed')
-      toast.success('Resume uploaded')
+      if (!res.ok) throw new Error(json.error || 'อัปโหลดไม่สำเร็จ')
+      toast.success('อัปโหลดเรซูเม่แล้ว')
       setLastUploaded(new Date().toLocaleString())
     } catch (e) {
       toast.error((e as Error).message)
@@ -49,8 +49,8 @@ export function ResumeTab() {
   return (
     <div className="space-y-6 p-6">
       <AdminPageSection
-        title="Resume / CV"
-        description="PDF shown by the Download button in the portfolio Hero & Footer"
+        title="เรซูเม่ / CV"
+        description="ไฟล์ PDF ที่ใช้กับปุ่มดาวน์โหลดบนหน้า portfolio"
       >
         <div className="rounded-xl border border-[#27272A] bg-[#18181B] p-5">
           <div className="flex items-center gap-3">
@@ -67,7 +67,7 @@ export function ResumeTab() {
               rel="noopener noreferrer"
               className="flex h-8 items-center gap-1.5 rounded-lg border border-[#27272A] px-3 text-xs text-[#A1A1AA] transition-colors hover:border-[#409EFE]/50 hover:text-[#FAFAFA]"
             >
-              <ExternalLink className="size-3.5" /> View
+              <ExternalLink className="size-3.5" /> เปิดดู
             </a>
           </div>
 
@@ -88,13 +88,13 @@ export function ResumeTab() {
               className="flex h-9 items-center gap-1.5 rounded-lg border border-[#409EFE]/30 bg-[#409EFE]/10 px-4 text-xs font-medium text-[#409EFE] transition-colors hover:bg-[#409EFE]/20 disabled:opacity-50"
             >
               {uploading ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
-              {uploading ? 'Uploading...' : 'Upload new resume'}
+              {uploading ? 'กำลังอัปโหลด...' : 'อัปโหลดเรซูเม่ใหม่'}
             </button>
-            {lastUploaded && <span className="text-[11px] text-[#52525b]">Updated {lastUploaded}</span>}
+            {lastUploaded && <span className="text-[11px] text-[#52525b]">อัปเดต {lastUploaded}</span>}
           </div>
 
           <p className="mt-3 text-[11px] text-[#3f3f46]">
-            Uploading replaces the file at the same path, so the portfolio download link updates automatically. PDF only, max 10MB.
+            การอัปโหลดจะแทนที่ไฟล์เดิมใน path เดียวกัน ลิงก์ดาวน์โหลดบน portfolio จะอัปเดตอัตโนมัติ รองรับ PDF เท่านั้น สูงสุด 10MB
           </p>
         </div>
       </AdminPageSection>

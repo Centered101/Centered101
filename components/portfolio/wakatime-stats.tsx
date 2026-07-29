@@ -7,13 +7,10 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useWakaTime } from '@/hooks/use-wakatime'
 import { useLanguage } from '@/components/language-provider'
 
-function formatRange(range: string) {
-  return range.replace(/_/g, ' ')
-}
 
 export function WakaTimeStats() {
   const { copy } = useLanguage()
-  const { data, isLoading, error } = useWakaTime('last_7_days')
+  const { data, isLoading, error } = useWakaTime('last_30_days')
 
   if (isLoading) {
     return <WakaTimeSkeleton />
@@ -33,7 +30,7 @@ export function WakaTimeStats() {
   }
 
   return (
-    <section id="wakatime" className="relative overflow-hidden px-6 py-24" data-aos="fade-up">
+    <section id="wakatime" className="relative overflow-hidden px-4 py-16 sm:px-6 sm:py-24" data-aos="fade-up">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-accent/[0.025] to-transparent" />
 
       <div className="relative mx-auto w-full max-w-[1400px]">
@@ -42,7 +39,7 @@ export function WakaTimeStats() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="mb-16 text-center"
+          className="mb-10 text-center sm:mb-16"
         >
           <div className="mb-6 inline-flex items-center gap-2 rounded-full glass-card px-4 py-1.5 text-sm">
             <Sparkles className="size-4 text-accent" />
@@ -56,31 +53,31 @@ export function WakaTimeStats() {
           </p>
         </motion.div>
 
-        <div className="grid gap-6 lg:grid-cols-5">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-5">
           {hasSummary ? (
-            <div className="glass-card rounded-2xl p-6 lg:col-span-2" data-aos="fade-right">
+            <div className="glass-card flex min-h-[360px] flex-col rounded-2xl p-4 sm:p-6 lg:col-span-2" data-aos="fade-right">
               <div className="mb-6 flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">{formatRange(data.range)}</p>
+                  <p className="text-sm text-muted-foreground">{(copy as any).wakatime_ranges?.[data.range] ?? data.range.replace(/_/g, ' ')}</p>
                   <h3 className="text-xl font-semibold">{copy.wakatime.summary}</h3>
                 </div>
                 <Clock className="size-6 text-accent" />
               </div>
 
-              <div className="space-y-4">
-                <div className="rounded-xl border border-border bg-background/45 p-4">
+              <div className="flex flex-1 flex-col gap-4">
+                <div className="flex flex-1 flex-col justify-center rounded-xl border border-border bg-background/45 p-4 sm:p-5">
                   <p className="text-sm text-muted-foreground">{copy.wakatime.totalCoded}</p>
                   <p className="text-4xl font-bold">{data.humanReadableTotal}</p>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid flex-1 gap-4 sm:grid-cols-2">
                   {hasDailyAverage ? (
-                    <div className="rounded-xl border border-border bg-background/45 p-4">
+                    <div className="flex flex-col justify-center rounded-xl border border-border bg-background/45 p-4">
                       <p className="text-sm text-muted-foreground">{copy.wakatime.dailyAvg}</p>
                       <p className="text-2xl font-bold">{data.humanReadableDailyAverage}</p>
                     </div>
                   ) : null}
                   {hasBestDay ? (
-                    <div className="rounded-xl border border-border bg-background/45 p-4">
+                    <div className="flex flex-col justify-center rounded-xl border border-border bg-background/45 p-4">
                       <p className="text-sm text-muted-foreground">{copy.wakatime.bestDay}</p>
                       <p className="text-2xl font-bold">{data.bestDayText}</p>
                     </div>
@@ -91,7 +88,7 @@ export function WakaTimeStats() {
           ) : null}
 
             {hasLanguages ? (
-              <div className="glass-card rounded-2xl p-6 lg:col-span-3" data-aos="fade-left" data-aos-delay="120">
+              <div className="glass-card rounded-2xl p-4 sm:p-6 lg:col-span-3" data-aos="fade-left" data-aos-delay="120">
                 <div className="mb-6 flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">{copy.wakatime.topStack}</p>
@@ -129,7 +126,7 @@ export function WakaTimeStats() {
             ) : null}
 
             {hasProjects ? (
-              <div className="glass-card rounded-2xl p-6 lg:col-span-5" data-aos="fade-up" data-aos-delay="160">
+              <div className="glass-card rounded-2xl p-4 sm:p-6 lg:col-span-5" data-aos="fade-up" data-aos-delay="160">
                 <div className="mb-5 flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">{copy.wakatime.recentFocus}</p>
@@ -160,14 +157,14 @@ export function WakaTimeStats() {
 
 function WakaTimeSkeleton() {
   return (
-    <section className="px-6 py-24">
+    <section className="px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto w-full max-w-[1400px]">
-        <div className="mb-16 text-center">
+        <div className="mb-10 text-center sm:mb-16">
           <Skeleton className="mx-auto mb-6 h-8 w-40 rounded-full" />
           <Skeleton className="mx-auto mb-4 h-12 w-72" />
           <Skeleton className="mx-auto h-6 w-96" />
         </div>
-        <div className="grid gap-6 lg:grid-cols-5">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-5">
           <Skeleton className="h-80 rounded-2xl lg:col-span-2" />
           <Skeleton className="h-80 rounded-2xl lg:col-span-3" />
         </div>

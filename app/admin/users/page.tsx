@@ -32,17 +32,17 @@ type AdminUser = {
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 1) return 'เมื่อสักครู่'
+  if (mins < 60) return `${mins} นาทีที่แล้ว`
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
+  if (hrs < 24) return `${hrs} ชั่วโมงที่แล้ว`
+  return `${Math.floor(hrs / 24)} วันที่แล้ว`
 }
 
 const ROLES = ['owner', 'administrator', 'developer', 'editor', 'moderator', 'support', 'member', 'guest'] as const
 
 export default function UsersPage() {
-  usePageTitle('Users')
+  usePageTitle('ผู้ดูแล')
   const { getAdminHeaders } = useAdminAuth()
   const { data, loading, error, refetch } = useAdminApi<{ users: AdminUser[] }>('/api/admin/users')
   const { mutate: patchUser } = useAdminMutation<{ status: string }>('/api/admin/users', 'PATCH')
@@ -56,7 +56,7 @@ export default function UsersPage() {
   const [inviting, setInviting] = useState(false)
   const [inviteForm, setInviteForm] = useState({ github_username: '', email: '', display_name: '', role: 'member' })
 
-  if (loading) return <AdminLoading message="Loading users..." />
+  if (loading) return <AdminLoading message="กำลังโหลดผู้ดูแล..." />
   if (error) return <AdminError error={error} onRetry={refetch} />
 
   const users = data?.users ?? []
@@ -72,7 +72,7 @@ export default function UsersPage() {
     const newStatus = user.status === 'suspended' ? 'active' : 'suspended'
     try {
       await patchUser({ status: newStatus }, { id: user.id })
-      toast.success(newStatus === 'suspended' ? `Suspended ${user.display_name || user.github_username}` : `Reinstated ${user.display_name || user.github_username}`)
+      toast.success(newStatus === 'suspended' ? `ระงับ ${user.display_name || user.github_username} แล้ว` : `คืนสิทธิ์ ${user.display_name || user.github_username} แล้ว`)
       setSuspendTarget(null)
       refetch()
     } catch (err) {
@@ -80,11 +80,11 @@ export default function UsersPage() {
     }
   }
 
-  const displayName = (u: AdminUser) => u.display_name || u.github_username || u.email || 'Unknown'
+  const displayName = (u: AdminUser) => u.display_name || u.github_username || u.email || 'ไม่ทราบชื่อ'
 
   async function handleInvite() {
     if (!inviteForm.github_username.trim() && !inviteForm.email.trim()) {
-      toast.error('Enter a GitHub username or email')
+      toast.error('กรอก GitHub username หรืออีเมล')
       return
     }
     setInviting(true)
@@ -95,8 +95,8 @@ export default function UsersPage() {
         body: JSON.stringify(inviteForm),
       })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error || 'Failed to invite user')
-      toast.success(`Invited ${inviteForm.github_username || inviteForm.email}`)
+      if (!res.ok) throw new Error(json.error || 'เชิญผู้ใช้ไม่สำเร็จ')
+      toast.success(`เชิญ ${inviteForm.github_username || inviteForm.email} แล้ว`)
       setInviteOpen(false)
       setInviteForm({ github_username: '', email: '', display_name: '', role: 'member' })
       refetch()
@@ -109,14 +109,14 @@ export default function UsersPage() {
 
   return (
     <AdminPageContainer>
-      <AdminPageHeader title="Admin Users" description={`${users.length} accounts from Supabase`}>
+      <AdminPageHeader title="ผู้ดูแลระบบ" description={`${users.length} บัญชีจาก Supabase`}>
         <Button
           size="sm"
           className="h-8 gap-1.5 bg-[#409EFE] text-xs font-semibold text-white hover:bg-[#60aeff]"
           onClick={() => setInviteOpen(true)}
         >
           <UserPlus className="size-3.5" />
-          Invite User
+          เชิญผู้ดูแล
         </Button>
       </AdminPageHeader>
 
@@ -125,19 +125,19 @@ export default function UsersPage() {
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-[#3f3f46]" />
             <Input
-              placeholder="Search by name, username, or email..."
+              placeholder="ค้นหาจากชื่อ username หรืออีเมล..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1) }}
               className="h-8 border-[#27272A] bg-[#09090B] pl-8 text-xs text-[#FAFAFA] placeholder:text-[#3f3f46] focus-visible:ring-[#409EFE]/30"
             />
           </div>
           <span className="rounded border border-[#27272A] bg-[#09090B] px-2 py-1 text-[11px] text-[#52525b]">
-            {filtered.length} results
+            {filtered.length} ผลลัพธ์
           </span>
         </div>
 
         {filtered.length === 0 ? (
-          <AdminEmpty title="No users found" description="Admin accounts appear here after first login" />
+          <AdminEmpty title="ไม่พบผู้ดูแล" description="บัญชีผู้ดูแลจะแสดงที่นี่หลังเข้าสู่ระบบครั้งแรก" />
         ) : (
           <div className="divide-y divide-[#27272A]/50">
             {paged.map((user) => (
@@ -159,10 +159,10 @@ export default function UsersPage() {
                 {/* Last login */}
                 <div className="shrink-0 text-right text-[11px]">
                   <p className="text-[#A1A1AA]">
-                    {user.last_login_at ? `Last login ${timeAgo(user.last_login_at)}` : 'Never logged in'}
+                    {user.last_login_at ? `เข้าสู่ระบบล่าสุด ${timeAgo(user.last_login_at)}` : 'ยังไม่เคยเข้าสู่ระบบ'}
                   </p>
                   <p className="text-[#3f3f46]">
-                    Joined {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                    เข้าร่วม {new Date(user.created_at).toLocaleDateString('th-TH', { month: 'short', year: 'numeric' })}
                   </p>
                 </div>
 
@@ -178,7 +178,7 @@ export default function UsersPage() {
                         : 'text-[#52525b] hover:border-[#EF4444]/30 hover:text-[#EF4444]'
                     }`}
                   >
-                    {user.status === 'suspended' ? 'Reinstate' : 'Suspend'}
+                    {user.status === 'suspended' ? 'คืนสิทธิ์' : 'ระงับ'}
                   </Button>
                 </div>
               </div>
@@ -193,7 +193,7 @@ export default function UsersPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl border border-[#27272A] bg-[#18181B] p-6 shadow-2xl shadow-black/60">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-[#FAFAFA]">Invite Admin User</h2>
+              <h2 className="text-sm font-semibold text-[#FAFAFA]">เชิญผู้ดูแลระบบ</h2>
               <button
                 type="button"
                 onClick={() => setInviteOpen(false)}
@@ -214,7 +214,7 @@ export default function UsersPage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-medium text-[#A1A1AA]">Email <span className="text-[#3f3f46]">(optional)</span></label>
+                <label className="mb-1 block text-[11px] font-medium text-[#A1A1AA]">อีเมล <span className="text-[#3f3f46]">(ไม่บังคับ)</span></label>
                 <Input
                   type="email"
                   placeholder="user@example.com"
@@ -224,16 +224,16 @@ export default function UsersPage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-medium text-[#A1A1AA]">Display Name <span className="text-[#3f3f46]">(optional)</span></label>
+                <label className="mb-1 block text-[11px] font-medium text-[#A1A1AA]">ชื่อที่แสดง <span className="text-[#3f3f46]">(ไม่บังคับ)</span></label>
                 <Input
-                  placeholder="Full name"
+                  placeholder="ชื่อเต็ม"
                   value={inviteForm.display_name}
                   onChange={(e) => setInviteForm((f) => ({ ...f, display_name: e.target.value }))}
                   className="h-8 border-[#27272A] bg-[#09090B] text-xs text-[#FAFAFA] placeholder:text-[#3f3f46] focus-visible:ring-[#409EFE]/30"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-medium text-[#A1A1AA]">Role</label>
+                <label className="mb-1 block text-[11px] font-medium text-[#A1A1AA]">บทบาท</label>
                 <select
                   value={inviteForm.role}
                   onChange={(e) => setInviteForm((f) => ({ ...f, role: e.target.value }))}
@@ -247,7 +247,7 @@ export default function UsersPage() {
             </div>
 
             <p className="mt-4 text-[10px] text-[#3f3f46]">
-              The user will be pre-authorized. They gain access after signing in with their GitHub account.
+              ผู้ใช้นี้จะถูกอนุญาตล่วงหน้า และจะเข้าใช้งานได้หลังเข้าสู่ระบบด้วยบัญชี GitHub
             </p>
 
             <div className="mt-5 flex gap-2">
@@ -257,7 +257,7 @@ export default function UsersPage() {
                 onClick={() => setInviteOpen(false)}
                 className="h-8 flex-1 border-[#27272A] bg-transparent text-xs text-[#A1A1AA] hover:bg-[#27272A]"
               >
-                Cancel
+                ยกเลิก
               </Button>
               <Button
                 size="sm"
@@ -266,7 +266,7 @@ export default function UsersPage() {
                 className="h-8 flex-1 gap-1.5 bg-[#409EFE] text-xs font-semibold text-white hover:bg-[#60aeff] disabled:opacity-60"
               >
                 {inviting ? <Loader2 className="size-3.5 animate-spin" /> : <UserPlus className="size-3.5" />}
-                {inviting ? 'Inviting...' : 'Invite'}
+                {inviting ? 'กำลังเชิญ...' : 'เชิญ'}
               </Button>
             </div>
           </div>
@@ -279,16 +279,16 @@ export default function UsersPage() {
         title={
           suspendTarget
             ? suspendTarget.status === 'suspended'
-              ? `Reinstate ${displayName(suspendTarget)}?`
-              : `Suspend ${displayName(suspendTarget)}?`
+              ? `คืนสิทธิ์ ${displayName(suspendTarget)} ใช่ไหม?`
+              : `ระงับ ${displayName(suspendTarget)} ใช่ไหม?`
             : ''
         }
         description={
           suspendTarget?.status === 'suspended'
-            ? 'This user will regain admin access.'
-            : 'This user will lose admin access until reinstated.'
+            ? 'ผู้ใช้นี้จะกลับมาใช้งาน admin ได้อีกครั้ง'
+            : 'ผู้ใช้นี้จะเสียสิทธิ์ admin จนกว่าจะคืนสิทธิ์'
         }
-        confirmLabel={suspendTarget?.status === 'suspended' ? 'Reinstate' : 'Suspend'}
+        confirmLabel={suspendTarget?.status === 'suspended' ? 'คืนสิทธิ์' : 'ระงับ'}
         destructive={suspendTarget?.status !== 'suspended'}
         onConfirm={() => suspendTarget && handleSuspend(suspendTarget)}
       />

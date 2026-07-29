@@ -60,7 +60,7 @@ function FileIcon({ mime }: { mime: string }) {
 }
 
 export default function AssetsPage() {
-  usePageTitle('Assets')
+  usePageTitle('ไฟล์ดิจิทัล')
   const { data, loading, error, refetch } = useAdminApi<AssetsData>('/api/admin/assets')
   const { mutate: deleteAsset } = useAdminMutation<undefined>('/api/admin/assets', 'DELETE')
   const { getAdminHeaders } = useAdminAuth()
@@ -71,7 +71,7 @@ export default function AssetsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   useAdminRealtime(['digital_assets'], refetch)
 
-  if (loading) return <AdminLoading message="Loading assets..." />
+  if (loading) return <AdminLoading message="กำลังโหลดไฟล์ดิจิทัล..." />
   if (error) return <AdminError error={error} onRetry={refetch} />
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -88,8 +88,8 @@ export default function AssetsPage() {
         body: form,
       })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error || 'Upload failed')
-      toast.success(`Uploaded "${file.name}"`)
+      if (!res.ok) throw new Error(json.error || 'อัปโหลดไม่สำเร็จ')
+      toast.success(`อัปโหลด "${file.name}" แล้ว`)
       refetch()
     } catch (err) {
       toast.error((err as Error).message)
@@ -102,7 +102,7 @@ export default function AssetsPage() {
   async function handleDelete(asset: Asset) {
     try {
       await deleteAsset(undefined, { id: asset.id })
-      toast.success(`Deleted "${asset.name}"`)
+      toast.success(`ลบ "${asset.name}" แล้ว`)
       setDeleteTarget(null)
       refetch()
     } catch (err) {
@@ -125,8 +125,8 @@ export default function AssetsPage() {
         onChange={handleUpload}
       />
       <AdminPageHeader
-        title="Digital Assets"
-        description={`Files from Supabase · ${assets.length} files · ${totalGB.toFixed(2)} GB total`}
+        title="ไฟล์ดิจิทัล"
+        description={`ไฟล์จาก Supabase · ${assets.length} ไฟล์ · รวม ${totalGB.toFixed(2)} GB`}
       >
         <button
           onClick={() => fileInputRef.current?.click()}
@@ -134,7 +134,7 @@ export default function AssetsPage() {
           className="flex items-center gap-1.5 rounded-lg bg-[#409EFE] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#60aeff] disabled:opacity-60"
         >
           {uploading ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
-          {uploading ? 'Uploading...' : 'Upload File'}
+          {uploading ? 'กำลังอัปโหลด...' : 'อัปโหลดไฟล์'}
         </button>
       </AdminPageHeader>
 
@@ -143,7 +143,7 @@ export default function AssetsPage() {
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <HardDrive className="size-4 text-[#3f3f46]" />
-            <h2 className="text-sm font-semibold text-[#FAFAFA]">Storage Usage</h2>
+            <h2 className="text-sm font-semibold text-[#FAFAFA]">การใช้พื้นที่จัดเก็บ</h2>
           </div>
           <span className="text-[11px] text-[#52525b]">
             {totalGB.toFixed(2)} GB / {TOTAL_LIMIT} GB ({Math.round((totalGB / TOTAL_LIMIT) * 100)}%)
@@ -170,7 +170,7 @@ export default function AssetsPage() {
         </div>
 
         {buckets.length === 0 ? (
-          <p className="text-[12px] text-[#3f3f46]">No storage data yet</p>
+          <p className="text-[12px] text-[#3f3f46]">ยังไม่มีข้อมูลพื้นที่จัดเก็บ</p>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {buckets.map((b) => (
@@ -180,7 +180,7 @@ export default function AssetsPage() {
                   <span className="text-[11px] font-medium capitalize text-[#A1A1AA]">{b.bucket}</span>
                 </div>
                 <p className="font-mono text-sm font-bold text-[#FAFAFA]">{b.usedGB.toFixed(2)} GB</p>
-                <p className="text-[10px] text-[#3f3f46]">{b.count} files</p>
+                <p className="text-[10px] text-[#3f3f46]">{b.count} ไฟล์</p>
               </div>
             ))}
           </div>
@@ -190,20 +190,20 @@ export default function AssetsPage() {
       {/* Files table */}
       <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
         <div className="border-b border-[#27272A] px-5 py-4">
-          <h2 className="text-sm font-semibold text-[#FAFAFA]">Files</h2>
+          <h2 className="text-sm font-semibold text-[#FAFAFA]">ไฟล์</h2>
         </div>
 
         {assets.length === 0 ? (
-          <AdminEmpty title="No files yet" description="Upload files to see them here" />
+          <AdminEmpty title="ยังไม่มีไฟล์" description="อัปโหลดไฟล์แล้วจะแสดงที่นี่" />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-140 text-left text-[13px]">
               <thead>
                 <tr className="border-b border-[#27272A] text-[10px] font-semibold uppercase tracking-widest text-[#3f3f46]">
-                  <th className="px-5 py-3">File</th>
+                  <th className="px-5 py-3">ไฟล์</th>
                   <th className="px-4 py-3">Bucket</th>
-                  <th className="px-4 py-3">Size</th>
-                  <th className="px-4 py-3">Uploaded</th>
+                  <th className="px-4 py-3">ขนาด</th>
+                  <th className="px-4 py-3">อัปโหลดเมื่อ</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -226,7 +226,7 @@ export default function AssetsPage() {
                     </td>
                     <td className="px-4 py-3 font-mono text-[12px] text-[#A1A1AA]">{formatBytes(asset.size_bytes)}</td>
                     <td className="px-4 py-3 text-[12px] text-[#52525b]">
-                      {new Date(asset.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      {new Date(asset.created_at).toLocaleDateString('th-TH', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
                     <td className="px-4 py-3">
                       <button
@@ -254,9 +254,9 @@ export default function AssetsPage() {
       <ConfirmModal
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title={`Delete "${deleteTarget?.name}"?`}
-        description="This file record will be soft-deleted. The original file in storage is not affected."
-        confirmLabel="Delete"
+        title={`ลบ "${deleteTarget?.name}" ใช่ไหม?`}
+        description="รายการไฟล์นี้จะถูกลบแบบ soft delete โดยไฟล์ต้นฉบับใน storage จะไม่ถูกกระทบ"
+        confirmLabel="ลบ"
         destructive
         onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
       />

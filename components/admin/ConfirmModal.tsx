@@ -44,7 +44,7 @@ export function ConfirmModal({
             className="border-[#27272A] bg-transparent text-[#A1A1AA] hover:bg-[#27272A] hover:text-[#FAFAFA]"
             onClick={() => onOpenChange(false)}
           >
-            Cancel
+            ยกเลิก
           </Button>
           <Button
             variant={destructive ? 'destructive' : 'default'}

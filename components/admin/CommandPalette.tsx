@@ -38,39 +38,39 @@ import {
 import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 
 const navCommands = [
-  { label: 'Dashboard', icon: LayoutDashboard, href: '/admin' },
-  { label: 'Portfolio', icon: Briefcase, href: '/admin/portfolio' },
-  { label: 'Content', icon: FileText, href: '/admin/content' },
-  { label: 'Projects', icon: FolderOpen, href: '/admin/projects' },
-  { label: 'Live Preview', icon: Eye, href: '/admin/preview' },
-  { label: 'Business', icon: Briefcase, href: '/admin/business' },
-  { label: 'Payments (Stripe)', icon: CreditCard, href: '/admin/stripe' },
-  { label: 'Open Source', icon: Github, href: '/admin/open-source' },
-  { label: 'Assets', icon: HardDrive, href: '/admin/assets' },
-  { label: 'Storage', icon: Server, href: '/admin/storage' },
-  { label: 'Database', icon: Database, href: '/admin/database' },
-  { label: 'Analytics', icon: BarChart3, href: '/admin/analytics' },
-  { label: 'AI Center', icon: Brain, href: '/admin/ai' },
-  { label: 'Subdomains', icon: Globe, href: '/admin/subdomains' },
-  { label: 'Monitoring', icon: Monitor, href: '/admin/monitoring' },
-  { label: 'Audit Logs', icon: ScrollText, href: '/admin/logs' },
-  { label: 'Security', icon: Shield, href: '/admin/security' },
-  { label: 'Users', icon: Users, href: '/admin/users' },
-  { label: 'Settings', icon: Settings, href: '/admin/settings' },
+  { label: 'แดชบอร์ด', icon: LayoutDashboard, href: '/admin' },
+  { label: 'พอร์ตโฟลิโอ', icon: Briefcase, href: '/portfolio/admin' },
+  { label: 'คอนเทนต์', icon: FileText, href: '/admin/content' },
+  { label: 'โปรเจกต์', icon: FolderOpen, href: '/admin/projects' },
+  { label: 'พรีวิวหน้าเว็บ', icon: Eye, href: '/admin/preview' },
+  { label: 'ธุรกิจ', icon: Briefcase, href: '/admin/business' },
+  { label: 'การชำระเงิน Stripe', icon: CreditCard, href: '/admin/stripe' },
+  { label: 'โอเพนซอร์ส', icon: Github, href: '/admin/open-source' },
+  { label: 'ไฟล์ดิจิทัล', icon: HardDrive, href: '/admin/assets' },
+  { label: 'พื้นที่จัดเก็บ', icon: Server, href: '/admin/storage' },
+  { label: 'ฐานข้อมูล', icon: Database, href: '/admin/database' },
+  { label: 'วิเคราะห์ข้อมูล', icon: BarChart3, href: '/admin/analytics' },
+  { label: 'ศูนย์ AI', icon: Brain, href: '/admin/ai' },
+  { label: 'ซับโดเมน', icon: Globe, href: '/admin/subdomains' },
+  { label: 'มอนิเตอร์', icon: Monitor, href: '/admin/monitoring' },
+  { label: 'บันทึกระบบ', icon: ScrollText, href: '/admin/logs' },
+  { label: 'ความปลอดภัย', icon: Shield, href: '/admin/security' },
+  { label: 'ผู้ดูแล', icon: Users, href: '/admin/users' },
+  { label: 'ตั้งค่า', icon: Settings, href: '/admin/settings' },
 ]
 
 const actionCommands = [
-  { label: 'New Blog Post', icon: FileText, href: '/admin/content', description: 'Write & publish' },
-  { label: 'Add Portfolio Project', icon: Package, href: '/admin/portfolio', description: 'Update portfolio' },
-  { label: 'Run Database Query', icon: Database, href: '/admin/database', description: 'DB explorer' },
-  { label: 'View GitHub Repos', icon: Github, href: '/admin/open-source', description: 'Open source hub' },
-  { label: 'Check System Status', icon: Monitor, href: '/admin/monitoring', description: 'Service health' },
-  { label: 'Manage API Keys', icon: Settings, href: '/admin/settings', description: 'Settings → API keys' },
-  { label: 'Security Events', icon: Shield, href: '/admin/security', description: 'Review audit log' },
-  { label: 'View Analytics', icon: BarChart3, href: '/admin/analytics', description: 'Traffic & stats' },
-  { label: 'AI Tools', icon: Brain, href: '/admin/ai', description: 'AI control center' },
-  { label: 'Deploy / Monitor', icon: Rocket, href: '/admin/monitoring', description: 'Vercel deployment' },
-  { label: 'Subdomain Manager', icon: Globe, href: '/admin/subdomains', description: 'Domain config' },
+  { label: 'เขียนบทความใหม่', icon: FileText, href: '/admin/content', description: 'เขียนและเผยแพร่' },
+  { label: 'เพิ่มโปรเจกต์พอร์ตโฟลิโอ', icon: Package, href: '/portfolio/admin', description: 'อัปเดตหน้าเว็บ' },
+  { label: 'รัน Query ฐานข้อมูล', icon: Database, href: '/admin/database', description: 'สำรวจฐานข้อมูล' },
+  { label: 'ดู GitHub Repos', icon: Github, href: '/admin/open-source', description: 'ฮับโอเพนซอร์ส' },
+  { label: 'ตรวจสถานะระบบ', icon: Monitor, href: '/admin/monitoring', description: 'สุขภาพบริการ' },
+  { label: 'จัดการ API Keys', icon: Settings, href: '/admin/settings', description: 'ตั้งค่า API keys' },
+  { label: 'เหตุการณ์ความปลอดภัย', icon: Shield, href: '/admin/security', description: 'ตรวจบันทึกระบบ' },
+  { label: 'ดู Analytics', icon: BarChart3, href: '/admin/analytics', description: 'ทราฟฟิกและสถิติ' },
+  { label: 'เครื่องมือ AI', icon: Brain, href: '/admin/ai', description: 'ศูนย์ควบคุม AI' },
+  { label: 'Deploy / Monitor', icon: Rocket, href: '/admin/monitoring', description: 'สถานะ Vercel' },
+  { label: 'จัดการซับโดเมน', icon: Globe, href: '/admin/subdomains', description: 'ตั้งค่าโดเมน' },
 ]
 
 const RESULT_ICONS = {
@@ -169,28 +169,28 @@ export function CommandPalette({ open, onOpenChange }: Props) {
       open={open}
       onOpenChange={onOpenChange}
       shouldFilter={false}
-      title="Command Palette"
-      description="Search pages, content, or run an action"
+      title="แถบคำสั่ง"
+      description="ค้นหาหน้า คอนเทนต์ หรือเรียกใช้คำสั่งลัด"
     >
       <CommandInput
-        placeholder="Search pages, users, projects, messages..."
+        placeholder="ค้นหาหน้า ผู้ดูแล โปรเจกต์ หรือข้อความ..."
         value={query}
         onValueChange={setQuery}
       />
       <CommandList className="max-h-[420px]">
         {isEmpty && (
           <CommandEmpty>
-            <p className="py-2 text-sm text-[#A1A1AA]">No results found.</p>
+            <p className="py-2 text-sm text-[#A1A1AA]">ไม่พบผลลัพธ์</p>
           </CommandEmpty>
         )}
 
         {searching && (
-          <div className="px-4 py-3 text-[12px] text-[#52525b]">Searching…</div>
+          <div className="px-4 py-3 text-[12px] text-[#52525b]">กำลังค้นหา...</div>
         )}
 
         {hasResults && (
           <>
-            <CommandGroup heading="Content Search">
+            <CommandGroup heading="ผลการค้นหา">
               {results.map((item) => {
                 const Icon = RESULT_ICONS[item.type] ?? FolderOpen
                 return (
@@ -212,7 +212,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
         )}
 
         {hasNav && (
-          <CommandGroup heading="Navigate">
+          <CommandGroup heading="ไปยังหน้า">
             {filteredNav.map((item) => {
               const Icon = item.icon
               return (
@@ -228,7 +228,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
         {hasNav && hasActions && <CommandSeparator />}
 
         {hasActions && (
-          <CommandGroup heading="Quick Actions">
+          <CommandGroup heading="คำสั่งลัด">
             {filteredActions.map((item) => {
               const Icon = item.icon
               return (
@@ -248,7 +248,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
       {!query && (
         <div className="border-t border-[#27272A] px-4 py-2">
           <p className="text-[10px] text-[#3f3f46]">
-            Type to search across pages, users, projects, messages, and logs
+            พิมพ์เพื่อค้นหาหน้า ผู้ดูแล โปรเจกต์ ข้อความ และบันทึกระบบ
           </p>
         </div>
       )}

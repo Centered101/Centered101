@@ -79,7 +79,7 @@ function usePublicFetch<T>(url: string) {
 }
 
 export default function PreviewPage() {
-  usePageTitle('Portfolio Preview')
+  usePageTitle('ตัวอย่างพอร์ตโฟลิโอ')
   const [iframeOpen, setIframeOpen] = useState(false)
 
   // Public routes — what visitors see
@@ -92,7 +92,7 @@ export default function PreviewPage() {
 
   const loading = pubProjLoading || toolsLoading || adminLoading
 
-  if (loading && !pubProjectsData && !adminData) return <AdminLoading message="Fetching live portfolio data..." />
+  if (loading && !pubProjectsData && !adminData) return <AdminLoading message="กำลังดึงข้อมูลพอร์ตโฟลิโอจริง..." />
 
   const visibleProjects = pubProjectsData?.projects ?? []
   const allProjects = adminData?.projects ?? []
@@ -112,8 +112,8 @@ export default function PreviewPage() {
   return (
     <AdminPageContainer>
       <AdminPageHeader
-        title="Portfolio Preview"
-        description="Real-time view of what visitors see — data from public API routes"
+        title="ตัวอย่างพอร์ตโฟลิโอ"
+        description="มุมมองจริงที่ผู้เข้าชมเห็น ดึงข้อมูลจาก public API routes"
       >
         <a
           href="/"
@@ -122,14 +122,14 @@ export default function PreviewPage() {
           className="flex items-center gap-1.5 rounded-lg border border-[#27272A] bg-[#18181B] px-3 py-1.5 text-xs text-[#A1A1AA] hover:text-[#FAFAFA]"
         >
           <ExternalLink className="size-3.5" />
-          Open Live Site
+          เปิดหน้าเว็บจริง
         </a>
         <button
           onClick={() => setIframeOpen(true)}
           className="flex items-center gap-1.5 rounded-lg bg-[#409EFE] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#60aeff]"
         >
           <Maximize2 className="size-3.5" />
-          Preview Full Screen
+          ดูเต็มหน้าจอ
         </button>
       </AdminPageHeader>
 
@@ -137,30 +137,30 @@ export default function PreviewPage() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           {
-            label: 'Visitors See',
-            value: `${featuredCount} projects`,
-            sub: `${allProjects.length} total in DB`,
+            label: 'ผู้เข้าชมเห็น',
+            value: `${featuredCount} โปรเจกต์`,
+            sub: `ทั้งหมด ${allProjects.length} รายการใน DB`,
             icon: Eye,
             color: 'text-[#22C55E]',
           },
           {
-            label: 'Not Visible',
-            value: `${hiddenCount} hidden`,
+            label: 'ไม่แสดงผล',
+            value: `ซ่อน ${hiddenCount} รายการ`,
             sub: 'draft / disabled / not featured',
             icon: EyeOff,
             color: 'text-[#52525b]',
           },
           {
-            label: 'Tech Tools',
-            value: `${tools.length} listed`,
-            sub: `${Object.keys(toolsByCategory).length} categories`,
+            label: 'เครื่องมือ',
+            value: `${tools.length} รายการ`,
+            sub: `${Object.keys(toolsByCategory).length} หมวดหมู่`,
             icon: Code2,
             color: 'text-[#409EFE]',
           },
           {
-            label: 'This Week',
+            label: 'สัปดาห์นี้',
             value: waka?.configured ? waka.humanReadableTotal : '—',
-            sub: waka?.configured ? `avg ${waka.humanReadableDailyAverage}/day` : 'WakaTime not configured',
+            sub: waka?.configured ? `เฉลี่ย ${waka.humanReadableDailyAverage}/วัน` : 'ยังไม่ได้ตั้งค่า WakaTime',
             icon: Clock,
             color: 'text-[#F59E0B]',
           },
@@ -183,25 +183,25 @@ export default function PreviewPage() {
       <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
         <div className="flex items-center justify-between border-b border-[#27272A] px-5 py-4">
           <div>
-            <h2 className="text-sm font-semibold text-[#FAFAFA]">Featured Projects</h2>
+            <h2 className="text-sm font-semibold text-[#FAFAFA]">โปรเจกต์ที่แสดงจริง</h2>
             <p className="mt-0.5 text-[11px] text-[#52525b]">
-              From <code className="font-mono text-[10px]">/api/projects</code> — enabled + published + featured only
+              จาก <code className="font-mono text-[10px]">/api/projects</code> · เฉพาะ enabled + published + featured
             </p>
           </div>
           <a
             href="/admin/projects"
             className="flex items-center gap-1 text-[11px] text-[#409EFE] hover:underline"
           >
-            Manage <ArrowRight className="size-3" />
+            จัดการ <ArrowRight className="size-3" />
           </a>
         </div>
 
         {visibleProjects.length === 0 ? (
           <div className="px-5 py-8 text-center">
             <EyeOff className="mx-auto mb-2 size-8 text-[#3f3f46]" />
-            <p className="text-sm text-[#52525b]">No projects visible to visitors</p>
+            <p className="text-sm text-[#52525b]">ยังไม่มีโปรเจกต์ที่ผู้เข้าชมเห็น</p>
             <p className="mt-1 text-[11px] text-[#3f3f46]">
-              Set projects to enabled + published + featured to show on the site
+              ตั้งค่าโปรเจกต์ให้ enabled + published + featured เพื่อแสดงบนหน้าเว็บ
             </p>
           </div>
         ) : (
@@ -215,11 +215,11 @@ export default function PreviewPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-semibold text-[#FAFAFA]">{proj.title}</span>
                     <span className="rounded border border-[#22C55E]/20 bg-[#22C55E]/10 px-1.5 py-px text-[9px] font-semibold text-[#22C55E]">
-                      LIVE
+                      แสดงอยู่
                     </span>
                     {proj.featured && (
                       <span className="rounded border border-[#409EFE]/20 bg-[#409EFE]/10 px-1.5 py-px text-[9px] font-semibold text-[#409EFE]">
-                        FEATURED
+                        เด่น
                       </span>
                     )}
                   </div>
@@ -259,22 +259,22 @@ export default function PreviewPage() {
         <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
           <div className="flex items-center justify-between border-b border-[#27272A] px-5 py-4">
             <div>
-              <h2 className="text-sm font-semibold text-[#FAFAFA]">All Projects — Visibility Status</h2>
-              <p className="mt-0.5 text-[11px] text-[#52525b]">Admin data vs what visitors see</p>
+              <h2 className="text-sm font-semibold text-[#FAFAFA]">โปรเจกต์ทั้งหมด · สถานะการแสดงผล</h2>
+              <p className="mt-0.5 text-[11px] text-[#52525b]">ข้อมูลแอดมินเทียบกับสิ่งที่ผู้เข้าชมเห็น</p>
             </div>
-            <a href="/admin/portfolio" className="flex items-center gap-1 text-[11px] text-[#409EFE] hover:underline">
-              Manage <ArrowRight className="size-3" />
+            <a href="/portfolio/admin" className="flex items-center gap-1 text-[11px] text-[#409EFE] hover:underline">
+              จัดการ <ArrowRight className="size-3" />
             </a>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-[13px]">
               <thead>
                 <tr className="border-b border-[#27272A] text-[10px] font-semibold uppercase tracking-widest text-[#3f3f46]">
-                  <th className="px-5 py-3">Project</th>
-                  <th className="px-4 py-3">Status</th>
+                  <th className="px-5 py-3">โปรเจกต์</th>
+                  <th className="px-4 py-3">สถานะ</th>
                   <th className="px-4 py-3">Enabled</th>
                   <th className="px-4 py-3">Featured</th>
-                  <th className="px-4 py-3">Visible</th>
+                  <th className="px-4 py-3">แสดงผล</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#27272A]/40">
@@ -304,8 +304,8 @@ export default function PreviewPage() {
                       </td>
                       <td className="px-4 py-2.5">
                         {visible
-                          ? <span className="rounded bg-[#22C55E]/10 px-2 py-0.5 text-[10px] font-semibold text-[#22C55E]">VISIBLE</span>
-                          : <span className="rounded bg-[#27272A] px-2 py-0.5 text-[10px] font-semibold text-[#52525b]">HIDDEN</span>}
+                          ? <span className="rounded bg-[#22C55E]/10 px-2 py-0.5 text-[10px] font-semibold text-[#22C55E]">แสดง</span>
+                          : <span className="rounded bg-[#27272A] px-2 py-0.5 text-[10px] font-semibold text-[#52525b]">ซ่อน</span>}
                       </td>
                     </tr>
                   )
@@ -320,19 +320,19 @@ export default function PreviewPage() {
       <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
         <div className="flex items-center justify-between border-b border-[#27272A] px-5 py-4">
           <div>
-            <h2 className="text-sm font-semibold text-[#FAFAFA]">Tech Stack</h2>
+            <h2 className="text-sm font-semibold text-[#FAFAFA]">สกิลและเครื่องมือ</h2>
             <p className="mt-0.5 text-[11px] text-[#52525b]">
-              From <code className="font-mono text-[10px]">/api/portfolio/tools</code> — {tools.length} tools
+              จาก <code className="font-mono text-[10px]">/api/portfolio/tools</code> · {tools.length} รายการ
             </p>
           </div>
-          <a href="/admin/portfolio" className="flex items-center gap-1 text-[11px] text-[#409EFE] hover:underline">
-            Manage <ArrowRight className="size-3" />
+          <a href="/portfolio/admin?tab=tools" className="flex items-center gap-1 text-[11px] text-[#409EFE] hover:underline">
+            จัดการ <ArrowRight className="size-3" />
           </a>
         </div>
         {toolsLoading ? (
-          <div className="px-5 py-6 text-center text-[12px] text-[#52525b]">Loading tools…</div>
+          <div className="px-5 py-6 text-center text-[12px] text-[#52525b]">กำลังโหลดเครื่องมือ...</div>
         ) : tools.length === 0 ? (
-          <div className="px-5 py-6 text-center text-[12px] text-[#52525b]">No tools configured</div>
+          <div className="px-5 py-6 text-center text-[12px] text-[#52525b]">ยังไม่ได้ตั้งค่าเครื่องมือ</div>
         ) : (
           <div className="divide-y divide-[#27272A]/40">
             {CATEGORY_ORDER.filter((cat) => toolsByCategory[cat]).map((cat) => (
@@ -362,23 +362,23 @@ export default function PreviewPage() {
         <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
           <div className="flex items-center justify-between border-b border-[#27272A] px-5 py-4">
             <div>
-              <h2 className="text-sm font-semibold text-[#FAFAFA]">WakaTime — Visitor View</h2>
+              <h2 className="text-sm font-semibold text-[#FAFAFA]">WakaTime · มุมมองผู้เข้าชม</h2>
               <p className="mt-0.5 text-[11px] text-[#52525b]">
-                From <code className="font-mono text-[10px]">/api/wakatime</code> — cached 1h
+                จาก <code className="font-mono text-[10px]">/api/wakatime</code> · cache 1 ชั่วโมง
               </p>
             </div>
             <a href="/admin/wakatime" className="flex items-center gap-1 text-[11px] text-[#409EFE] hover:underline">
-              Full stats <ArrowRight className="size-3" />
+              ดูสถิติเต็ม <ArrowRight className="size-3" />
             </a>
           </div>
           {!waka.configured ? (
             <div className="px-5 py-6 text-center text-[12px] text-[#52525b]">
-              WakaTime not configured — set <code className="font-mono text-[10px]">WAKATIME_API_KEY</code> in .env
+              ยังไม่ได้ตั้งค่า WakaTime · ตั้งค่า <code className="font-mono text-[10px]">WAKATIME_API_KEY</code> ใน .env
             </div>
           ) : (
             <div className="grid divide-y divide-[#27272A]/40 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
               <div className="px-5 py-4">
-                <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-[#3f3f46]">Top Languages</p>
+                <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-[#3f3f46]">ภาษายอดนิยม</p>
                 <div className="space-y-2">
                   {waka.languages.map((lang) => (
                     <div key={lang.name} className="flex items-center gap-3">
@@ -397,19 +397,19 @@ export default function PreviewPage() {
                 </div>
               </div>
               <div className="px-5 py-4">
-                <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-[#3f3f46]">This Week</p>
+                <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-[#3f3f46]">สัปดาห์นี้</p>
                 <div className="space-y-3">
                   <div>
-                    <p className="text-[11px] text-[#52525b]">Total coded</p>
+                    <p className="text-[11px] text-[#52525b]">เวลาเขียนโค้ดรวม</p>
                     <p className="text-xl font-bold text-[#F59E0B]">{waka.humanReadableTotal}</p>
                   </div>
                   <div>
-                    <p className="text-[11px] text-[#52525b]">Daily average</p>
+                    <p className="text-[11px] text-[#52525b]">เฉลี่ยต่อวัน</p>
                     <p className="text-sm font-semibold text-[#FAFAFA]">{waka.humanReadableDailyAverage}</p>
                   </div>
                   {waka.bestDayText && (
                     <div>
-                      <p className="text-[11px] text-[#52525b]">Best day</p>
+                      <p className="text-[11px] text-[#52525b]">วันที่ดีที่สุด</p>
                       <p className="text-sm font-semibold text-[#22C55E]">{waka.bestDayText}</p>
                     </div>
                   )}
@@ -427,10 +427,10 @@ export default function PreviewPage() {
           className="max-h-[95vh] w-[95vw] max-w-[95vw] overflow-hidden border-[#27272A] bg-[#09090B] p-0"
         >
           <div className="flex items-center justify-between border-b border-[#27272A] px-4 py-2.5">
-            <span className="text-[12px] font-semibold text-[#A1A1AA]">Live Portfolio Preview</span>
+            <span className="text-[12px] font-semibold text-[#A1A1AA]">ตัวอย่างพอร์ตโฟลิโอจริง</span>
             <div className="flex items-center gap-2">
               <span className="rounded border border-[#22C55E]/20 bg-[#22C55E]/10 px-2 py-px text-[10px] font-semibold text-[#22C55E]">
-                LIVE
+                แสดงจริง
               </span>
               <a
                 href="/"
@@ -438,14 +438,14 @@ export default function PreviewPage() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 rounded border border-[#27272A] bg-[#18181B] px-2 py-px text-[10px] text-[#A1A1AA] hover:text-[#FAFAFA]"
               >
-                <ExternalLink className="size-3" /> Open in tab
+                <ExternalLink className="size-3" /> เปิดในแท็บ
               </a>
             </div>
           </div>
           <iframe
             src="/"
             className="h-[calc(95vh-44px)] w-full border-0"
-            title="Portfolio Live Preview"
+            title="ตัวอย่างพอร์ตโฟลิโอจริง"
           />
         </DialogContent>
       </Dialog>

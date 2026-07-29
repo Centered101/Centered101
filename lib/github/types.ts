@@ -55,6 +55,13 @@ export interface GitHubSocialAccount {
   url: string
 }
 
+export interface GitHubOrganization {
+  login: string
+  id: number
+  avatar_url: string
+  description: string | null
+}
+
 export interface ContributionDay {
   date: string
   count: number
@@ -71,6 +78,7 @@ export interface GitHubProfile {
   user: GitHubUser
   repositories: GitHubRepo[]
   socialAccounts: GitHubSocialAccount[]
+  organizations: GitHubOrganization[]
   orcidId: string | null
   totalStars: number
   topLanguages: LanguageStats[]

@@ -11,10 +11,9 @@ type ToolRow = {
   sort_order?: number | null
 }
 
-const VALID_CATEGORIES = new Set(['Frontend', 'Backend', 'Database', 'DevOps', 'Tools', 'Cloud'])
-
 function normalizeTool(row: ToolRow, index: number): PortfolioTool {
-  const category = row.category && VALID_CATEGORIES.has(row.category) ? row.category : 'Tools'
+  // Any non-empty category is kept as-is so admin-defined custom groups survive.
+  const category = (typeof row.category === 'string' && row.category.trim()) || 'Tools'
 
   return {
     id: String(row.id || `tool-${index}`),

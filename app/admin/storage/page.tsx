@@ -73,7 +73,7 @@ function bucketColor(name: string) {
 
 function copyUrl(url: string) {
   navigator.clipboard.writeText(url)
-  toast.success('URL copied')
+  toast.success('คัดลอก URL แล้ว')
 }
 
 // ---------- per-bucket section ----------
@@ -116,12 +116,12 @@ function BucketSection({ bucket, onUpload }: { bucket: BucketInfo; onUpload: (bu
                 }}
               >
                 {bucket.public ? <Globe className="size-2.5" /> : <Lock className="size-2.5" />}
-                {bucket.public ? 'Public' : 'Private'}
+                {bucket.public ? 'สาธารณะ' : 'ส่วนตัว'}
               </span>
             </div>
             <p className="mt-0.5 text-[11px] text-[#52525b]">
-              {bucket.fileCount} files · {bucket.folderCount} folders · {formatBytes(bucket.totalBytes)}
-              {bucket.fileSizeLimit ? ` · max ${formatBytes(bucket.fileSizeLimit)}/file` : ''}
+              {bucket.fileCount} ไฟล์ · {bucket.folderCount} โฟลเดอร์ · {formatBytes(bucket.totalBytes)}
+              {bucket.fileSizeLimit ? ` · สูงสุด ${formatBytes(bucket.fileSizeLimit)}/ไฟล์` : ''}
             </p>
           </div>
 
@@ -140,7 +140,7 @@ function BucketSection({ bucket, onUpload }: { bucket: BucketInfo; onUpload: (bu
             className="hidden h-7 items-center gap-1.5 rounded-lg border border-[#27272A] bg-[#09090B] px-2.5 text-[11px] text-[#A1A1AA] transition-colors hover:border-[#409EFE]/30 hover:text-[#409EFE] sm:flex"
           >
             <Upload className="size-3" />
-            Upload
+            อัปโหลด
           </button>
           {open
             ? <ChevronDown className="size-4 text-[#3f3f46]" />
@@ -154,11 +154,11 @@ function BucketSection({ bucket, onUpload }: { bucket: BucketInfo; onUpload: (bu
           {loading ? (
             <div className="flex h-20 items-center justify-center gap-2 text-[12px] text-[#52525b]">
               <Loader2 className="size-3.5 animate-spin" />
-              Loading files...
+              กำลังโหลดไฟล์...
             </div>
           ) : files.length === 0 ? (
             <div className="flex h-20 items-center justify-center text-[12px] text-[#3f3f46]">
-              Bucket is empty
+              Bucket นี้ยังว่าง
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -166,9 +166,9 @@ function BucketSection({ bucket, onUpload }: { bucket: BucketInfo; onUpload: (bu
                 <thead>
                   <tr className="border-b border-[#27272A] text-[10px] font-semibold uppercase tracking-widest text-[#3f3f46]">
                     <th className="px-5 py-2.5">Path</th>
-                    <th className="px-4 py-2.5">Type</th>
-                    <th className="px-4 py-2.5">Size</th>
-                    <th className="px-4 py-2.5">Modified</th>
+                    <th className="px-4 py-2.5">ประเภท</th>
+                    <th className="px-4 py-2.5">ขนาด</th>
+                    <th className="px-4 py-2.5">แก้ไขล่าสุด</th>
                     <th className="px-4 py-2.5" />
                   </tr>
                 </thead>
@@ -182,19 +182,19 @@ function BucketSection({ bucket, onUpload }: { bucket: BucketInfo; onUpload: (bu
                           <FileIcon mime={f.mimeType} isFolder={f.isFolder} />
                           <span className="max-w-60 truncate font-mono text-xs text-[#A1A1AA]">{f.name}</span>
                           {depth > 0 && (
-                            <span className="truncate font-mono text-[10px] text-[#3f3f46]">in {f.path.split('/').slice(0, -1).join('/')}</span>
+                            <span className="truncate font-mono text-[10px] text-[#3f3f46]">ใน {f.path.split('/').slice(0, -1).join('/')}</span>
                           )}
                         </div>
                       </td>
                       <td className="px-4 py-2.5 font-mono text-[11px] text-[#52525b]">
-                        {f.isFolder ? 'folder' : (f.mimeType || '—')}
+                        {f.isFolder ? 'โฟลเดอร์' : (f.mimeType || '—')}
                       </td>
                       <td className="px-4 py-2.5 font-mono text-xs text-[#52525b]">
                         {f.isFolder ? '—' : formatBytes(f.size)}
                       </td>
                       <td className="px-4 py-2.5 text-xs text-[#52525b]">
                         {f.lastModified
-                          ? new Date(f.lastModified).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                          ? new Date(f.lastModified).toLocaleDateString('th-TH', { month: 'short', day: 'numeric', year: 'numeric' })
                           : '—'}
                       </td>
                       <td className="px-4 py-2.5">
@@ -204,7 +204,7 @@ function BucketSection({ bucket, onUpload }: { bucket: BucketInfo; onUpload: (bu
                             type="button"
                             onClick={() => copyUrl(f.url)}
                             className="grid size-7 place-items-center rounded-lg border border-[#27272A] text-[#52525b] hover:border-[#3f3f46] hover:text-[#A1A1AA]"
-                            title="Copy URL"
+                            title="คัดลอก URL"
                           >
                             <Copy className="size-3" />
                           </button>
@@ -213,7 +213,7 @@ function BucketSection({ bucket, onUpload }: { bucket: BucketInfo; onUpload: (bu
                             target="_blank"
                             rel="noopener noreferrer"
                             className="grid size-7 place-items-center rounded-lg border border-[#27272A] text-[#52525b] hover:border-[#3f3f46] hover:text-[#A1A1AA]"
-                            title="Open file"
+                            title="เปิดไฟล์"
                           >
                             <ExternalLink className="size-3" />
                           </a>
@@ -235,7 +235,7 @@ function BucketSection({ bucket, onUpload }: { bucket: BucketInfo; onUpload: (bu
 
 // ---------- main page ----------
 export default function StoragePage() {
-  usePageTitle('Storage')
+  usePageTitle('พื้นที่จัดเก็บ')
   const { getAdminHeaders } = useAdminAuth()
   const [uploading, setUploading] = useState(false)
   const [uploadTarget, setUploadTarget] = useState<string | null>(null)
@@ -265,8 +265,8 @@ export default function StoragePage() {
         body: form,
       })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error || 'Upload failed')
-      toast.success(`Uploaded "${file.name}" to ${uploadTarget}`)
+      if (!res.ok) throw new Error(json.error || 'อัปโหลดไม่สำเร็จ')
+      toast.success(`อัปโหลด "${file.name}" ไปยัง ${uploadTarget} แล้ว`)
       refetch()
     } catch (err) {
       toast.error((err as Error).message)
@@ -277,15 +277,15 @@ export default function StoragePage() {
     }
   }
 
-  if (loading) return <AdminLoading message="Loading storage buckets..." />
+  if (loading) return <AdminLoading message="กำลังโหลดพื้นที่จัดเก็บ..." />
   if (error) return <AdminError error={error} onRetry={refetch} />
 
   return (
     <AdminPageContainer>
       <input ref={fileInputRef} type="file" className="hidden" onChange={handleUpload} />
       <AdminPageHeader
-        title="Storage Buckets"
-        description={`${buckets.length} buckets · ${totalFiles} files · ${formatBytes(totalBytes)}`}
+        title="พื้นที่จัดเก็บ"
+        description={`${buckets.length} bucket · ${totalFiles} ไฟล์ · ใช้พื้นที่ ${formatBytes(totalBytes)}`}
       >
         <Button
           variant="outline"
@@ -298,7 +298,7 @@ export default function StoragePage() {
           )}
         >
           {uploading
-            ? <><Loader2 className="size-3.5 animate-spin" /> Uploading...</>
+            ? <><Loader2 className="size-3.5 animate-spin" /> กำลังอัปโหลด...</>
             : <RefreshCw className="size-3.5" />}
         </Button>
       </AdminPageHeader>
@@ -306,8 +306,8 @@ export default function StoragePage() {
       {/* Buckets */}
       {buckets.length === 0 ? (
         <AdminEmpty
-          title="No storage buckets"
-          description="Create buckets in the Supabase Dashboard → Storage"
+          title="ยังไม่มี bucket พื้นที่จัดเก็บ"
+          description="สร้าง bucket ได้ใน Supabase Dashboard > Storage"
         />
       ) : (
         <div className="space-y-3">

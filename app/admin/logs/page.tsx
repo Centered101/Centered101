@@ -26,23 +26,23 @@ type LogEntry = {
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 1) return 'เมื่อสักครู่'
+  if (mins < 60) return `${mins} นาทีที่แล้ว`
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
+  if (hrs < 24) return `${hrs} ชั่วโมงที่แล้ว`
+  return `${Math.floor(hrs / 24)} วันที่แล้ว`
 }
 
 const PAGE_SIZE = 25
 
 export default function LogsPage() {
-  usePageTitle('Audit Logs')
+  usePageTitle('บันทึกระบบ')
   const { data, loading, error, refetch } = useAdminApi<{ logs: LogEntry[] }>('/api/admin/logs')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   useAdminRealtime(['admin_audit_log'], refetch)
 
-  if (loading) return <AdminLoading message="Loading audit logs..." />
+  if (loading) return <AdminLoading message="กำลังโหลดบันทึกระบบ..." />
   if (error) return <AdminError error={error} onRetry={refetch} />
 
   const logs = data?.logs ?? []
@@ -56,7 +56,7 @@ export default function LogsPage() {
 
   return (
     <AdminPageContainer>
-      <AdminPageHeader title="Audit Logs" description={`${logs.length} entries`}>
+      <AdminPageHeader title="บันทึกระบบ" description={`${logs.length} รายการ`}>
         <Button
           size="sm"
           variant="outline"
@@ -64,7 +64,7 @@ export default function LogsPage() {
           onClick={refetch}
         >
           <RefreshCw className="size-3.5" />
-          Refresh
+          รีเฟรช
         </Button>
       </AdminPageHeader>
 
@@ -73,29 +73,29 @@ export default function LogsPage() {
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-foreground-faint" />
             <Input
-              placeholder="Filter by action, resource, or id..."
+              placeholder="กรองจาก action, resource หรือ id..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1) }}
               className="h-8 border-surface-300 bg-dash-canvas pl-8 text-xs text-foreground-light placeholder:text-foreground-faint focus-visible:ring-[#409EFE]/30"
             />
           </div>
           <span className="rounded border border-surface-300 bg-dash-canvas px-2 py-1 text-[11px] text-foreground-muted">
-            {filtered.length} entries
+            {filtered.length} รายการ
           </span>
         </div>
 
         {filtered.length === 0 ? (
-          <AdminEmpty title="No log entries" description="Admin actions will appear here after they occur" />
+          <AdminEmpty title="ยังไม่มีบันทึก" description="การทำงานของ admin จะแสดงที่นี่หลังเกิดเหตุการณ์" />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-left text-[13px]">
               <thead>
                 <tr className="border-b border-surface-300 text-[10px] font-semibold uppercase tracking-widest text-foreground-faint">
-                  <th className="px-5 py-3">Action</th>
-                  <th className="px-4 py-3">Resource</th>
-                  <th className="px-4 py-3">Outcome</th>
+                  <th className="px-5 py-3">การทำงาน</th>
+                  <th className="px-4 py-3">ทรัพยากร</th>
+                  <th className="px-4 py-3">ผลลัพธ์</th>
                   <th className="px-4 py-3">IP</th>
-                  <th className="px-4 py-3">Time</th>
+                  <th className="px-4 py-3">เวลา</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-300/50">

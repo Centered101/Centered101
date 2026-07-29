@@ -31,7 +31,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 }
 
 export default function DatabasePage() {
-  usePageTitle('Database')
+  usePageTitle('ฐานข้อมูล')
   const { getAdminHeaders } = useAdminAuth()
   const { data, loading, error, refetch } = useAdminApi<DatabaseData>('/api/admin/database')
   const [query, setQuery] = useState('SELECT * FROM portfolio_projects LIMIT 10;')
@@ -40,7 +40,7 @@ export default function DatabasePage() {
   const [queryError, setQueryError] = useState<string | null>(null)
   const [running, setRunning] = useState(false)
 
-  if (loading) return <AdminLoading message="Querying table stats..." />
+  if (loading) return <AdminLoading message="กำลังอ่านสถิติตาราง..." />
   if (error) return <AdminError error={error} onRetry={refetch} />
 
   const tables = data?.tables ?? []
@@ -53,7 +53,7 @@ export default function DatabasePage() {
   async function runQuery() {
     const trimmed = query.trim().toLowerCase()
     if (!trimmed.startsWith('select')) {
-      toast.error('Only SELECT queries are permitted')
+      toast.error('อนุญาตเฉพาะคำสั่ง SELECT เท่านั้น')
       return
     }
     setRunning(true)
@@ -61,7 +61,7 @@ export default function DatabasePage() {
     setQueryResults(null)
     try {
       const match = trimmed.match(/from\s+(\w+)/)
-      if (!match) { toast.error('Could not determine table name from query'); return }
+      if (!match) { toast.error('อ่านชื่อตารางจาก query ไม่ได้'); return }
       const tableName = match[1]
       const limitMatch = trimmed.match(/limit\s+(\d+)/)
       const limit = Math.min(limitMatch ? parseInt(limitMatch[1]) : 20, 100)
@@ -72,7 +72,7 @@ export default function DatabasePage() {
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`)
       setQueryResults(json.rows ?? [])
-      toast.success(`${json.rows?.length ?? 0} rows returned`)
+      toast.success(`ได้ผลลัพธ์ ${json.rows?.length ?? 0} แถว`)
     } catch (err) {
       setQueryError((err as Error).message)
       toast.error((err as Error).message)
@@ -84,16 +84,16 @@ export default function DatabasePage() {
   return (
     <AdminPageContainer>
       <AdminPageHeader
-        title="Database Explorer"
-        description={`${accessibleTables.length} tables · ${totalRows.toLocaleString()} total rows from Supabase`}
+        title="สำรวจฐานข้อมูล"
+        description={`${accessibleTables.length} ตาราง · รวม ${totalRows.toLocaleString()} แถวจาก Supabase`}
       />
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {[
-          { label: 'Tables', value: tables.length, color: 'text-[#409EFE]' },
-          { label: 'Total Rows', value: totalRows.toLocaleString(), color: 'text-[#FAFAFA]' },
-          { label: 'Categories', value: categories.length, color: 'text-[#F59E0B]' },
+          { label: 'ตาราง', value: tables.length, color: 'text-[#409EFE]' },
+          { label: 'จำนวนแถวรวม', value: totalRows.toLocaleString(), color: 'text-[#FAFAFA]' },
+          { label: 'หมวดหมู่', value: categories.length, color: 'text-[#F59E0B]' },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border border-[#27272A] bg-[#18181B] px-4 py-3">
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
@@ -102,14 +102,14 @@ export default function DatabasePage() {
         ))}
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[280px_1fr]">
+      <div className="grid min-w-0 gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
         {/* Table list */}
         <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
           <div className="border-b border-[#27272A] px-4 py-3.5">
-            <h2 className="text-sm font-semibold text-[#FAFAFA]">Tables</h2>
+            <h2 className="text-sm font-semibold text-[#FAFAFA]">ตาราง</h2>
           </div>
           {tables.length === 0 ? (
-            <AdminEmpty title="No tables found" />
+            <AdminEmpty title="ไม่พบตาราง" />
           ) : (
             <div className="max-h-[400px] divide-y divide-[#27272A]/50 overflow-y-auto">
               {tables.map((table) => {
@@ -129,7 +129,7 @@ export default function DatabasePage() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[12px] font-medium text-[#FAFAFA]">{table.name}</p>
                       <p className="text-[10px] text-[#52525b]">
-                        {table.accessible ? `${(table.rows ?? 0).toLocaleString()} rows` : 'no access'}
+                        {table.accessible ? `${(table.rows ?? 0).toLocaleString()} แถว` : 'ไม่มีสิทธิ์เข้าถึง'}
                       </p>
                     </div>
                     <span
@@ -150,19 +150,19 @@ export default function DatabasePage() {
         </div>
 
         {/* Query editor */}
-        <div className="flex flex-col gap-4">
-          <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
+        <div className="flex min-w-0 flex-col gap-4">
+          <div className="min-w-0 rounded-xl border border-[#27272A] bg-[#18181B]">
             <div className="flex items-center justify-between border-b border-[#27272A] px-5 py-3.5">
               <div>
-                <h2 className="text-sm font-semibold text-[#FAFAFA]">Query Runner</h2>
+                <h2 className="text-sm font-semibold text-[#FAFAFA]">รัน Query</h2>
                 {selectedTable && (
                   <p className="mt-0.5 text-[11px] text-[#52525b]">
-                    {selectedTable.name} · {(selectedTable.rows ?? 0).toLocaleString()} rows
+                    {selectedTable.name} · {(selectedTable.rows ?? 0).toLocaleString()} แถว
                   </p>
                 )}
               </div>
               <span className="rounded border border-[#F59E0B]/20 bg-[#F59E0B]/5 px-1.5 py-0.5 text-[9px] font-semibold text-[#F59E0B]">
-                READ-ONLY
+                อ่านอย่างเดียว
               </span>
             </div>
             <div className="p-5">
@@ -170,18 +170,18 @@ export default function DatabasePage() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 rows={5}
-                className="w-full resize-none rounded-lg border border-[#27272A] bg-[#09090B] px-3 py-2.5 font-mono text-[13px] text-[#FAFAFA] placeholder:text-[#3f3f46] focus:border-[#409EFE]/40 focus:outline-none"
+                className="w-full min-w-0 resize-none rounded-lg border border-[#27272A] bg-[#09090B] px-3 py-2.5 font-mono text-[13px] text-[#FAFAFA] placeholder:text-[#3f3f46] focus:border-[#409EFE]/40 focus:outline-none"
                 spellCheck={false}
               />
               <div className="mt-3 flex items-center justify-between">
-                <span className="text-[11px] text-[#3f3f46]">Only SELECT queries · max 100 rows</span>
+                <span className="text-[11px] text-[#3f3f46]">เฉพาะ SELECT · สูงสุด 100 แถว</span>
                 <button
                   onClick={runQuery}
                   disabled={running}
                   className="flex items-center gap-1.5 rounded-lg bg-[#409EFE] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#60aeff] disabled:opacity-60"
                 >
                   {running ? <Loader2 className="size-3 animate-spin" /> : <Play className="size-3" />}
-                  Run
+                  รัน
                 </button>
               </div>
 
@@ -192,11 +192,11 @@ export default function DatabasePage() {
                 </div>
               )}
               {queryResults && queryResults.length === 0 && (
-                <p className="mt-3 text-[11px] text-[#52525b]">Query returned 0 rows.</p>
+                <p className="mt-3 text-[11px] text-[#52525b]">Query นี้ไม่มีผลลัพธ์</p>
               )}
               {queryResults && queryResults.length > 0 && (
-                <div className="mt-3 overflow-x-auto rounded-lg border border-[#27272A]">
-                  <table className="w-full text-left text-[11px]">
+                <div className="mt-3 max-w-full overflow-x-auto rounded-lg border border-[#27272A]">
+                  <table className="min-w-max text-left text-[11px]">
                     <thead>
                       <tr className="border-b border-[#27272A] bg-[#09090B]">
                         {Object.keys(queryResults[0]).map((col) => (
@@ -222,9 +222,9 @@ export default function DatabasePage() {
           </div>
 
           {/* Category breakdown */}
-          <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
+          <div className="min-w-0 rounded-xl border border-[#27272A] bg-[#18181B]">
             <div className="border-b border-[#27272A] px-5 py-3.5">
-              <h2 className="text-sm font-semibold text-[#FAFAFA]">By Category</h2>
+              <h2 className="text-sm font-semibold text-[#FAFAFA]">แยกตามหมวดหมู่</h2>
             </div>
             <div className="grid grid-cols-2 gap-px bg-[#27272A]/50 sm:grid-cols-3">
               {categories.map((cat) => {
@@ -240,7 +240,7 @@ export default function DatabasePage() {
                     <p className="mt-1 font-mono text-sm font-bold text-[#FAFAFA]">
                       {catRows.toLocaleString()}
                     </p>
-                    <p className="text-[10px] text-[#3f3f46]">{catTables.length} tables</p>
+                    <p className="text-[10px] text-[#3f3f46]">{catTables.length} ตาราง</p>
                   </div>
                 )
               })}

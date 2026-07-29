@@ -1,4 +1,4 @@
-import type { GitHubUser, GitHubRepo, GitHubSocialAccount, LanguageStats } from './types'
+import type { GitHubUser, GitHubRepo, GitHubSocialAccount, GitHubOrganization, LanguageStats } from './types'
 
 const GITHUB_API_BASE = 'https://api.github.com'
 const GITHUB_USERNAME = 'centered101'
@@ -98,6 +98,27 @@ export async function fetchGitHubSocialAccounts(
 
   if (!response.ok) {
     throw new Error(`Failed to fetch social accounts: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+export async function fetchGitHubOrganizations(
+  username: string = GITHUB_USERNAME
+): Promise<GitHubOrganization[]> {
+  const response = await fetch(`${GITHUB_API_BASE}/users/${username}/orgs?per_page=100`, {
+    headers: {
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2026-03-10',
+      ...(process.env.GITHUB_TOKEN && {
+        Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+      }),
+    },
+    next: { revalidate: 3600 },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch organizations: ${response.status}`)
   }
 
   return response.json()

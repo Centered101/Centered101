@@ -4,6 +4,10 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
   --admin-accent: #409EFE;
   --primary-color: #409EFE;
   --secondary-color: #84D4FA;
@@ -122,6 +126,24 @@
   }
   html {
     scroll-behavior: none;
+    min-height: 100%;
+    min-height: 100dvh;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    overscroll-behavior-y: none;
+  }
+  body {
+    min-height: 100%;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  input,
+  textarea,
+  select,
+  button {
+    font-size: max(16px, 1em);
   }
   img,
   svg,
@@ -131,6 +153,31 @@
     -webkit-touch-callout: none;
     user-select: none;
   }
+}
+
+@supports (height: 100svh) {
+  .min-h-screen {
+    min-height: 100svh;
+  }
+}
+
+@supports (height: 100dvh) {
+  .min-h-screen {
+    min-height: 100dvh;
+  }
+
+  .h-screen {
+    height: 100dvh;
+  }
+}
+
+.safe-x {
+  padding-left: max(1rem, var(--safe-left));
+  padding-right: max(1rem, var(--safe-right));
+}
+
+.safe-bottom {
+  padding-bottom: max(1rem, var(--safe-bottom));
 }
 
 html,
@@ -227,6 +274,130 @@ a, button, label, .cursor-pointer, [class^="btn-"] { cursor: url(/cursors/old-ro
     linear-gradient(to bottom, rgba(9, 12, 19, 0.025) 1px, transparent 1px);
 }
 
+.portfolio-admin-theme [class*="bg-[#18181B]"],
+.portfolio-admin-theme [class*="bg-[#09090B]"],
+.portfolio-admin-theme [class*="bg-[#0a0a0a]"],
+.portfolio-admin-theme .bg-\[\#18181B\],
+.portfolio-admin-theme .bg-\[\#09090B\],
+.portfolio-admin-theme .bg-\[\#0a0a0a\] {
+  background-color: rgba(255, 255, 255, 0.88) !important;
+}
+
+.portfolio-admin-theme [class*="bg-[#27272A]"],
+.portfolio-admin-theme .bg-\[\#27272A\],
+.portfolio-admin-theme .bg-\[\#27272A\]\/20,
+.portfolio-admin-theme .bg-\[\#27272A\]\/30,
+.portfolio-admin-theme .bg-\[\#27272A\]\/40,
+.portfolio-admin-theme .bg-\[\#27272A\]\/50 {
+  background-color: rgba(9, 12, 19, 0.055) !important;
+}
+
+.portfolio-admin-theme [class*="border-[#27272A]"],
+.portfolio-admin-theme [class*="border-[#3f3f46]"],
+.portfolio-admin-theme .border-\[\#27272A\],
+.portfolio-admin-theme .border-\[\#3f3f46\] {
+  border-color: rgba(9, 12, 19, 0.095) !important;
+}
+
+.portfolio-admin-theme [class*="text-[#FAFAFA]"],
+.portfolio-admin-theme [class*="text-[#A1A1AA]"],
+.portfolio-admin-theme .text-\[\#FAFAFA\],
+.portfolio-admin-theme .text-\[\#A1A1AA\] {
+  color: #090c13 !important;
+}
+
+.portfolio-admin-theme [class*="text-[#52525b]"],
+.portfolio-admin-theme [class*="text-[#71717A]"],
+.portfolio-admin-theme [class*="text-[#3f3f46]"],
+.portfolio-admin-theme .text-\[\#52525b\],
+.portfolio-admin-theme .text-\[\#71717A\],
+.portfolio-admin-theme .text-\[\#3f3f46\] {
+  color: #747b86 !important;
+}
+
+.portfolio-admin-theme .divide-\[\#27272A\]\/40 > :not([hidden]) ~ :not([hidden]),
+.portfolio-admin-theme .divide-\[\#27272A\]\/60 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(9, 12, 19, 0.075) !important;
+}
+
+.portfolio-admin-theme input,
+.portfolio-admin-theme textarea,
+.portfolio-admin-theme select {
+  background-color: #ffffff !important;
+  color: #090c13 !important;
+  border-color: rgba(9, 12, 19, 0.12) !important;
+}
+
+.portfolio-admin-theme input::placeholder,
+.portfolio-admin-theme textarea::placeholder {
+  color: #9aa2ad !important;
+}
+
+.portfolio-admin-theme table tr:hover {
+  background-color: rgba(64, 158, 254, 0.05) !important;
+}
+
+.portfolio-admin-theme [class*="rounded-xl"][class*="bg-"],
+.portfolio-admin-theme [class*="rounded-lg"][class*="bg-"] {
+  box-shadow: 0 18px 50px -44px rgba(9, 12, 19, 0.5);
+}
+
+.portfolio-admin-theme [class*="bg-[#18181B]"] [class*="bg-[#09090B]"],
+.portfolio-admin-theme .bg-\[\#18181B\] .bg-\[\#09090B\] {
+  background-color: #f6f7f9 !important;
+}
+
+  .portfolio-admin-theme [class*="hover:bg-[#27272A]"]:hover,
+  .portfolio-admin-theme [class*="hover:bg-[#18181B]"]:hover {
+    background-color: rgba(64, 158, 254, 0.06) !important;
+  }
+
+  .portfolio-admin-theme .bg-surface-100,
+  .portfolio-admin-theme .bg-surface-200,
+  .portfolio-admin-theme [class*="bg-surface-"] {
+    background-color: var(--card) !important;
+  }
+
+  .portfolio-admin-theme .border-surface-300,
+  .portfolio-admin-theme [class*="border-surface-"] {
+    border-color: var(--border) !important;
+  }
+
+  .portfolio-admin-theme .text-foreground-light,
+  .portfolio-admin-theme [class*="text-foreground-light"] {
+    color: var(--foreground) !important;
+  }
+
+  .portfolio-admin-theme .text-foreground-muted,
+  .portfolio-admin-theme [class*="text-foreground-muted"] {
+    color: var(--muted-foreground) !important;
+  }
+
+  .portfolio-admin-theme section {
+    box-shadow: none !important;
+  }
+
+  .portfolio-admin-theme [role="dialog"] {
+    box-shadow: 0 20px 58px -48px rgba(9, 12, 19, 0.55);
+  }
+
+  .portfolio-admin-theme [data-slot="dialog-content"],
+  .portfolio-admin-theme [role="dialog"] {
+    background-color: var(--card) !important;
+    color: var(--foreground) !important;
+    border-color: var(--border) !important;
+  }
+
+  .portfolio-admin-theme button[class*="border-dashed"] {
+    background-color: rgba(255, 255, 255, 0.7) !important;
+    border-color: rgba(64, 158, 254, 0.28) !important;
+    color: var(--accent) !important;
+  }
+
+  .portfolio-admin-theme [class*="divide-[#27272A]"] > :not([hidden]) ~ :not([hidden]) {
+    border-color: var(--border) !important;
+  }
+
 .admin-supabase-theme {
   --primary: #3ecf8e;
   --accent: #3ecf8e;
@@ -321,10 +492,6 @@ a, button, label, .cursor-pointer, [class^="btn-"] { cursor: url(/cursors/old-ro
 .admin-supabase-theme button,
 .admin-supabase-theme a {
   transition-duration: 150ms;
-}
-
-.admin-supabase-theme [class*="shadow-[0_30px_120px"] {
-  box-shadow: none !important;
 }
 
 /* Glow effects */
@@ -444,6 +611,59 @@ a, button, label, .cursor-pointer, [class^="btn-"] { cursor: url(/cursors/old-ro
   animation: float 6s ease-in-out infinite;
 }
 
+@keyframes tools-marquee-y {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(-50% - 0.75rem));
+  }
+}
+
+.tools-marquee-y {
+  animation: tools-marquee-y var(--tools-marquee-duration, 32s) linear infinite;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+.tools-marquee-viewport {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tools-marquee-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.tools-marquee-viewport:hover .tools-marquee-y,
+.tools-marquee-viewport:focus-within .tools-marquee-y,
+.tools-marquee-viewport.is-paused .tools-marquee-y {
+  animation-play-state: paused;
+}
+
+@keyframes repo-topics-marquee-x {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-50% - 0.1875rem));
+  }
+}
+
+.repo-topics-marquee[data-loop='true'] .repo-topics-track {
+  animation: repo-topics-marquee-x 28s linear infinite;
+  will-change: transform;
+}
+
+.repo-topics-marquee:hover .repo-topics-track,
+.repo-topics-marquee:focus-within .repo-topics-track,
+.glass-card:hover .repo-topics-marquee[data-loop='true'] .repo-topics-track {
+  animation-play-state: paused;
+}
+
 /* Pulse ring animation */
 @keyframes pulse-ring {
   0% {
@@ -478,6 +698,44 @@ a, button, label, .cursor-pointer, [class^="btn-"] { cursor: url(/cursors/old-ro
 
 .hover-lift:hover {
   transform: translateY(-4px);
+}
+
+@media (hover: none) {
+  [data-touch-hover] {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  [data-touch-hover].touch-hover {
+    border-color: rgba(64, 158, 254, 0.35) !important;
+  }
+
+  [data-touch-hover].touch-hover.hover-lift {
+    transform: translateY(-4px);
+  }
+
+  [data-touch-hover].touch-hover .touch-hover-accent {
+    color: var(--accent) !important;
+  }
+
+  [data-touch-hover].touch-hover.touch-hover-bg,
+  [data-touch-hover].touch-hover .touch-hover-bg {
+    background-color: rgba(64, 158, 254, 0.1) !important;
+  }
+
+  [data-touch-hover].touch-hover.touch-hover-border,
+  [data-touch-hover].touch-hover .touch-hover-border {
+    border-color: rgba(64, 158, 254, 0.35) !important;
+  }
+
+  [data-touch-hover].touch-hover .touch-hover-visible {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+  }
+
+  [data-touch-hover].touch-hover.touch-hover-scale,
+  [data-touch-hover].touch-hover .touch-hover-scale {
+    transform: scale(1.05) !important;
+  }
 }
 
 /* Stagger animation delay utilities */
@@ -523,4 +781,65 @@ html.reduce-motion *::after {
     transparent 100%
   );
   animation: progress-shine 2s ease-in-out infinite;
+}
+
+/* Final portfolio admin skin. Keep this after utilities so legacy dark admin
+   components render as the portfolio workspace without changing their logic. */
+.portfolio-admin-theme .bg-\[\#18181B\],
+.portfolio-admin-theme .bg-\[\#09090B\],
+.portfolio-admin-theme .bg-\[\#0a0a0a\],
+.portfolio-admin-theme [class*="bg-[#18181B]"],
+.portfolio-admin-theme [class*="bg-[#09090B]"],
+.portfolio-admin-theme [class*="bg-[#0a0a0a]"] {
+  background-color: #ffffff !important;
+}
+
+.portfolio-admin-theme .border-\[\#27272A\],
+.portfolio-admin-theme .border-\[\#3f3f46\],
+.portfolio-admin-theme [class*="border-[#27272A]"],
+.portfolio-admin-theme [class*="border-[#3f3f46]"],
+.portfolio-admin-theme .border-surface-300 {
+  border-color: rgba(9, 12, 19, 0.1) !important;
+}
+
+.portfolio-admin-theme .divide-\[\#27272A\]\/50 > :not([hidden]) ~ :not([hidden]),
+.portfolio-admin-theme .divide-\[\#27272A\]\/40 > :not([hidden]) ~ :not([hidden]),
+.portfolio-admin-theme [class*="divide-[#27272A]"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(9, 12, 19, 0.08) !important;
+}
+
+.portfolio-admin-theme .text-\[\#FAFAFA\],
+.portfolio-admin-theme .text-\[\#A1A1AA\],
+.portfolio-admin-theme [class*="text-[#FAFAFA]"],
+.portfolio-admin-theme [class*="text-[#A1A1AA]"],
+.portfolio-admin-theme .text-foreground-light {
+  color: #090c13 !important;
+}
+
+.portfolio-admin-theme .text-\[\#52525b\],
+.portfolio-admin-theme .text-\[\#3f3f46\],
+.portfolio-admin-theme [class*="text-[#52525b]"],
+.portfolio-admin-theme [class*="text-[#3f3f46]"],
+.portfolio-admin-theme .text-foreground-muted {
+  color: #747b86 !important;
+}
+
+.portfolio-admin-theme .bg-surface-100,
+.portfolio-admin-theme [class*="bg-surface-"] {
+  background-color: #ffffff !important;
+}
+
+.portfolio-admin-theme input,
+.portfolio-admin-theme textarea,
+.portfolio-admin-theme select {
+  background-color: #ffffff !important;
+  color: #090c13 !important;
+  border-color: rgba(9, 12, 19, 0.12) !important;
+}
+
+.portfolio-admin-theme [role="dialog"],
+.portfolio-admin-theme [data-slot="dialog-content"] {
+  background-color: #ffffff !important;
+  color: #090c13 !important;
+  border-color: rgba(9, 12, 19, 0.1) !important;
 }

@@ -7,30 +7,22 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { useAdminApi } from '@/lib/hooks/useAdminApi'
 import {
   BarChart3,
-  BookOpen,
   Brain,
   Briefcase,
   ChevronDown,
   ChevronRight,
-  Clock,
-  CreditCard,
   Database,
-  Eye,
-  FileText,
+  ExternalLink,
   Globe,
   HardDrive,
-  Inbox,
-  Layers,
   LayoutDashboard,
-  MessageCircle,
   Monitor,
   ScrollText,
   Server,
   Settings,
-  Shield,
   ShoppingBag,
+  Shield,
   Users,
-  Wrench,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { AdminAuthInfo } from '@/components/admin/AdminAuthProvider'
@@ -38,81 +30,91 @@ import type { AdminAuthInfo } from '@/components/admin/AdminAuthProvider'
 type NavChild = { href: string; label: string; icon: React.ElementType }
 type NavItem = { href: string; label: string; icon: React.ElementType; exact?: boolean; children?: NavChild[] }
 type NavGroup = { label: string; items: NavItem[] }
+type SwitcherItem = {
+  label: string
+  description: string
+  href: string
+  subdomain?: string
+  subdomainHref?: string
+  icon: React.ElementType
+  image: string
+  accent: string
+}
 
 const navGroups: NavGroup[] = [
   {
-    label: 'Overview',
+    label: 'ภาพรวม',
     items: [
-      { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+      { href: '/admin', label: 'แดชบอร์ด', icon: LayoutDashboard, exact: true },
     ],
   },
   {
-    label: 'Portfolio',
+    label: 'โครงสร้างระบบ',
     items: [
-      {
-        href: '/admin/portfolio',
-        label: 'Portfolio',
-        icon: Briefcase,
-        children: [
-          { href: '/admin/preview', label: 'Live Preview', icon: Eye },
-          { href: '/admin/portfolio?tab=projects', label: 'Featured Projects', icon: Layers },
-          { href: '/admin/portfolio?tab=coding', label: 'Coding Time', icon: Clock },
-          { href: '/admin/portfolio?tab=tools', label: 'Skills & Tools', icon: Wrench },
-          { href: '/admin/portfolio?tab=story', label: 'My Learning Story', icon: BookOpen },
-          { href: '/admin/portfolio?tab=resume', label: 'Resume', icon: FileText },
-          { href: '/admin/portfolio?tab=connect', label: 'Get in Touch', icon: MessageCircle },
-        ],
-      },
+      { href: '/admin/assets', label: 'ไฟล์ดิจิทัล', icon: HardDrive },
+      { href: '/admin/storage', label: 'พื้นที่จัดเก็บ', icon: Server },
+      { href: '/admin/database', label: 'ฐานข้อมูล', icon: Database },
+      { href: '/admin/subdomains', label: 'ซับโดเมน', icon: Globe },
     ],
   },
   {
-    label: 'Shop',
+    label: 'อัจฉริยะ',
     items: [
-      { href: '/shop/admin', label: 'Shop Admin', icon: ShoppingBag },
-      { href: '/admin/stripe', label: 'Payments', icon: CreditCard },
-      { href: '/admin/business', label: 'Business', icon: Inbox },
+      { href: '/admin/analytics', label: 'วิเคราะห์ข้อมูล', icon: BarChart3 },
+      { href: '/admin/ai', label: 'ศูนย์ AI', icon: Brain },
     ],
   },
   {
-    label: 'NewTab',
+    label: 'ปฏิบัติการ',
     items: [
-      { href: '/admin/wakatime', label: 'WakaTime', icon: Clock },
+      { href: '/admin/monitoring', label: 'มอนิเตอร์', icon: Monitor },
+      { href: '/admin/logs', label: 'บันทึกระบบ', icon: ScrollText },
+      { href: '/admin/security', label: 'ความปลอดภัย', icon: Shield },
     ],
   },
   {
-    label: 'Infrastructure',
+    label: 'ระบบ',
     items: [
-      { href: '/admin/assets', label: 'Assets', icon: HardDrive },
-      { href: '/admin/storage', label: 'Storage', icon: Server },
-      { href: '/admin/database', label: 'Database', icon: Database },
-      { href: '/admin/subdomains', label: 'Subdomains', icon: Globe },
-    ],
-  },
-  {
-    label: 'Intelligence',
-    items: [
-      { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
-      { href: '/admin/ai', label: 'AI Center', icon: Brain },
-    ],
-  },
-  {
-    label: 'Operations',
-    items: [
-      { href: '/admin/monitoring', label: 'Monitoring', icon: Monitor },
-      { href: '/admin/logs', label: 'Audit Logs', icon: ScrollText },
-      { href: '/admin/security', label: 'Security', icon: Shield },
-    ],
-  },
-  {
-    label: 'System',
-    items: [
-      { href: '/admin/users', label: 'Users', icon: Users },
-      { href: '/admin/settings', label: 'Settings', icon: Settings },
+      { href: '/admin/users', label: 'ผู้ดูแล', icon: Users },
+      { href: '/admin/settings', label: 'ตั้งค่า', icon: Settings },
     ],
   },
 ]
 
 const TOTAL_STORAGE_GB = 35
+const APP_SUBDOMAINS = ['admin', 'portfolio', 'shop']
+const switcherItems: SwitcherItem[] = [
+  {
+    label: 'แดชบอร์ด Admin',
+    description: 'ภาพรวมระบบหลัก',
+    href: '/admin',
+    subdomain: 'admin',
+    subdomainHref: '/',
+    icon: LayoutDashboard,
+    image: '/admin/favicon.png',
+    accent: '#409EFE',
+  },
+  {
+    label: 'Portfolio Admin',
+    description: 'จัดการพอร์ตโฟลิโอ',
+    href: '/portfolio/admin',
+    subdomain: 'portfolio',
+    subdomainHref: '/admin',
+    icon: Briefcase,
+    image: '/branding/favicon.png',
+    accent: '#22C55E',
+  },
+  {
+    label: 'Shop Admin',
+    description: 'จัดการร้านค้า',
+    href: '/shop/admin',
+    subdomain: 'shop',
+    subdomainHref: '/admin',
+    icon: ShoppingBag,
+    image: '/shop/favicon.png',
+    accent: '#F59E0B',
+  },
+]
 
 type AssetsData = { storageByBucket: { usedGB: number }[] }
 
@@ -128,6 +130,8 @@ export function AdminSidebar({ authInfo, authMode, adminUsername, onNavClick }: 
   const searchParams = useSearchParams()
   const { data: assetsData } = useAdminApi<AssetsData>('/api/admin/assets')
   const usedStorageGB = (assetsData?.storageByBucket ?? []).reduce((s, b) => s + b.usedGB, 0)
+  const [switcherOpen, setSwitcherOpen] = React.useState(false)
+  const [hostInfo, setHostInfo] = React.useState<{ protocol: string; hostname: string; port: string } | null>(null)
 
   const [compact, setCompact] = React.useState(() =>
     typeof window !== 'undefined' && localStorage.getItem('admin_compact_sidebar') === 'true'
@@ -187,6 +191,11 @@ export function AdminSidebar({ authInfo, authMode, adminUsername, onNavClick }: 
     return () => window.removeEventListener('admin-appearance-change', onAppearance)
   }, [])
 
+  React.useEffect(() => {
+    const { protocol, hostname, port } = window.location
+    setHostInfo({ protocol, hostname, port })
+  }, [])
+
   function accentBg(opacity: number) {
     const r = parseInt(accent.slice(1, 3), 16)
     const g = parseInt(accent.slice(3, 5), 16)
@@ -194,42 +203,122 @@ export function AdminSidebar({ authInfo, authMode, adminUsername, onNavClick }: 
     return `rgba(${r},${g},${b},${opacity})`
   }
 
+  function appHref(item: SwitcherItem) {
+    if (!hostInfo) return item.href
+    if (!item.subdomain) return item.href
+
+    const { protocol, hostname, port } = hostInfo
+    const parts = hostname.split('.')
+    if (parts.length > 1 && APP_SUBDOMAINS.includes(parts[0])) {
+      const root = parts.slice(1).join('.')
+      return `${protocol}//${item.subdomain}.${root}${port ? `:${port}` : ''}${item.subdomainHref ?? item.href}`
+    }
+    return item.href
+  }
+
+  function isSwitcherActive(item: SwitcherItem) {
+    if (item.href === '/admin') return pathname === '/admin'
+    return pathname.startsWith(item.href)
+  }
+
   return (
     <aside className={cn(
       'flex h-full flex-col border-r border-[#27272A] bg-[#09090B] transition-all',
       compact ? 'w-16' : 'w-60'
     )}>
-      {/* Project selector */}
-      <div className="border-b border-[#27272A] px-4 py-3.5">
+      {/* App selector */}
+      <div className="relative flex h-14 items-center border-b border-[#27272A] px-3">
         <button
           type="button"
-          className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-[#18181B]"
+          onClick={() => setSwitcherOpen((v) => !v)}
+          className="flex h-10 w-full items-center gap-2.5 rounded-xl px-2 text-left transition-colors hover:bg-[#18181B]"
         >
-          <div className="size-7 shrink-0 overflow-hidden rounded-lg">
-            <Image src="/admin/favicon.png" alt="Centered101" width={28} height={28} className="size-full object-cover" />
+          <div className="size-8 shrink-0 overflow-hidden rounded-xl">
+            <Image src="/admin/favicon.png" alt="Centered101" width={32} height={32} className="size-full object-cover" />
           </div>
           {!compact && (
             <>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-semibold text-[#FAFAFA]">Centered101</p>
-                <p className="text-[10px] text-[#52525b]">Ecosystem Platform</p>
+                <p className="truncate text-[10px] text-[#52525b]">แพลตฟอร์มระบบ</p>
               </div>
-              <ChevronDown className="size-3.5 shrink-0 text-[#52525b]" />
+              <ChevronDown className={cn('size-3.5 shrink-0 text-[#52525b] transition-transform', switcherOpen && 'rotate-180')} />
             </>
           )}
         </button>
+
+        {switcherOpen && !compact && (
+          <>
+            <div className="fixed inset-0 z-30" onClick={() => setSwitcherOpen(false)} />
+            <div className="absolute left-3 right-3 top-[3.25rem] z-40 overflow-hidden rounded-xl border border-[#27272A] bg-[#18181B] shadow-2xl shadow-black/60">
+              <div className="relative overflow-hidden border-b border-[#27272A] px-3 py-2.5">
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#409EFE]/60 to-transparent" />
+                <p className="text-[11px] font-semibold text-[#FAFAFA]">เลือกหน้า Admin</p>
+                <p className="mt-0.5 text-[10px] text-[#52525b]">แสดงเฉพาะ workspace ที่มีหน้าจัดการจริง</p>
+              </div>
+              <div className="p-1.5">
+                {switcherItems.map((item) => {
+                  const Icon = item.icon
+                  const active = isSwitcherActive(item)
+                  return (
+                    <a
+                      key={item.label}
+                      href={appHref(item)}
+                      onClick={() => {
+                        setSwitcherOpen(false)
+                        onNavClick?.()
+                      }}
+                      className={cn(
+                        'group relative flex h-12 items-center gap-2.5 rounded-lg px-2.5 transition-colors',
+                        active
+                          ? 'bg-[#09090B]'
+                          : 'hover:bg-[#09090B]'
+                      )}
+                    >
+                      <span
+                        className="relative grid size-8 shrink-0 place-items-center overflow-hidden rounded-lg border bg-[#09090B]"
+                        style={{ borderColor: active ? `${item.accent}66` : '#27272A' }}
+                      >
+                        <Image
+                          src={item.image}
+                          alt={item.label}
+                          width={32}
+                          height={32}
+                          className="size-full object-cover"
+                        />
+                        <span
+                          className="absolute bottom-0 right-0 grid size-3.5 place-items-center rounded border border-[#09090B] bg-[#18181B]"
+                        >
+                          <Icon className="size-2.5" style={{ color: item.accent }} />
+                        </span>
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[12px] font-semibold text-[#FAFAFA]">{item.label}</span>
+                        <span className="block truncate text-[10px] text-[#52525b]">{item.description}</span>
+                      </span>
+                      <span className="flex shrink-0 items-center gap-1.5">
+                        {active && <span className="size-1.5 rounded-full" style={{ backgroundColor: item.accent }} />}
+                        <ExternalLink className="size-3 text-[#3f3f46] group-hover:text-[#A1A1AA]" />
+                      </span>
+                    </a>
+                  )
+                })}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3">
+      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
         {navGroups.map((group) => (
-          <div key={group.label} className="mb-4">
+          <div key={group.label}>
             {!compact && (
-              <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-[#3f3f46]">
+              <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-widest text-[#3f3f46]">
                 {group.label}
               </p>
             )}
-            <div className="space-y-px">
+            <div className="space-y-1">
               {group.items.map((item) => {
                 const Icon = item.icon
                 const hasChildren = !!item.children?.length
@@ -248,7 +337,7 @@ export function AdminSidebar({ authInfo, authMode, adminUsername, onNavClick }: 
                         onClick={() => { toggleExpanded(item.href); if (!compact) return; }}
                         title={compact ? item.label : undefined}
                         className={cn(
-                          'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors',
+                          'flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium transition-colors',
                           compact && 'justify-center px-0',
                           parentHighlight
                             ? 'text-[#FAFAFA]'
@@ -278,7 +367,7 @@ export function AdminSidebar({ authInfo, authMode, adminUsername, onNavClick }: 
                         onClick={onNavClick}
                         title={compact ? item.label : undefined}
                         className={cn(
-                          'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors',
+                          'flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium transition-colors',
                           compact && 'justify-center px-0',
                           !isActive && 'text-[#A1A1AA] hover:bg-[#18181B] hover:text-[#FAFAFA]'
                         )}
@@ -294,8 +383,8 @@ export function AdminSidebar({ authInfo, authMode, adminUsername, onNavClick }: 
 
                     {/* Sub-items */}
                     {hasChildren && isOpen && !compact && (
-                      <div className="mt-0.5 space-y-px pl-3">
-                        <div className="border-l border-[#27272A] pl-2.5 space-y-px">
+                      <div className="mt-1 space-y-1 pl-3">
+                        <div className="space-y-1 border-l border-[#27272A] pl-2.5">
                           {item.children!.map((child) => {
                             const ChildIcon = child.icon
                             const childIsActive = isChildActive(child.href)
@@ -305,7 +394,7 @@ export function AdminSidebar({ authInfo, authMode, adminUsername, onNavClick }: 
                                 href={child.href}
                                 onClick={onNavClick}
                                 className={cn(
-                                  'flex items-center gap-2 rounded-md px-2 py-1.5 text-[12px] font-medium transition-colors',
+                                  'flex h-8 items-center gap-2 rounded-md px-2 text-[12px] font-medium transition-colors',
                                   childIsActive
                                     ? 'text-[#FAFAFA]'
                                     : 'text-[#71717A] hover:bg-[#18181B] hover:text-[#A1A1AA]'
@@ -339,7 +428,7 @@ export function AdminSidebar({ authInfo, authMode, adminUsername, onNavClick }: 
             return (
               <>
                 <div className="mb-1.5 flex items-center justify-between">
-                  <p className="text-[11px] text-[#52525b]">Storage</p>
+                  <p className="text-[11px] text-[#52525b]">พื้นที่จัดเก็บ</p>
                   <p className="text-[11px] font-medium text-[#A1A1AA]">
                     {usedStorageGB.toFixed(1)} / {TOTAL_STORAGE_GB} GB
                   </p>
@@ -353,7 +442,7 @@ export function AdminSidebar({ authInfo, authMode, adminUsername, onNavClick }: 
                     }}
                   />
                 </div>
-                <p className="mt-1 text-[10px] text-[#3f3f46]">{pct}% used</p>
+                <p className="mt-1 text-[10px] text-[#3f3f46]">ใช้แล้ว {pct}%</p>
               </>
             )
           })()}
@@ -400,7 +489,7 @@ export function AdminSidebar({ authInfo, authMode, adminUsername, onNavClick }: 
                   </span>
                 ))}
                 <span className="text-[9px] text-[#3f3f46]">
-                  {authMode === 'github' ? 'GitHub OAuth' : 'password'}
+                  {authMode === 'github' ? 'GitHub OAuth' : 'รหัสผ่าน'}
                 </span>
               </div>
             </div>

@@ -1,9 +1,8 @@
 'use client'
 
-import Image from 'next/image'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { ExternalLink, Github, ImagePlus, Loader2, Pencil, Plus, Star, Trash2, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, Check, ExternalLink, Github, ImagePlus, Loader2, Pencil, Plus, Star, Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,7 +20,7 @@ import { useAdminRealtime } from '@/lib/hooks/useAdminRealtime'
 type Project = {
   id: string; slug: string; title: string; short_description: string | null
   description: string | null; category: string; status: string
-  poster_url: string | null; poster_alt: string | null
+  poster_url: string | null; poster_alt: string | null; logo_url: string | null
   live_url: string | null; github_url: string | null
   tech_stack: string[]; tags: string[]
   featured: boolean; enabled: boolean; sort_order: number; updated_at: string
@@ -32,13 +31,14 @@ type GhRepo = {
 }
 type ProjectForm = {
   id?: string; slug: string; title: string; short_description: string
-  category: string; status: string; poster_url: string; poster_alt: string
+  category: string; status: string; poster_url: string; poster_alt: string; logo_url: string
   github_url: string; live_url: string; tech_stack: string; featured: boolean; enabled: boolean
+  sort_order?: number
 }
 
 const BLANK: ProjectForm = {
   slug: '', title: '', short_description: '', category: 'project',
-  status: 'published', poster_url: '', poster_alt: '', github_url: '', live_url: '',
+  status: 'published', poster_url: '', poster_alt: '', logo_url: '', github_url: '', live_url: '',
   tech_stack: '', featured: false, enabled: true,
 }
 
@@ -51,7 +51,40 @@ function slugify(t: string) {
   return t.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '')
 }
 
+function autoCommaList(value: string) {
+  return value.replace(/\s{2,}/g, ', ')
+}
+
 const PAGE_SIZE = 10
+
+function ProjectStateBadges({ project, position }: { project: Project; position: number }) {
+  const isMainCard = project.enabled && position <= 3
+  const isLogoLink = project.enabled && position > 3 && Boolean(project.logo_url)
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span
+        className={
+          project.enabled
+            ? 'rounded-md border border-[#409EFE]/25 bg-[#409EFE]/10 px-2 py-0.5 text-[10px] font-bold text-[#409EFE]'
+            : 'rounded-md border border-[#94a3b8]/25 bg-[#f1f5f9] px-2 py-0.5 text-[10px] font-bold text-[#647084]'
+        }
+      >
+        {project.enabled ? 'แสดงบนเว็บ' : 'ซ่อนจากเว็บ'}
+      </span>
+      {project.enabled ? <StatusBadge status={project.status} /> : null}
+      {isMainCard ? (
+        <span className="rounded-md border border-[#409EFE]/25 bg-[#409EFE]/10 px-2 py-0.5 text-[10px] font-bold text-[#409EFE]">
+          การ์ดหลัก #{position}
+        </span>
+      ) : null}
+      {isLogoLink ? (
+        <span className="rounded-md border border-[#8b5cf6]/25 bg-[#8b5cf6]/10 px-2 py-0.5 text-[10px] font-bold text-[#8b5cf6]">
+          ไอคอนโลโก้
+        </span>
+      ) : null}
+    </div>
+  )
+}
 
 export function FeaturedTab() {
   const { getAdminHeaders } = useAdminAuth()
@@ -66,22 +99,33 @@ export function FeaturedTab() {
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null)
   const [uploading, setUploading] = useState(false)
   const [toggling, setToggling] = useState<string | null>(null)
+  const [orderedProjects, setOrderedProjects] = useState<Project[]>([])
+  const [orderDirty, setOrderDirty] = useState(false)
+  const [savingOrder, setSavingOrder] = useState(false)
   const [page, setPage] = useState(1)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const posterInputRef = useRef<HTMLInputElement>(null)
+  const logoInputRef = useRef<HTMLInputElement>(null)
 
   const projects = projData?.projects ?? []
   const repos = ghData?.repos ?? []
-  const paged = projects.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const visibleProjects = orderedProjects.filter((project) => project.enabled)
+  const mainCards = visibleProjects.slice(0, 3)
+  const logoLinks = visibleProjects.slice(3).filter((project) => project.logo_url)
+  const paged = orderedProjects.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  useEffect(() => {
+    if (!orderDirty) setOrderedProjects(projects)
+  }, [projData?.projects, orderDirty])
 
   function openEdit(p: Project) {
     setForm({
       id: p.id, slug: p.slug, title: p.title,
       short_description: p.short_description ?? '',
       category: p.category, status: p.status,
-      poster_url: p.poster_url ?? '', poster_alt: p.poster_alt ?? '',
+      poster_url: p.poster_url ?? '', poster_alt: p.poster_alt ?? '', logo_url: p.logo_url ?? '',
       github_url: p.github_url ?? '', live_url: p.live_url ?? '',
       tech_stack: p.tech_stack.join(', '),
-      featured: p.featured, enabled: p.enabled,
+      featured: p.featured, enabled: p.enabled, sort_order: p.sort_order,
     })
     setModalOpen(true)
   }
@@ -95,24 +139,77 @@ export function FeaturedTab() {
         body: JSON.stringify({ id, [field]: value }),
       })
       if (!res.ok) throw new Error((await res.json()).error)
+      setOrderedProjects((current) => current.map((project) => (project.id === id ? { ...project, [field]: value } : project)))
       refetch()
     } catch (e) { toast.error((e as Error).message) }
     finally { setToggling(null) }
   }
 
-  async function handlePosterUpload(file: File) {
+  async function handleImageUpload(file: File, kind: 'poster' | 'logo') {
     setUploading(true)
     try {
       const fd = new FormData()
       fd.append('file', file)
       fd.append('slug', form.slug.trim() || 'project')
+      fd.append('kind', kind)
       const res = await fetch('/api/admin/projects/upload', { method: 'POST', headers: getAdminHeaders(), body: fd })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Upload failed')
-      setForm((p) => ({ ...p, poster_url: json.publicUrl, poster_alt: p.poster_alt || file.name.replace(/\.[^.]+$/, '') }))
-      toast.success('Poster uploaded')
+      setForm((p) => (
+        kind === 'logo'
+          ? { ...p, logo_url: json.publicUrl }
+          : { ...p, poster_url: json.publicUrl, poster_alt: p.poster_alt || file.name.replace(/\.[^.]+$/, '') }
+      ))
+      toast.success(kind === 'logo' ? 'อัปโหลดโลโก้แล้ว' : 'อัปโหลดรูปโปรเจกต์แล้ว')
     } catch (err) { toast.error((err as Error).message) }
-    finally { setUploading(false); if (fileInputRef.current) fileInputRef.current.value = '' }
+    finally {
+      setUploading(false)
+      if (posterInputRef.current) posterInputRef.current.value = ''
+      if (logoInputRef.current) logoInputRef.current.value = ''
+    }
+  }
+
+  function moveProject(index: number, direction: -1 | 1) {
+    const absoluteIndex = (page - 1) * PAGE_SIZE + index
+    const targetIndex = absoluteIndex + direction
+    if (targetIndex < 0 || targetIndex >= orderedProjects.length) return
+
+    setOrderedProjects((current) => {
+      const next = [...current]
+      const moving = next[absoluteIndex]
+      next[absoluteIndex] = next[targetIndex]
+      next[targetIndex] = moving
+      return next
+    })
+    setOrderDirty(true)
+  }
+
+  async function saveOrder() {
+    setSavingOrder(true)
+    try {
+      const res = await fetch('/api/admin/projects', {
+        method: 'PATCH',
+        headers: { ...getAdminHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order: orderedProjects.map((project, index) => ({ id: project.id, sort_order: (index + 1) * 100 })),
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'บันทึกลำดับไม่สำเร็จ')
+      if (Array.isArray(json.projects)) setOrderedProjects(json.projects)
+      await refetch()
+      setOrderDirty(false)
+      toast.success('บันทึกลำดับโปรเจกต์แล้ว')
+    } catch (err) {
+      toast.error((err as Error).message)
+    } finally {
+      setSavingOrder(false)
+    }
+  }
+
+  function discardOrder() {
+    setOrderedProjects(projects)
+    setOrderDirty(false)
   }
 
   async function handleSave() {
@@ -132,91 +229,168 @@ export function FeaturedTab() {
     } catch (err) { toast.error((err as Error).message) }
   }
 
-  if (loading) return <AdminLoading message="Loading projects..." />
+  if (loading) return <AdminLoading message="กำลังโหลดโปรเจกต์..." />
   if (error) return <AdminError error={error} onRetry={refetch} />
 
   return (
     <div className="space-y-6 p-6">
       {/* Projects */}
       <AdminPageSection
-        title={`Portfolio Projects (${projects.length})`}
-        description={`${projects.filter((p) => p.featured && p.enabled).length} featured · visible on portfolio`}
+        title={`โปรเจกต์ Portfolio (${projects.length})`}
+        description={`${mainCards.length} การ์ดหลัก · ${logoLinks.length} ไอคอนโลโก้ · จัดลำดับก่อนแล้วค่อยบันทึก`}
       >
-        <div className="mb-4 flex justify-end">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2 text-[11px] font-semibold">
+            <span className="rounded-md border border-[#409EFE]/25 bg-[#409EFE]/10 px-2 py-1 text-[#409EFE]">อันดับ 1-3 = การ์ดหลัก</span>
+            <span className="rounded-md border border-[#8b5cf6]/25 bg-[#8b5cf6]/10 px-2 py-1 text-[#8b5cf6]">อันดับ 4+ = ไอคอนโลโก้</span>
+            <span className="rounded-md border border-[#94a3b8]/25 bg-[#f1f5f9] px-2 py-1 text-[#647084]">ปิดแสดง = ไม่ขึ้นหน้าเว็บ</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {orderDirty ? (
+              <>
+                <button
+                  type="button"
+                  onClick={discardOrder}
+                  disabled={savingOrder}
+                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-[#409EFE]/40 hover:text-[#409EFE] disabled:opacity-50"
+                >
+                  ยกเลิกการจัด
+                </button>
+                <button
+                  type="button"
+                  onClick={saveOrder}
+                  disabled={savingOrder}
+                  className="flex items-center gap-1.5 rounded-lg bg-[#409EFE] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#60aeff] disabled:opacity-50"
+                >
+                  {savingOrder ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+                  บันทึกลำดับ
+                </button>
+              </>
+            ) : null}
           <button
             onClick={() => { setForm(BLANK); setModalOpen(true) }}
             className="flex items-center gap-1.5 rounded-lg bg-[#409EFE] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#60aeff]"
           >
-            <Plus className="size-3.5" /> Add Project
+            <Plus className="size-3.5" /> เพิ่มโปรเจกต์
           </button>
+          </div>
         </div>
 
-        {projects.length === 0 ? (
-          <AdminEmpty title="No projects yet" description="Add your first portfolio project" />
+        {orderedProjects.length === 0 ? (
+          <AdminEmpty title="ยังไม่มีโปรเจกต์" description="เพิ่มโปรเจกต์แรกสำหรับหน้า portfolio" />
         ) : (
           <>
-            <div className="divide-y divide-[#27272A]/50">
-              {paged.map((p) => (
-                <div key={p.id} className="flex flex-wrap items-center gap-3 py-3 sm:flex-nowrap">
-                  {p.poster_url && (
-                    <Image src={p.poster_url} alt={p.title} width={40} height={40} className="size-10 shrink-0 rounded-lg object-cover" />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-[#FAFAFA]">{p.title}</span>
-                      <StatusBadge status={p.status} />
+            <div className="overflow-hidden rounded-lg border border-border bg-background">
+              {paged.map((p, index) => {
+                const absoluteIndex = (page - 1) * PAGE_SIZE + index
+                const visiblePosition = visibleProjects.findIndex((project) => project.id === p.id) + 1
+                const displayMode = !p.enabled
+                  ? 'ซ่อนอยู่'
+                  : visiblePosition > 0 && visiblePosition <= 3
+                    ? `การ์ดหลัก #${visiblePosition}`
+                    : p.logo_url
+                      ? 'ไอคอนโลโก้'
+                      : 'รอโลโก้'
+
+                return (
+                  <div
+                    key={p.id}
+                    className="grid gap-4 border-b border-border/80 p-4 transition-colors last:border-b-0 hover:bg-[#409EFE]/[0.035] lg:grid-cols-[88px_1fr_auto]"
+                  >
+                    <div className="flex items-center gap-3 lg:block">
+                      <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded-lg border border-border bg-secondary">
+                        {p.poster_url ? (
+                          <img src={p.poster_url} alt={p.title} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="grid h-full place-items-center text-[10px] font-bold text-muted-foreground">ไม่มีรูป</div>
+                        )}
+                      </div>
+                      {p.logo_url ? (
+                        <div className="relative -mt-6 ml-10 size-10 overflow-hidden rounded-lg border border-border bg-white lg:ml-auto lg:mr-0">
+                          <img src={p.logo_url} alt={`${p.title} logo`} className="h-full w-full object-contain p-1.5" />
+                        </div>
+                      ) : null}
                     </div>
-                    <p className="truncate text-[11px] text-[#52525b]">{p.short_description || `/${p.slug}`}</p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-4">
-                    <label className="flex items-center gap-1.5 text-[11px] text-[#52525b]">
-                      Featured
-                      <Switch
-                        checked={p.featured}
-                        disabled={toggling === `${p.id}-featured`}
-                        onCheckedChange={(v) => toggle(p.id, 'featured', v)}
-                        className="data-[state=checked]:bg-[#F59E0B]"
-                      />
-                    </label>
-                    <label className="flex items-center gap-1.5 text-[11px] text-[#52525b]">
-                      Visible
-                      <Switch
-                        checked={p.enabled}
-                        disabled={toggling === `${p.id}-enabled`}
-                        onCheckedChange={(v) => toggle(p.id, 'enabled', v)}
-                      />
-                    </label>
-                    <div className="flex gap-1">
+
+                    <div className="min-w-0 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-md border border-border bg-card px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">#{absoluteIndex + 1}</span>
+                        <span className="truncate text-sm font-black text-foreground">{p.title}</span>
+                        <ProjectStateBadges project={p} position={visiblePosition} />
+                        <span className="rounded-md border border-[#94a3b8]/25 bg-[#f1f5f9] px-2 py-0.5 text-[10px] font-bold text-[#647084]">{displayMode}</span>
+                      </div>
+                      <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">{p.short_description || 'ยังไม่มีคำอธิบายสั้น'}</p>
+                      <div className="grid gap-2 text-[11px] text-muted-foreground sm:grid-cols-2 xl:grid-cols-4">
+                        <span className="truncate"><strong className="text-foreground">Slug:</strong> /{p.slug}</span>
+                        <span className="truncate"><strong className="text-foreground">หมวดหมู่:</strong> {p.category || '-'}</span>
+                        <span className="truncate"><strong className="text-foreground">ลำดับ:</strong> {(absoluteIndex + 1) * 100}</span>
+                        <span className="truncate"><strong className="text-foreground">Tech:</strong> {p.tech_stack?.join(', ') || '-'}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 flex-wrap items-center gap-2 lg:self-end lg:justify-end lg:pb-1">
+                      <button
+                        type="button"
+                        onClick={() => moveProject(index, -1)}
+                        disabled={absoluteIndex === 0}
+                        className="grid size-8 place-items-center rounded-md border border-border text-muted-foreground transition hover:border-[#409EFE]/40 hover:text-[#409EFE] disabled:cursor-not-allowed disabled:opacity-35"
+                        aria-label="เลื่อนขึ้น"
+                      >
+                        <ArrowUp className="size-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveProject(index, 1)}
+                        disabled={absoluteIndex === orderedProjects.length - 1}
+                        className="grid size-8 place-items-center rounded-md border border-border text-muted-foreground transition hover:border-[#409EFE]/40 hover:text-[#409EFE] disabled:cursor-not-allowed disabled:opacity-35"
+                        aria-label="เลื่อนลง"
+                      >
+                        <ArrowDown className="size-3.5" />
+                      </button>
+                      <label className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+                        แสดงบนเว็บ
+                        <Switch
+                          checked={p.enabled}
+                          disabled={toggling === `${p.id}-enabled`}
+                          onCheckedChange={(v) => toggle(p.id, 'enabled', v)}
+                        />
+                      </label>
                       {p.live_url && (
                         <a href={p.live_url} target="_blank" rel="noopener noreferrer"
-                          className="grid size-7 place-items-center rounded-lg border border-[#27272A] text-[#52525b] hover:text-[#409EFE]">
+                          className="grid size-8 place-items-center rounded-md border border-border text-muted-foreground transition hover:border-[#409EFE]/40 hover:text-[#409EFE]">
                           <ExternalLink className="size-3.5" />
                         </a>
                       )}
+                      {p.github_url && (
+                        <a href={p.github_url} target="_blank" rel="noopener noreferrer"
+                          className="grid size-8 place-items-center rounded-md border border-border text-muted-foreground transition hover:border-[#409EFE]/40 hover:text-[#409EFE]">
+                          <Github className="size-3.5" />
+                        </a>
+                      )}
                       <button onClick={() => openEdit(p)}
-                        className="grid size-7 place-items-center rounded-lg border border-[#27272A] text-[#52525b] hover:text-[#409EFE]">
+                        className="grid size-8 place-items-center rounded-md border border-border text-muted-foreground transition hover:border-[#409EFE]/40 hover:text-[#409EFE]">
                         <Pencil className="size-3" />
                       </button>
                       <button onClick={() => setDeleteTarget(p)}
-                        className="grid size-7 place-items-center rounded-lg border border-[#27272A] text-[#52525b] hover:text-[#EF4444]">
+                        className="grid size-8 place-items-center rounded-md border border-border text-muted-foreground transition hover:border-[#ef4444]/30 hover:text-[#ef4444]">
                         <Trash2 className="size-3" />
                       </button>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
-            <AdminPagination page={page} total={projects.length} pageSize={PAGE_SIZE} onChange={setPage} className="mt-3 pt-3 border-t border-[#27272A]" />
+            <AdminPagination page={page} total={orderedProjects.length} pageSize={PAGE_SIZE} onChange={setPage} className="mt-3 border-t border-border pt-3" />
           </>
         )}
       </AdminPageSection>
 
       {/* GitHub repos */}
-      <AdminPageSection title="GitHub Repositories" description="Public repos — cached from GitHub API">
+      <AdminPageSection title="GitHub Repositories" description="Repo สาธารณะที่ cache จาก GitHub API">
         {ghLoading ? (
-          <div className="py-8 text-center text-sm text-[#52525b]">Loading repos...</div>
+          <div className="py-8 text-center text-sm text-muted-foreground">กำลังโหลด repo...</div>
         ) : repos.length === 0 ? (
-          <AdminEmpty title="No repos cached" description="GitHub sync not configured" />
+          <AdminEmpty title="ยังไม่มี repo" description="ยังไม่ได้ตั้งค่าการซิงก์ GitHub" />
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {repos.map((r) => (
@@ -248,122 +422,165 @@ export function FeaturedTab() {
       {/* Edit/Create modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent aria-describedby={undefined}
-          className="max-h-[90vh] overflow-y-auto border-[#27272A] bg-[#18181B] text-[#FAFAFA] sm:max-w-lg">
+          className="max-h-[90vh] overflow-y-auto !border-[#dfe3e8] !bg-white !text-[#090c13] shadow-[0_24px_80px_-48px_rgba(64,158,254,0.65)] sm:max-w-lg [&_label]:!text-[#647084] [&_input]:!border-[#dfe3e8] [&_input]:!bg-white [&_input]:!text-[#090c13] [&_input::placeholder]:!text-[#9aa2ad] [&_select]:!border-[#dfe3e8] [&_select]:!bg-white [&_select]:!text-[#090c13]">
           <DialogHeader>
-            <DialogTitle className="text-[#FAFAFA]">{form.id ? 'Edit Project' : 'New Project'}</DialogTitle>
+            <DialogTitle className="!text-[#090c13]">{form.id ? 'แก้ไขโปรเจกต์' : 'โปรเจกต์ใหม่'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-1">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-[#A1A1AA]">Title *</Label>
+                <Label className="text-xs text-muted-foreground">ชื่อโปรเจกต์ *</Label>
                 <Input value={form.title}
                   onChange={(e) => {
                     const title = e.target.value
                     setForm((p) => ({ ...p, title, ...(p.id ? {} : { slug: slugify(title) }) }))
                   }}
-                  className="mt-1 h-9 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30" />
+                  className="mt-1 h-9 !border-[#dfe3e8] !bg-white text-sm !text-[#090c13] focus-visible:ring-[#409EFE]/30" />
               </div>
               <div>
-                <Label className="text-xs text-[#A1A1AA]">Slug *</Label>
+                <Label className="text-xs text-muted-foreground">Slug *</Label>
                 <Input value={form.slug} onChange={(e) => setForm((p) => ({ ...p, slug: e.target.value }))}
-                  className="mt-1 h-9 border-[#27272A] bg-[#09090B] font-mono text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30" />
+                  className="mt-1 h-9 !border-[#dfe3e8] !bg-white font-mono text-sm !text-[#090c13] focus-visible:ring-[#409EFE]/30" />
               </div>
             </div>
             <div>
-              <Label className="text-xs text-[#A1A1AA]">Short Description</Label>
+              <Label className="text-xs text-muted-foreground">คำอธิบายสั้น</Label>
               <Input value={form.short_description} onChange={(e) => setForm((p) => ({ ...p, short_description: e.target.value }))}
-                className="mt-1 h-9 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30" />
+                className="mt-1 h-9 !border-[#dfe3e8] !bg-white text-sm !text-[#090c13] focus-visible:ring-[#409EFE]/30" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-[#A1A1AA]">Category</Label>
+                <Label className="text-xs text-muted-foreground">หมวดหมู่</Label>
                 <Input value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
-                  className="mt-1 h-9 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30" />
+                  className="mt-1 h-9 !border-[#dfe3e8] !bg-white text-sm !text-[#090c13] focus-visible:ring-[#409EFE]/30" />
               </div>
               <div>
-                <Label className="text-xs text-[#A1A1AA]">Status</Label>
+                <Label className="text-xs text-muted-foreground">สถานะ</Label>
                 <select value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}
-                  className="mt-1 h-9 w-full rounded-md border border-[#27272A] bg-[#09090B] px-2 text-sm text-[#FAFAFA] focus:outline-none focus:ring-1 focus:ring-[#409EFE]/30">
-                  {['published', 'active', 'in_progress', 'paused', 'archived'].map((s) => <option key={s}>{s}</option>)}
+                  className="mt-1 h-9 w-full rounded-md border !border-[#dfe3e8] !bg-white px-2 text-sm !text-[#090c13] focus:outline-none focus:ring-1 focus:ring-[#409EFE]/30">
+                  {[
+                    ['published', 'เผยแพร่'],
+                    ['active', 'ใช้งาน'],
+                    ['in_progress', 'กำลังทำ'],
+                    ['paused', 'พักไว้'],
+                    ['archived', 'เก็บถาวร'],
+                  ].map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </div>
             </div>
             {/* Poster upload */}
             <div>
-              <Label className="text-xs text-[#A1A1AA]">Poster Image</Label>
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePosterUpload(f) }} />
+              <Label className="text-xs text-muted-foreground">รูปโปรเจกต์</Label>
+              <input ref={posterInputRef} type="file" accept="image/*" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f, 'poster') }} />
               {form.poster_url ? (
                 <div className="mt-1 flex gap-2">
-                  <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded-lg border border-[#27272A]">
-                    <Image src={form.poster_url} alt="" fill sizes="64px" className="object-cover" />
+                  <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded-lg border border-[#dfe3e8] bg-white">
+                    <img src={form.poster_url} alt="" className="h-full w-full object-cover" />
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                     <Input value={form.poster_url} onChange={(e) => setForm((p) => ({ ...p, poster_url: e.target.value }))}
-                      className="h-8 border-[#27272A] bg-[#09090B] font-mono text-[11px] text-[#A1A1AA] focus-visible:ring-[#409EFE]/30" />
+                      className="h-8 !border-[#dfe3e8] !bg-white font-mono text-[11px] !text-[#647084] focus-visible:ring-[#409EFE]/30" />
                     <div className="flex gap-1.5">
-                      <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
-                        className="flex items-center gap-1 rounded-md border border-[#27272A] bg-[#09090B] px-2 py-1 text-[10px] text-[#A1A1AA] hover:text-[#FAFAFA] disabled:opacity-50">
-                        {uploading ? <Loader2 className="size-3 animate-spin" /> : <ImagePlus className="size-3" />} Replace
+                      <button type="button" onClick={() => posterInputRef.current?.click()} disabled={uploading}
+                        className="flex items-center gap-1 rounded-md border border-[#dfe3e8] bg-white px-2 py-1 text-[10px] font-semibold text-[#647084] transition hover:border-[#409EFE]/40 hover:text-[#409EFE] disabled:opacity-50">
+                        {uploading ? <Loader2 className="size-3 animate-spin" /> : <ImagePlus className="size-3" />} แทนที่
                       </button>
                       <button type="button" onClick={() => setForm((p) => ({ ...p, poster_url: '', poster_alt: '' }))}
-                        className="flex items-center gap-1 rounded-md border border-[#27272A] bg-[#09090B] px-2 py-1 text-[10px] text-[#52525b] hover:text-[#EF4444]">
-                        <X className="size-3" /> Remove
+                        className="flex items-center gap-1 rounded-md border border-[#dfe3e8] bg-white px-2 py-1 text-[10px] font-semibold text-[#647084] transition hover:border-[#ef4444]/30 hover:text-[#ef4444]">
+                        <X className="size-3" /> ลบออก
                       </button>
                     </div>
                   </div>
                 </div>
               ) : (
                 <div className="mt-1 space-y-2">
-                  <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#27272A] bg-[#09090B] py-4 text-[11px] text-[#52525b] hover:border-[#409EFE]/40 hover:text-[#409EFE] disabled:opacity-50">
+                  <button type="button" onClick={() => posterInputRef.current?.click()} disabled={uploading}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#dfe3e8] bg-white py-4 text-[11px] font-semibold text-[#647084] transition hover:border-[#409EFE]/40 hover:text-[#409EFE] disabled:opacity-50">
                     {uploading ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />}
-                    {uploading ? 'Uploading...' : 'Upload poster'}
+                    {uploading ? 'กำลังอัปโหลด...' : 'อัปโหลดรูปโปรเจกต์'}
                   </button>
                   <Input value={form.poster_url} onChange={(e) => setForm((p) => ({ ...p, poster_url: e.target.value }))}
-                    className="h-8 border-[#27272A] bg-[#09090B] font-mono text-[11px] text-[#A1A1AA] focus-visible:ring-[#409EFE]/30"
-                    placeholder="or paste URL..." />
+                    className="h-8 !border-[#dfe3e8] !bg-white font-mono text-[11px] !text-[#647084] focus-visible:ring-[#409EFE]/30"
+                    placeholder="หรือวาง URL..." />
                 </div>
               )}
             </div>
             <div>
-              <Label className="text-xs text-[#A1A1AA]">Poster Alt Text</Label>
+              <Label className="text-xs text-muted-foreground">โลโก้โปรเจกต์</Label>
+              <p className="mt-0.5 text-[11px] text-[#647084]">ใช้แสดงเป็น logo link ใต้ Selected work เมื่อไม่อยู่ใน 3 การ์ดหลัก</p>
+              <input ref={logoInputRef} type="file" accept="image/*" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f, 'logo') }} />
+              {form.logo_url ? (
+                <div className="mt-2 flex gap-2">
+                  <div className="relative size-14 shrink-0 overflow-hidden rounded-lg border border-[#dfe3e8] bg-white">
+                    <img src={form.logo_url} alt="" className="h-full w-full object-contain p-2" />
+                  </div>
+                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                    <Input value={form.logo_url} onChange={(e) => setForm((p) => ({ ...p, logo_url: e.target.value }))}
+                      className="h-8 !border-[#dfe3e8] !bg-white font-mono text-[11px] !text-[#647084] focus-visible:ring-[#409EFE]/30" />
+                    <div className="flex gap-1.5">
+                      <button type="button" onClick={() => logoInputRef.current?.click()} disabled={uploading}
+                        className="flex items-center gap-1 rounded-md border border-[#dfe3e8] bg-white px-2 py-1 text-[10px] font-semibold text-[#647084] transition hover:border-[#409EFE]/40 hover:text-[#409EFE] disabled:opacity-50">
+                        {uploading ? <Loader2 className="size-3 animate-spin" /> : <ImagePlus className="size-3" />} แทนที่
+                      </button>
+                      <button type="button" onClick={() => setForm((p) => ({ ...p, logo_url: '' }))}
+                        className="flex items-center gap-1 rounded-md border border-[#dfe3e8] bg-white px-2 py-1 text-[10px] font-semibold text-[#647084] transition hover:border-[#ef4444]/30 hover:text-[#ef4444]">
+                        <X className="size-3" /> ลบโลโก้
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-2 space-y-2">
+                  <button type="button" onClick={() => logoInputRef.current?.click()} disabled={uploading}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#dfe3e8] bg-white py-4 text-[11px] font-semibold text-[#647084] transition hover:border-[#409EFE]/40 hover:text-[#409EFE] disabled:opacity-50">
+                    {uploading ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />}
+                    {uploading ? 'กำลังอัปโหลด...' : 'อัปโหลดโลโก้'}
+                  </button>
+                  <Input value={form.logo_url} onChange={(e) => setForm((p) => ({ ...p, logo_url: e.target.value }))}
+                    className="h-8 !border-[#dfe3e8] !bg-white font-mono text-[11px] !text-[#647084] focus-visible:ring-[#409EFE]/30"
+                    placeholder="หรือวาง URL โลโก้..." />
+                </div>
+              )}
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">คำอธิบายรูป</Label>
               <Input value={form.poster_alt} onChange={(e) => setForm((p) => ({ ...p, poster_alt: e.target.value }))}
-                className="mt-1 h-9 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30" />
+                className="mt-1 h-9 !border-[#dfe3e8] !bg-white text-sm !text-[#090c13] focus-visible:ring-[#409EFE]/30" />
             </div>
             <div>
-              <Label className="text-xs text-[#A1A1AA]">GitHub URL</Label>
+              <Label className="text-xs text-muted-foreground">ลิงก์ GitHub</Label>
               <Input value={form.github_url} onChange={(e) => setForm((p) => ({ ...p, github_url: e.target.value }))}
-                className="mt-1 h-9 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30" placeholder="https://github.com/..." />
+                className="mt-1 h-9 !border-[#dfe3e8] !bg-white text-sm !text-[#090c13] focus-visible:ring-[#409EFE]/30" placeholder="https://github.com/..." />
             </div>
             <div>
-              <Label className="text-xs text-[#A1A1AA]">Live URL</Label>
+              <Label className="text-xs text-muted-foreground">ลิงก์เว็บจริง</Label>
               <Input value={form.live_url} onChange={(e) => setForm((p) => ({ ...p, live_url: e.target.value }))}
-                className="mt-1 h-9 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30" placeholder="https://..." />
+                className="mt-1 h-9 !border-[#dfe3e8] !bg-white text-sm !text-[#090c13] focus-visible:ring-[#409EFE]/30" placeholder="https://..." />
             </div>
             <div>
-              <Label className="text-xs text-[#A1A1AA]">Tech Stack (comma-separated)</Label>
-              <Input value={form.tech_stack} onChange={(e) => setForm((p) => ({ ...p, tech_stack: e.target.value }))}
-                className="mt-1 h-9 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30" placeholder="Next.js, TypeScript" />
+              <Label className="text-xs text-muted-foreground">เทคโนโลยีที่ใช้ (คั่นด้วย comma)</Label>
+              <Input value={form.tech_stack} onChange={(e) => setForm((p) => ({ ...p, tech_stack: autoCommaList(e.target.value) }))}
+                className="mt-1 h-9 !border-[#dfe3e8] !bg-white text-sm !text-[#090c13] focus-visible:ring-[#409EFE]/30" placeholder="Next.js, TypeScript" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center justify-between rounded-lg border border-[#27272A] px-3 py-2.5">
-                <p className="text-sm text-[#FAFAFA]">Featured</p>
-                <Switch checked={form.featured} onCheckedChange={(v) => setForm((p) => ({ ...p, featured: v }))} />
-              </div>
-              <div className="flex items-center justify-between rounded-lg border border-[#27272A] px-3 py-2.5">
-                <p className="text-sm text-[#FAFAFA]">Visible</p>
+            <div className="grid gap-3">
+              <div className="flex items-center justify-between rounded-lg border border-[#dfe3e8] bg-white px-3 py-2.5">
+                <div>
+                  <p className="text-sm !text-[#090c13]">แสดงบนเว็บ</p>
+                  <p className="mt-0.5 text-[11px] text-[#647084]">เปิดแล้วจะเข้า portfolio ตามลำดับ: 3 อันดับแรกเป็นการ์ดหลัก ที่เหลือเป็นโลโก้</p>
+                </div>
                 <Switch checked={form.enabled} onCheckedChange={(v) => setForm((p) => ({ ...p, enabled: v }))} />
               </div>
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setModalOpen(false)}
-              className="h-8 border-[#27272A] bg-transparent text-[#A1A1AA] hover:bg-[#27272A] hover:text-[#FAFAFA]">Cancel</Button>
+              className="h-8 border-border bg-transparent text-muted-foreground hover:bg-secondary hover:text-accent">ยกเลิก</Button>
             <Button onClick={handleSave} disabled={saving}
               className="h-8 bg-[#409EFE] text-sm text-white hover:bg-[#60aeff] disabled:opacity-60">
-              {saving && <Loader2 className="mr-1.5 size-3 animate-spin" />}
-              {form.id ? 'Save Changes' : 'Create Project'}
+              <Loader2 className={`mr-1.5 size-3 ${saving ? 'animate-spin opacity-100' : 'opacity-0'}`} />
+              {form.id ? 'บันทึกการแก้ไข' : 'สร้างโปรเจกต์'}
             </Button>
           </div>
         </DialogContent>
@@ -372,9 +589,9 @@ export function FeaturedTab() {
       <ConfirmModal
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title={`Delete "${deleteTarget?.title}"?`}
-        description="This project will be permanently removed."
-        confirmLabel="Delete"
+        title={`ลบ "${deleteTarget?.title}" ใช่ไหม?`}
+        description="โปรเจกต์นี้จะถูกลบถาวร"
+        confirmLabel="ลบ"
         destructive
         onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
       />

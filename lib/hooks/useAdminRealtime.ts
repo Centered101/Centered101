@@ -1,15 +1,17 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 import { createClient } from '@/lib/supabase/client'
 
 export function useAdminRealtime(tables: string[], refetch: () => void) {
+  const { isAuthenticated } = useAdminAuth()
   const refetchRef = useRef(refetch)
   refetchRef.current = refetch
   const key = tables.join(',')
 
   useEffect(() => {
-    if (!tables.length) return
+    if (!isAuthenticated || !tables.length) return
     let client: ReturnType<typeof createClient>
     try {
       client = createClient()
@@ -27,5 +29,5 @@ export function useAdminRealtime(tables: string[], refetch: () => void) {
     channel.subscribe()
     return () => { client.removeChannel(channel) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key])
+  }, [isAuthenticated, key])
 }

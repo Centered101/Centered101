@@ -13,13 +13,13 @@ import { useAdminApi, useAdminMutation } from '@/lib/hooks/useAdminApi'
 import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 
 const TABS = [
-  { id: 'general', label: 'General', icon: Globe },
-  { id: 'profile', label: 'Profile', icon: User },
-  { id: 'appearance', label: 'Appearance', icon: Palette },
-  { id: 'notifications', label: 'Notifications', icon: Bell },
-  { id: 'security', label: 'Security', icon: Shield },
-  { id: 'integrations', label: 'Integrations', icon: Code2 },
-  { id: 'danger', label: 'Danger Zone', icon: AlertTriangle },
+  { id: 'general', label: 'ทั่วไป', icon: Globe },
+  { id: 'profile', label: 'โปรไฟล์', icon: User },
+  { id: 'appearance', label: 'หน้าตา', icon: Palette },
+  { id: 'notifications', label: 'แจ้งเตือน', icon: Bell },
+  { id: 'security', label: 'ความปลอดภัย', icon: Shield },
+  { id: 'integrations', label: 'การเชื่อมต่อ', icon: Code2 },
+  { id: 'danger', label: 'โซนอันตราย', icon: AlertTriangle },
 ] as const
 
 type Tab = (typeof TABS)[number]['id']
@@ -83,7 +83,7 @@ function PanelWrap({
                 : saved
                   ? <CheckCircle2 className="size-3" />
                   : <Save className="size-3" />}
-              <span>{saved ? 'Saved' : 'Save'}</span>
+              <span>{saved ? 'บันทึกแล้ว' : 'บันทึก'}</span>
             </span>
           </Button>
         )}
@@ -100,10 +100,10 @@ function IntegrationsPanel() {
   const integrations = data?.integrations ?? []
 
   return (
-    <PanelWrap title="Integrations" description="External services connected via environment variables">
+    <PanelWrap title="การเชื่อมต่อ" description="บริการภายนอกที่ตรวจจาก environment variables">
       <div className="divide-y divide-[#27272A]/60">
         {loading ? (
-          <p className="py-4 text-xs text-[#52525b]">Checking connections...</p>
+          <p className="py-4 text-xs text-[#52525b]">กำลังตรวจการเชื่อมต่อ...</p>
         ) : (
           integrations.map((int) => (
             <SectionRow key={int.name} label={int.name} description={int.description}>
@@ -118,7 +118,7 @@ function IntegrationsPanel() {
                       : 'border border-[#27272A] bg-[#09090B] text-[#52525b]'
                   }`}
                 >
-                  {int.connected ? 'Connected' : 'Not configured'}
+                  {int.connected ? 'เชื่อมต่อแล้ว' : 'ยังไม่ได้ตั้งค่า'}
                 </span>
               </div>
             </SectionRow>
@@ -130,7 +130,7 @@ function IntegrationsPanel() {
 }
 
 export default function SettingsPage() {
-  usePageTitle('Settings')
+  usePageTitle('ตั้งค่า')
   const { authInfo, getAdminHeaders } = useAdminAuth()
   const { data, loading, error, refetch } = useAdminApi<SettingsData>('/api/admin/settings')
   const { mutate: patchSettings } = useAdminMutation<Record<string, unknown>>('/api/admin/settings', 'PATCH')
@@ -145,6 +145,8 @@ export default function SettingsPage() {
     site_url: 'https://centered101.com',
     timezone: 'Asia/Bangkok',
     maintenance_mode: false,
+    homepage_target: 'portfolio',
+    homepage_custom_path: '/',
   })
   const [notifs, setNotifs] = useState({
     deploy_success: true,
@@ -190,6 +192,8 @@ export default function SettingsPage() {
       site_url: (s.site_url as string) ?? 'https://centered101.com',
       timezone: (s.timezone as string) ?? 'Asia/Bangkok',
       maintenance_mode: (s.maintenance_mode as boolean) ?? false,
+      homepage_target: (s.homepage_target as string) ?? 'portfolio',
+      homepage_custom_path: (s.homepage_custom_path as string) ?? '/',
     })
     const n = s.notifications as Record<string, boolean> | undefined
     if (n) {
@@ -228,7 +232,7 @@ export default function SettingsPage() {
     try {
       await patchSettings(payload)
       setSaved(true)
-      toast.success('Settings saved')
+      toast.success('บันทึกการตั้งค่าแล้ว')
       setTimeout(() => setSaved(false), 2500)
       refetch()
     } catch (err) {
@@ -239,7 +243,7 @@ export default function SettingsPage() {
   }
 
   async function saveProfile() {
-    if (!authInfo?.adminUserId) { toast.error('No admin user ID'); return }
+    if (!authInfo?.adminUserId) { toast.error('ไม่พบ ID ผู้ดูแล'); return }
     setSaving(true)
     setSaved(false)
     try {
@@ -254,7 +258,7 @@ export default function SettingsPage() {
       })
       if (!res.ok) throw new Error((await res.json()).error)
       setSaved(true)
-      toast.success('Profile updated')
+      toast.success('อัปเดตโปรไฟล์แล้ว')
       setTimeout(() => setSaved(false), 2500)
     } catch (err) {
       toast.error((err as Error).message)
@@ -272,7 +276,7 @@ export default function SettingsPage() {
         body: JSON.stringify({ action }),
       })
       if (!res.ok) throw new Error((await res.json()).error)
-      toast.success(`${label} completed`)
+      toast.success(`ทำรายการ ${label} เสร็จแล้ว`)
       refetch()
     } catch (err) {
       toast.error((err as Error).message)
@@ -281,23 +285,23 @@ export default function SettingsPage() {
     }
   }
 
-  if (loading) return <AdminLoading message="Loading settings..." />
+  if (loading) return <AdminLoading message="กำลังโหลดการตั้งค่า..." />
   if (error) return <AdminError error={error} onRetry={refetch} />
 
   const notifLabels: Record<keyof typeof notifs, string> = {
-    deploy_success: 'Successful deployments',
-    deploy_fail: 'Failed deployments',
-    security_alerts: 'Security alerts',
-    storage_warnings: 'Storage warnings',
-    github_stars: 'New GitHub stars',
-    weekly_digest: 'Weekly analytics digest',
+    deploy_success: 'Deploy สำเร็จ',
+    deploy_fail: 'Deploy ไม่สำเร็จ',
+    security_alerts: 'แจ้งเตือนความปลอดภัย',
+    storage_warnings: 'เตือนพื้นที่จัดเก็บ',
+    github_stars: 'ดาว GitHub ใหม่',
+    weekly_digest: 'สรุปรายสัปดาห์',
   }
 
   return (
     <AdminPageContainer>
       <AdminPageHeader
-        title="Settings"
-        description="Configure your ecosystem platform — saved to Supabase"
+        title="ตั้งค่า"
+        description="ตั้งค่าระบบหลักของแพลตฟอร์ม บันทึกไว้ใน Supabase"
       />
 
       <div className="flex gap-5 max-xl:flex-col">
@@ -332,42 +336,66 @@ export default function SettingsPage() {
         <div className="min-w-0 flex-1 rounded-xl border border-surface-300 bg-surface-100">
           {tab === 'general' && (
             <PanelWrap
-              title="General"
-              description="Site and platform settings"
+              title="ทั่วไป"
+              description="ตั้งค่าเว็บไซต์และแพลตฟอร์ม"
               onSave={() =>
                 save({
                   site_name: general.site_name,
                   site_url: general.site_url,
                   timezone: general.timezone,
                   maintenance_mode: general.maintenance_mode,
+                  homepage_target: general.homepage_target,
+                  homepage_custom_path: general.homepage_custom_path,
                 })
               }
               saving={saving}
               saved={saved}
             >
               <div className="divide-y divide-[#27272A]/60">
-                <SectionRow label="Site Name" description="Public name shown in browser tabs">
+                <SectionRow label="ชื่อเว็บไซต์" description="ชื่อสาธารณะที่แสดงบนแท็บเบราว์เซอร์">
                   <Input
                     value={general.site_name}
                     onChange={(e) => setGeneral((p) => ({ ...p, site_name: e.target.value }))}
                     className="h-9 w-56 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30"
                   />
                 </SectionRow>
-                <SectionRow label="Site URL" description="Primary domain for the platform">
+                <SectionRow label="URL เว็บไซต์" description="โดเมนหลักของแพลตฟอร์ม">
                   <Input
                     value={general.site_url}
                     onChange={(e) => setGeneral((p) => ({ ...p, site_url: e.target.value }))}
                     className="h-9 w-56 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30"
                   />
                 </SectionRow>
-                <SectionRow label="Timezone" description="Used for analytics and scheduling">
+                <SectionRow label="โซนเวลา" description="ใช้กับสถิติและการจัดเวลา">
                   <Input
                     value={general.timezone}
                     onChange={(e) => setGeneral((p) => ({ ...p, timezone: e.target.value }))}
                     className="h-9 w-56 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30"
                   />
                 </SectionRow>
-                <SectionRow label="Maintenance Mode" description="Show a maintenance banner to visitors">
+                <SectionRow label="หน้าแรกของเว็บ" description="กำหนดว่า centered101.com/ จะพาไปส่วนไหน">
+                  <select
+                    value={general.homepage_target}
+                    onChange={(e) => setGeneral((p) => ({ ...p, homepage_target: e.target.value }))}
+                    className="h-9 w-56 rounded-md border border-[#27272A] bg-[#09090B] px-3 text-sm text-[#FAFAFA] focus:outline-none focus:ring-2 focus:ring-[#409EFE]/30"
+                  >
+                    <option value="portfolio">พอร์ตโฟลิโอ</option>
+                    <option value="shop">ร้านค้า</option>
+                    <option value="dashboard">แดชบอร์ด</option>
+                    <option value="newtab">NewTab</option>
+                    <option value="custom">Path กำหนดเอง</option>
+                  </select>
+                </SectionRow>
+                {general.homepage_target === 'custom' && (
+                  <SectionRow label="Path หน้าแรกแบบกำหนดเอง" description="ต้องขึ้นต้นด้วย / เช่น /business หรือ /projects">
+                    <Input
+                      value={general.homepage_custom_path}
+                      onChange={(e) => setGeneral((p) => ({ ...p, homepage_custom_path: e.target.value }))}
+                      className="h-9 w-56 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30"
+                    />
+                  </SectionRow>
+                )}
+                <SectionRow label="โหมดปิดปรับปรุง" description="แสดงแถบแจ้งเตือนปิดปรับปรุงให้ผู้เข้าชม">
                   <Switch
                     checked={general.maintenance_mode}
                     onCheckedChange={(v) => setGeneral((p) => ({ ...p, maintenance_mode: v }))}
@@ -379,21 +407,21 @@ export default function SettingsPage() {
 
           {tab === 'profile' && (
             <PanelWrap
-              title="Profile"
-              description="Updates your admin_users record directly"
+              title="โปรไฟล์"
+              description="อัปเดตข้อมูลผู้ดูแลในตาราง admin_users"
               onSave={saveProfile}
               saving={saving}
               saved={saved}
             >
               <div className="divide-y divide-[#27272A]/60">
-                <SectionRow label="Display Name">
+                <SectionRow label="ชื่อที่แสดง">
                   <Input
                     value={profile.display_name}
                     onChange={(e) => setProfile((p) => ({ ...p, display_name: e.target.value }))}
                     className="h-9 w-56 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30"
                   />
                 </SectionRow>
-                <SectionRow label="Email" description="Used for notifications and auth">
+                <SectionRow label="อีเมล" description="ใช้กับแจ้งเตือนและการยืนยันตัวตน">
                   <Input
                     value={profile.email}
                     onChange={(e) => setProfile((p) => ({ ...p, email: e.target.value }))}
@@ -401,7 +429,7 @@ export default function SettingsPage() {
                     className="h-9 w-56 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30"
                   />
                 </SectionRow>
-                <SectionRow label="GitHub Username">
+                <SectionRow label="ชื่อผู้ใช้ GitHub">
                   <Input
                     value={profile.github_username}
                     onChange={(e) => setProfile((p) => ({ ...p, github_username: e.target.value }))}
@@ -414,14 +442,14 @@ export default function SettingsPage() {
 
           {tab === 'appearance' && (
             <PanelWrap
-              title="Appearance"
-              description="Visual theme and density"
+              title="หน้าตา"
+              description="ธีม สี และความหนาแน่นของหน้าจัดการ"
               onSave={() => save({ appearance })}
               saving={saving}
               saved={saved}
             >
               <div className="divide-y divide-[#27272A]/60">
-                <SectionRow label="Accent Color" description="Admin interface accent color">
+                <SectionRow label="สีหลัก" description="สี accent ของหน้าแอดมิน">
                   <div className="flex gap-2">
                     {['#409EFE', '#22C55E', '#8B5CF6', '#F59E0B'].map((color) => (
                       <button
@@ -436,13 +464,13 @@ export default function SettingsPage() {
                     ))}
                   </div>
                 </SectionRow>
-                <SectionRow label="Compact Sidebar" description="Reduce sidebar to icon-only view">
+                <SectionRow label="Sidebar แบบกระชับ" description="ลด sidebar ให้เหลือมุมมองไอคอน">
                   <Switch
                     checked={appearance.compact_sidebar}
                     onCheckedChange={(v) => setAppearance((p) => ({ ...p, compact_sidebar: v }))}
                   />
                 </SectionRow>
-                <SectionRow label="Reduced Motion" description="Disable transition animations">
+                <SectionRow label="ลดแอนิเมชัน" description="ปิด transition animation">
                   <Switch
                     checked={appearance.reduced_motion}
                     onCheckedChange={(v) => setAppearance((p) => ({ ...p, reduced_motion: v }))}
@@ -454,8 +482,8 @@ export default function SettingsPage() {
 
           {tab === 'notifications' && (
             <PanelWrap
-              title="Notifications"
-              description="Choose what triggers alerts — saved to system_settings"
+              title="แจ้งเตือน"
+              description="เลือกเหตุการณ์ที่จะส่งแจ้งเตือน บันทึกใน system_settings"
               onSave={() => save({ notifications: notifs })}
               saving={saving}
               saved={saved}
@@ -475,33 +503,33 @@ export default function SettingsPage() {
 
           {tab === 'security' && (
             <PanelWrap
-              title="Security"
-              description="Auth and session management"
+              title="ความปลอดภัย"
+              description="จัดการ auth และ session"
               onSave={() => save({ security })}
               saving={saving}
               saved={saved}
             >
               <div className="divide-y divide-[#27272A]/60">
-                <SectionRow label="Session Timeout" description="Auto-logout after inactivity">
+                <SectionRow label="หมดเวลาเซสชัน" description="ออกจากระบบอัตโนมัติหลังไม่มีการใช้งาน">
                   <Input
                     value={security.session_timeout}
                     onChange={(e) => setSecurity((p) => ({ ...p, session_timeout: e.target.value }))}
                     className="h-9 w-40 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30"
                   />
                 </SectionRow>
-                <SectionRow label="GitHub OAuth" description="Allow GitHub login for admins">
+                <SectionRow label="GitHub OAuth" description="อนุญาตให้ผู้ดูแลเข้าสู่ระบบด้วย GitHub">
                   <Switch
                     checked={security.github_oauth}
                     onCheckedChange={(v) => setSecurity((p) => ({ ...p, github_oauth: v }))}
                   />
                 </SectionRow>
-                <SectionRow label="IP Allowlist" description="Restrict admin access by IP">
+                <SectionRow label="รายการ IP ที่อนุญาต" description="จำกัดการเข้าแอดมินตาม IP">
                   <Switch
                     checked={security.ip_allowlist}
                     onCheckedChange={(v) => setSecurity((p) => ({ ...p, ip_allowlist: v }))}
                   />
                 </SectionRow>
-                <SectionRow label="Force HTTPS" description="Redirect all HTTP to HTTPS">
+                <SectionRow label="บังคับ HTTPS" description="เปลี่ยน HTTP ทั้งหมดไปเป็น HTTPS">
                   <Switch
                     checked={security.force_https}
                     onCheckedChange={(v) => setSecurity((p) => ({ ...p, force_https: v }))}
@@ -518,27 +546,27 @@ export default function SettingsPage() {
           {tab === 'danger' && (
             <div>
               <div className="border-b border-[#EF4444]/20 px-5 py-4">
-                <h2 className="text-sm font-semibold text-[#EF4444]">Danger Zone</h2>
-                <p className="mt-0.5 text-[12px] text-[#52525b]">Irreversible actions — proceed with caution</p>
+                <h2 className="text-sm font-semibold text-[#EF4444]">โซนอันตราย</h2>
+                <p className="mt-0.5 text-[12px] text-[#52525b]">คำสั่งที่ย้อนกลับไม่ได้ โปรดตรวจให้ดีก่อนกด</p>
               </div>
               <div className="divide-y divide-[#27272A]/60 px-5">
                 {[
                   {
                     action: 'revoke_all_sessions',
-                    label: 'Revoke All Sessions',
-                    description: 'Sign out all active admin sessions immediately',
+                    label: 'ยกเลิกทุกเซสชัน',
+                    description: 'ออกจากระบบทุกเซสชันของผู้ดูแลทันที',
                     icon: Shield,
                   },
                   {
                     action: 'clear_audit_logs',
-                    label: 'Clear Old Audit Logs',
-                    description: 'Delete audit log entries older than 30 days',
+                    label: 'ลบบันทึกเก่า',
+                    description: 'ลบบันทึกการทำงานที่เก่ากว่า 30 วัน',
                     icon: Trash2,
                   },
                   {
                     action: 'reset_settings',
-                    label: 'Reset All Settings',
-                    description: 'Wipe every row in system_settings — defaults will reload',
+                    label: 'รีเซ็ตการตั้งค่าทั้งหมด',
+                    description: 'ล้างข้อมูลใน system_settings แล้วโหลดค่าเริ่มต้นใหม่',
                     icon: AlertTriangle,
                   },
                 ].map(({ action, label, description, icon: Icon }) => (

@@ -68,14 +68,14 @@ function formatPath(path: string): { label: string; isLocal: boolean } {
 }
 
 export default function AnalyticsPage() {
-  usePageTitle('Analytics')
+  usePageTitle('วิเคราะห์ข้อมูล')
   const [period, setPeriod] = useState(30)
   const [showLocal, setShowLocal] = useState(false)
   const { data, loading, error, refetch } = useAdminApi<AnalyticsData>(
     `/api/admin/analytics?days=${period}`
   )
 
-  if (loading) return <AdminLoading message="Loading analytics..." />
+  if (loading) return <AdminLoading message="กำลังโหลดข้อมูลวิเคราะห์..." />
   if (error) return <AdminError error={error} onRetry={refetch} />
 
   const { overview, topPages, traffic, weeklyVisitors, dailyVisitors, countries } = data!
@@ -87,7 +87,7 @@ export default function AnalyticsPage() {
   const lineData = {
     labels: dailyVisitors.map((d) => {
       const dt = new Date(d.date)
-      return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      return dt.toLocaleDateString('th-TH', { month: 'short', day: 'numeric' })
     }),
     datasets: [{
       data: dailyVisitors.map((d) => d.value),
@@ -182,8 +182,8 @@ export default function AnalyticsPage() {
   return (
     <AdminPageContainer>
       <AdminPageHeader
-        title="Analytics"
-        description={`${overview.totalVisitors.toLocaleString()} visitors in the last ${overview.period}`}
+        title="วิเคราะห์ข้อมูล"
+        description={`${overview.totalVisitors.toLocaleString()} ผู้เข้าชมในช่วง ${overview.period} ล่าสุด`}
       >
         <div className="flex gap-1.5">
           {[7, 30, 90].map((d) => (
@@ -196,7 +196,7 @@ export default function AnalyticsPage() {
                   : 'border border-surface-300 bg-surface-100 text-foreground-light hover:text-foreground-light'
               }`}
             >
-              {d}d
+              {d} วัน
             </button>
           ))}
         </div>
@@ -205,10 +205,10 @@ export default function AnalyticsPage() {
       {/* Stat cards */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          { label: 'Total Visitors', value: overview.totalVisitors.toLocaleString(), color: 'text-[#409EFE]' },
-          { label: 'Unique Pages', value: topPages.length, color: 'text-[#FAFAFA]' },
-          { label: 'Traffic Sources', value: traffic.length, color: 'text-[#22C55E]' },
-          { label: 'Countries', value: countries.length, color: 'text-[#F59E0B]' },
+          { label: 'ผู้เข้าชมทั้งหมด', value: overview.totalVisitors.toLocaleString(), color: 'text-[#409EFE]' },
+          { label: 'หน้าที่ถูกเข้าชม', value: topPages.length, color: 'text-[#FAFAFA]' },
+          { label: 'แหล่งที่มา', value: traffic.length, color: 'text-[#22C55E]' },
+          { label: 'ประเทศ', value: countries.length, color: 'text-[#F59E0B]' },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border border-[#27272A] bg-[#18181B] px-5 py-4">
             <p className="text-[11px] text-[#52525b]">{s.label}</p>
@@ -220,12 +220,12 @@ export default function AnalyticsPage() {
       {/* Line chart: daily trend */}
       <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
         <div className="border-b border-[#27272A] px-5 py-4">
-          <h2 className="text-sm font-semibold text-[#FAFAFA]">Daily Visitors</h2>
-          <p className="mt-0.5 text-[11px] text-[#52525b]">Trend over the selected period</p>
+          <h2 className="text-sm font-semibold text-[#FAFAFA]">ผู้เข้าชมรายวัน</h2>
+          <p className="mt-0.5 text-[11px] text-[#52525b]">แนวโน้มในช่วงเวลาที่เลือก</p>
         </div>
         <div className="px-5 py-5" style={{ height: 220 }}>
           {dailyVisitors.every((d) => d.value === 0) ? (
-            <AdminEmpty title="No visitor data" description="Visits will appear here as they're tracked" />
+            <AdminEmpty title="ยังไม่มีข้อมูลผู้เข้าชม" description="ข้อมูลการเข้าชมจะแสดงที่นี่เมื่อระบบเริ่มบันทึก" />
           ) : (
             <Line data={lineData} options={lineOpts} />
           )}
@@ -236,8 +236,8 @@ export default function AnalyticsPage() {
       <div className="grid gap-4 xl:grid-cols-[1fr_240px]">
         <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
           <div className="border-b border-[#27272A] px-5 py-4">
-            <h2 className="text-sm font-semibold text-[#FAFAFA]">Visitors by Day of Week</h2>
-            <p className="mt-0.5 text-[11px] text-[#52525b]">Aggregated from visitor_logs</p>
+            <h2 className="text-sm font-semibold text-[#FAFAFA]">ผู้เข้าชมตามวันในสัปดาห์</h2>
+            <p className="mt-0.5 text-[11px] text-[#52525b]">สรุปจาก visitor_logs</p>
           </div>
           <div className="px-5 py-5" style={{ height: 200 }}>
             <Bar data={barData} options={barOpts} />
@@ -246,10 +246,10 @@ export default function AnalyticsPage() {
 
         <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
           <div className="border-b border-[#27272A] px-5 py-4">
-            <h2 className="text-sm font-semibold text-[#FAFAFA]">Top Countries</h2>
+            <h2 className="text-sm font-semibold text-[#FAFAFA]">ประเทศยอดนิยม</h2>
           </div>
           {countries.length === 0 ? (
-            <AdminEmpty title="No country data" description="Country data requires Vercel headers" />
+            <AdminEmpty title="ยังไม่มีข้อมูลประเทศ" description="ข้อมูลประเทศต้องใช้ header จาก Vercel" />
           ) : (
             <div className="divide-y divide-[#27272A]/60">
               {countries.map((c) => (
@@ -270,10 +270,10 @@ export default function AnalyticsPage() {
         <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
           <div className="flex items-center justify-between border-b border-[#27272A] px-5 py-4">
             <div>
-              <h2 className="text-sm font-semibold text-foreground-light">Top Pages</h2>
+              <h2 className="text-sm font-semibold text-foreground-light">หน้ายอดนิยม</h2>
               {localCount > 0 && (
                 <p className="mt-0.5 text-[11px] text-foreground-muted">
-                  {localCount} localhost {localCount === 1 ? 'entry' : 'entries'} hidden
+                  ซ่อนข้อมูล localhost {localCount} รายการ
                 </p>
               )}
             </div>
@@ -282,19 +282,19 @@ export default function AnalyticsPage() {
                 onClick={() => setShowLocal((v) => !v)}
                 className="rounded-lg border border-[#27272A] bg-[#09090B] px-2.5 py-1 text-[11px] text-foreground-muted transition-colors hover:text-foreground-light"
               >
-                {showLocal ? 'Hide localhost' : 'Show localhost'}
+                {showLocal ? 'ซ่อน localhost' : 'แสดง localhost'}
               </button>
             )}
           </div>
           {filteredPages.length === 0 ? (
-            <AdminEmpty title="No page data yet" description="Visits will appear here as they're tracked" />
+            <AdminEmpty title="ยังไม่มีข้อมูลหน้า" description="ข้อมูลการเข้าชมจะแสดงที่นี่เมื่อระบบเริ่มบันทึก" />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-[13px]">
                 <thead>
                   <tr className="border-b border-[#27272A] text-[10px] font-semibold uppercase tracking-widest text-[#3f3f46]">
-                    <th className="px-5 py-3">Page</th>
-                    <th className="px-4 py-3 text-right">Views</th>
+                    <th className="px-5 py-3">หน้า</th>
+                    <th className="px-4 py-3 text-right">ยอดเข้าชม</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#27272A]/50">
@@ -326,10 +326,10 @@ export default function AnalyticsPage() {
 
         <div className="rounded-xl border border-[#27272A] bg-[#18181B]">
           <div className="border-b border-[#27272A] px-5 py-4">
-            <h2 className="text-sm font-semibold text-[#FAFAFA]">Traffic Sources</h2>
+            <h2 className="text-sm font-semibold text-[#FAFAFA]">แหล่งที่มาทราฟฟิก</h2>
           </div>
           {traffic.length === 0 ? (
-            <AdminEmpty title="No traffic data yet" />
+            <AdminEmpty title="ยังไม่มีข้อมูลทราฟฟิก" />
           ) : (
             <div className="flex flex-col items-center px-4 py-5" style={{ height: 260 }}>
               <Doughnut data={doughnutData} options={doughnutOpts} />

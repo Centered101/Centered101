@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { AosProvider } from '@/components/aos-provider'
 import { LanguageProvider } from '@/components/language-provider'
 import { PageInteractionGuard } from '@/components/page-interaction-guard'
+import { TouchHoverProvider } from '@/components/portfolio/touch-hover-provider'
 import { Toaster } from '@/components/ui/sonner'
 import 'aos/dist/aos.css'
 import './globals.css'
@@ -11,7 +12,7 @@ import './globals.css'
 const kanit = Kanit({
   subsets: ['latin', 'thai'],
   variable: '--font-kanit',
-  weight: ['300', '400', '500', '600', '700', '800', '900'],
+  weight: ['400', '500', '600', '700', '900'],
 })
 
 const geistMono = Geist_Mono({
@@ -20,19 +21,19 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Centered101 | Personal Digital Ecosystem',
-  description: 'The digital operating system for Centered101: portfolio, open source, business, knowledge base, system dashboard, labs, games, APIs, and experiments.',
-  keywords: ['Centered101', 'digital ecosystem', 'portfolio', 'open source', 'developer tools', 'personal operating system'],
+  title: 'Centered101 | Portfolio',
+  description: 'Portfolio website for Centered101: selected projects, GitHub work, skills, coding time, learning story, and contact.',
+  keywords: ['Centered101', 'portfolio', 'projects', 'developer', 'GitHub', 'Supabase', 'Next.js'],
   authors: [{ name: 'Centered101' }],
   openGraph: {
-    title: 'Centered101 | Personal Digital Ecosystem',
-    description: 'Portfolio, open source, business, knowledge base, dashboard, labs, games, APIs, and experiments in one place.',
+    title: 'Centered101 | Portfolio',
+    description: 'Selected projects, GitHub work, skills, coding time, learning story, and contact.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Centered101 | Personal Digital Ecosystem',
-    description: 'The digital operating system for everything Centered101 builds.',
+    title: 'Centered101 | Portfolio',
+    description: 'Selected projects, GitHub work, skills, coding time, learning story, and contact.',
   },
 }
 
@@ -40,6 +41,7 @@ export const viewport: Viewport = {
   themeColor: '#05070b',
   width: 'device-width',
   initialScale: 1,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({
@@ -60,11 +62,12 @@ export default function RootLayout({
         />
       </head>
       <body
-        className="font-sans antialiased bg-background text-foreground min-h-screen"
+        className="font-sans antialiased bg-background text-foreground min-h-screen min-h-dvh"
         suppressHydrationWarning
       >
         <LanguageProvider>
           <PageInteractionGuard />
+          <TouchHoverProvider />
           <AosProvider>{children}</AosProvider>
         </LanguageProvider>
         <Toaster richColors closeButton position="top-right" />

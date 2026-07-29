@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Download, ArrowUp, MapPin, Sparkles } from 'lucide-react'
+import { Download, ArrowUp } from 'lucide-react'
 import { useLanguage } from '@/components/language-provider'
-import { getSocialLinkIcon } from '@/components/social-link-icon'
+
+import { TheSvgIcon } from '@/components/the-svg-icon'
 import { useSocialLinks } from '@/hooks/use-social-links'
 import { smoothScrollTo } from '@/lib/smooth-scroll'
 import type { GitHubUser } from '@/lib/github/types'
@@ -51,8 +52,11 @@ export function Footer({ user, onResumeDownload }: FooterProps) {
     { id: 'contact', label: copy.nav.contact },
   ]
 
+  const pageLinks = [
+    { href: 'https://shop.centered101.com', label: 'Shop' },
+  ]
+
   const profileName = user?.name || user?.login || 'centered101'
-  const username = user?.login || 'centered101'
   const resumeHref = 'https://wwcduaaqtyopvofzlouw.supabase.co/storage/v1/object/public/general/Centered101-resume.pdf?download=Centered101-resume.pdf'
 
   return (
@@ -61,78 +65,70 @@ export function Footer({ user, onResumeDownload }: FooterProps) {
         type="button"
         aria-label={copy.footer.backTop}
         onClick={scrollToTop}
-        className={`fixed bottom-6 right-6 z-50 grid size-11 place-items-center rounded-full border border-border bg-card/90 text-muted-foreground shadow-[0_18px_60px_-28px_rgba(64,158,254,0.8)] backdrop-blur-xl transition-colors hover:border-accent/40 hover:text-accent ${
+        className={`fixed bottom-[max(1.5rem,var(--safe-bottom))] right-[max(1.5rem,var(--safe-right))] z-50 grid size-11 place-items-center rounded-full border border-border bg-card/90 text-muted-foreground shadow-[0_18px_60px_-28px_rgba(64,158,254,0.8)] backdrop-blur-xl transition-colors hover:border-accent/40 hover:text-accent ${
           showBackToTop ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
         }`}
       >
         <ArrowUp className="size-4" />
       </button>
 
-      <footer className="relative overflow-hidden border-t border-border/50 px-6 py-16">
+      <footer className="relative overflow-hidden border-t border-border/50 px-4 py-12 sm:px-6 sm:py-16">
         <div className="absolute inset-0 grid-pattern opacity-45" />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
 
         <div className="relative mx-auto w-full max-w-[1400px]">
-          <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr_0.9fr]">
-            <div>
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-secondary/50 px-3 py-1 text-xs text-muted-foreground">
-                <Sparkles className="size-3.5 text-accent" />
-                {copy.footer.eyebrow}
-              </div>
-              <h3 className="mb-3 text-3xl font-bold">
-                <span className="gradient-text">{profileName}</span>
-              </h3>
-              <p className="max-w-sm text-sm leading-6 text-muted-foreground">
-                {copy.footer.tagline}
-              </p>
-
-              <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                {user?.location ? (
-                  <span className="inline-flex items-center gap-1.5">
-                    <MapPin className="size-4 text-accent" />
-                    {user.location}
-                  </span>
-                ) : null}
-                <span className="inline-flex items-center gap-1.5">
-                  {(() => {
-                    const Icon = getSocialLinkIcon('github')
-                    return <Icon className="size-4 text-accent" />
-                  })()}
-                  @{username}
-                </span>
-              </div>
-            </div>
-
+          <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr_0.9fr]">
             <nav>
-              <p className="mb-3 text-sm font-semibold text-foreground">{copy.footer.navigation}</p>
-              <div className="grid grid-cols-2 gap-2">
-              {navItems.map((item) => (
-                <button
-                  key={item.id}
-                  suppressHydrationWarning
-                  onClick={() => {
-                    if (item.action) {
-                      item.action()
-                    } else {
-                      smoothScrollTo(item.id)
-                    }
-                  }}
-                  className="group flex items-center justify-between rounded-xl border border-border bg-secondary/35 px-4 py-3 text-left text-sm text-muted-foreground transition-all hover:border-accent/35 hover:bg-accent/10 hover:text-foreground"
-                >
-                  <span>{item.label}</span>
-                  <span className="size-1.5 rounded-full bg-muted-foreground/30 transition-colors group-hover:bg-accent" />
-                </button>
-              ))}
+              <div>
+                <p className="mb-3 text-sm font-semibold text-foreground">{copy.footer.navigation}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {navItems.map((item) => (
+                    <button
+                      key={item.id}
+                      suppressHydrationWarning
+                      data-touch-hover
+                      onClick={() => {
+                        if (item.action) {
+                          item.action()
+                        } else {
+                          smoothScrollTo(item.id)
+                        }
+                      }}
+                      className="group flex items-center justify-between rounded-xl border border-border bg-secondary/35 px-4 py-3 text-left text-sm text-muted-foreground transition-all hover:border-accent/35 hover:bg-accent/10 hover:text-foreground"
+                    >
+                      <span>{item.label}</span>
+                      <span className="touch-hover-bg size-1.5 rounded-full bg-muted-foreground/30 transition-colors group-hover:bg-accent" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </nav>
+
+            <nav className="space-y-6">
+              <div>
+                <p className="mb-3 text-sm font-semibold text-foreground">{copy.footer.pages}</p>
+                <div className="grid gap-2">
+                  {pageLinks.map((page) => (
+                    <a
+                      key={page.href}
+                      href={page.href}
+                      target={page.href.startsWith('http') ? '_blank' : undefined}
+                      rel={page.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                      data-touch-hover
+                      className="group flex items-center justify-between rounded-xl border border-border bg-secondary/35 px-4 py-3 text-sm text-muted-foreground transition-all hover:border-accent/35 hover:bg-accent/10 hover:text-foreground"
+                    >
+                      <span>{page.label}</span>
+                      <span className="touch-hover-bg size-1.5 rounded-full bg-muted-foreground/30 transition-colors group-hover:bg-accent" />
+                    </a>
+                  ))}
+                </div>
               </div>
             </nav>
 
             <div className="space-y-4">
               <p className="text-sm font-semibold text-foreground">{copy.footer.social}</p>
               <div className="flex flex-wrap gap-2">
-                {socialLinks.map((link) => {
-                  const Icon = getSocialLinkIcon(link.icon)
-
-                  return (
+                {socialLinks.map((link) => (
                   <Button
                     key={link.id}
                     variant="ghost"
@@ -146,11 +142,10 @@ export function Footer({ user, onResumeDownload }: FooterProps) {
                       rel={link.name === 'Email' ? undefined : 'noopener noreferrer'}
                       aria-label={link.name}
                     >
-                      <Icon className="size-5" />
+                      <TheSvgIcon label={link.name} slug={link.icon} className="size-9 border-0 bg-transparent" />
                     </a>
                   </Button>
-                  )
-                })}
+                ))}
               </div>
 
               <Button

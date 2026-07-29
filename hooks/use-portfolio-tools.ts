@@ -1,6 +1,7 @@
 'use client'
 
 import useSWR from 'swr'
+import { fetchJson } from '@/lib/api-fetcher'
 import type { PortfolioTool } from '@/lib/portfolio/types'
 
 interface PortfolioToolsData {
@@ -8,16 +9,12 @@ interface PortfolioToolsData {
   tools: PortfolioTool[]
 }
 
-const fetcher = async (url: string) => {
-  const response = await fetch(url)
-  const data = await response.json()
-
-  if (!response.ok) {
-    throw new Error(data.error || 'Failed to fetch portfolio tools')
-  }
-
-  return data
+const fallbackToolsData: PortfolioToolsData = {
+  configured: false,
+  tools: [],
 }
+
+const fetcher = (url: string) => fetchJson<PortfolioToolsData>(url, fallbackToolsData, 'Failed to fetch portfolio tools')
 
 export function usePortfolioTools() {
   const { data, error, isLoading, mutate } = useSWR<PortfolioToolsData>(

@@ -1,7 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Bell, CheckCheck, Rocket, Shield, Star, TriangleAlert, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Bell, CheckCheck, ChevronRight, Rocket, Shield, Star, TriangleAlert, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient as createBrowserClient } from '@/lib/supabase/client'
 import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
@@ -31,18 +32,50 @@ const TYPE_COLOR = {
   info: 'text-[#409EFE]',
 }
 
+// Maps a notification's `resource` to the admin page it belongs to.
+const RESOURCE_HREF: Record<string, string> = {
+  portfolio_projects: '/portfolio/admin?tab=projects',
+  blog_posts: '/admin/content',
+  contact_messages: '/admin/business',
+  digital_assets: '/admin/assets',
+  storage: '/admin/storage',
+  security_events: '/admin/security',
+  user_sessions: '/admin/security',
+  subdomains: '/admin/subdomains',
+  admin_users: '/admin/users',
+  system_settings: '/admin/settings',
+  audit_logs: '/admin/logs',
+}
+
+function resourceHref(item: NotificationItem): string | null {
+  if (!item.resource) return null
+  return RESOURCE_HREF[item.resource] ?? null
+}
+
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 1) return 'เมื่อสักครู่'
+  if (mins < 60) return `${mins} นาทีที่แล้ว`
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
+  if (hrs < 24) return `${hrs} ชั่วโมงที่แล้ว`
+  return `${Math.floor(hrs / 24)} วันที่แล้ว`
+}
+
+function notificationTitle(title: string) {
+  const projectUpdated = title.match(/^Project updated:\s*(.+)$/)
+  if (projectUpdated) return `อัปเดตโปรเจกต์: ${projectUpdated[1]}`
+
+  const projectCreated = title.match(/^New project created:\s*(.+)$/)
+  if (projectCreated) return `เพิ่มโปรเจกต์ใหม่: ${projectCreated[1]}`
+
+  if (title === 'Project deleted') return 'ลบโปรเจกต์แล้ว'
+  return title
 }
 
 export function NotificationCenter() {
   const { getAdminHeaders, authMode } = useAdminAuth()
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<NotificationItem[]>([])
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -95,6 +128,24 @@ export function NotificationCenter() {
     })
   }
 
+  async function markRead(id: string) {
+    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
+    await fetch('/api/admin/notifications', {
+      method: 'PATCH',
+      headers: { ...getAdminHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: [id] }),
+    }).catch(() => {})
+  }
+
+  function openNotification(item: NotificationItem) {
+    if (!item.read) markRead(item.id)
+    const href = resourceHref(item)
+    if (href) {
+      setOpen(false)
+      router.push(href)
+    }
+  }
+
   async function dismiss(id: string) {
     setItems((prev) => prev.filter((n) => n.id !== id))
     await fetch(`/api/admin/notifications?id=${id}`, {
@@ -114,7 +165,7 @@ export function NotificationCenter() {
           'relative grid size-8 place-items-center rounded-lg border border-[#27272A] bg-[#18181B] text-[#A1A1AA] transition-colors hover:border-[#3f3f46] hover:text-[#FAFAFA]',
           open && 'border-[#409EFE]/30 bg-[#409EFE]/5 text-[#409EFE]'
         )}
-        aria-label={`Notifications${unread > 0 ? ` (${unread} unread)` : ''}`}
+        aria-label={`การแจ้งเตือน${unread > 0 ? ` (${unread} รายการยังไม่อ่าน)` : ''}`}
       >
         <Bell className="size-3.5" />
         {unread > 0 && (
@@ -127,13 +178,13 @@ export function NotificationCenter() {
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-10 z-40 w-80 overflow-hidden rounded-xl border border-[#27272A] bg-[#18181B] shadow-2xl shadow-black/60">
+          <div className="absolute right-0 top-10 z-40 w-[min(calc(100vw-1rem),22rem)] overflow-hidden rounded-xl border border-[#27272A] bg-[#18181B] shadow-2xl shadow-black/60">
             <div className="flex items-center justify-between border-b border-[#27272A] px-4 py-3">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-[#FAFAFA]">Notifications</h3>
+                <h3 className="text-sm font-semibold text-[#FAFAFA]">การแจ้งเตือน</h3>
                 {unread > 0 && (
                   <span className="rounded-md bg-[#409EFE]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[#409EFE]">
-                    {unread} new
+                    ใหม่ {unread}
                   </span>
                 )}
               </div>
@@ -144,7 +195,7 @@ export function NotificationCenter() {
                   className="flex items-center gap-1 text-[11px] text-[#52525b] transition-colors hover:text-[#A1A1AA]"
                 >
                   <CheckCheck className="size-3" />
-                  Mark all read
+                  อ่านทั้งหมด
                 </button>
               )}
             </div>
@@ -153,38 +204,60 @@ export function NotificationCenter() {
               {items.length === 0 ? (
                 <div className="px-4 py-8 text-center">
                   <Bell className="mx-auto mb-2 size-6 text-[#3f3f46]" />
-                  <p className="text-xs text-[#52525b]">No notifications yet</p>
+                  <p className="text-xs text-[#52525b]">ยังไม่มีการแจ้งเตือน</p>
                   <p className="mt-0.5 text-[10px] text-[#3f3f46]">
-                    {authMode === 'github' ? 'Realtime active' : 'Polling every 15s'}
+                    {authMode === 'github' ? 'Realtime ทำงานอยู่' : 'ตรวจทุก 60 วินาที'}
                   </p>
                 </div>
               ) : (
                 items.map((item) => {
                   const Icon = TYPE_ICON[item.type as keyof typeof TYPE_ICON] ?? Bell
                   const color = TYPE_COLOR[item.type as keyof typeof TYPE_COLOR] ?? 'text-[#A1A1AA]'
+                  const href = resourceHref(item)
                   return (
                     <div
                       key={item.id}
+                      role={href ? 'button' : undefined}
+                      tabIndex={href ? 0 : undefined}
+                      onClick={() => openNotification(item)}
+                      onKeyDown={(e) => {
+                        if (href && (e.key === 'Enter' || e.key === ' ')) {
+                          e.preventDefault()
+                          openNotification(item)
+                        }
+                      }}
                       className={cn(
-                        'flex items-start gap-3 px-4 py-3 transition-colors hover:bg-[#27272A]/30',
+                        'group flex items-start gap-3 px-4 py-3 transition-colors hover:bg-[#27272A]/30',
+                        href && 'cursor-pointer',
                         !item.read && 'bg-[#409EFE]/[0.03]'
                       )}
                     >
                       <Icon className={cn('mt-0.5 size-4 shrink-0', color)} />
                       <div className="min-w-0 flex-1">
                         <p className={cn('text-xs font-medium', item.read ? 'text-[#A1A1AA]' : 'text-[#FAFAFA]')}>
-                          {item.title}
+                          {notificationTitle(item.title)}
                         </p>
                         {item.message && (
                           <p className="mt-0.5 text-[11px] text-[#52525b]">{item.message}</p>
                         )}
-                        <p className="mt-0.5 text-[10px] text-[#3f3f46]">{timeAgo(item.created_at)}</p>
+                        <div className="mt-0.5 flex items-center gap-1">
+                          <p className="text-[10px] text-[#3f3f46]">{timeAgo(item.created_at)}</p>
+                          {href && (
+                            <span className="flex items-center gap-0.5 text-[10px] text-[#3f3f46] opacity-0 transition-opacity group-hover:opacity-100">
+                              · ดู
+                              <ChevronRight className="size-2.5" />
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <button
                         type="button"
-                        onClick={() => dismiss(item.id)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          dismiss(item.id)
+                        }}
                         className="mt-0.5 shrink-0 text-[#3f3f46] transition-colors hover:text-[#A1A1AA]"
-                        aria-label="Dismiss"
+                        aria-label="ปิดการแจ้งเตือน"
                       >
                         <X className="size-3" />
                       </button>
@@ -202,14 +275,14 @@ export function NotificationCenter() {
                     authMode === 'github' ? 'bg-[#22C55E]' : 'bg-[#F59E0B]'
                   )}
                 />
-                {authMode === 'github' ? 'Realtime' : 'Polling 60s'}
+                {authMode === 'github' ? 'Realtime' : 'ตรวจทุก 60 วินาที'}
               </span>
               <button
                 type="button"
                 onClick={fetchNotifications}
                 className="text-[11px] text-[#52525b] transition-colors hover:text-[#409EFE]"
               >
-                Refresh
+                รีเฟรช
               </button>
             </div>
           </div>

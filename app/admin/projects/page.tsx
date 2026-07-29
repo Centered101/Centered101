@@ -66,7 +66,7 @@ function slugify(t: string) {
 }
 
 export default function ProjectsPage() {
-  usePageTitle('Projects')
+  usePageTitle('โปรเจกต์')
   const { data, loading, error, refetch } = useAdminApi<ProjectsData>('/api/admin/projects')
   const { mutate: saveProject, loading: saving } = useAdminMutation<ProjectForm>('/api/admin/projects', 'POST')
   const { mutate: deleteProject } = useAdminMutation<undefined>('/api/admin/projects', 'DELETE')
@@ -83,7 +83,7 @@ export default function ProjectsPage() {
   useAdminRealtime(['portfolio_projects'], refetch)
 
   async function generateDescription() {
-    if (!form.title.trim()) { toast.error('Enter a title first'); return }
+    if (!form.title.trim()) { toast.error('กรุณากรอกชื่อโปรเจกต์ก่อน'); return }
     setGenerating(true)
     try {
       const res = await fetch('/api/admin/ai/generate', {
@@ -95,9 +95,9 @@ export default function ProjectsPage() {
         }),
       })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error || 'Generation failed')
+      if (!res.ok) throw new Error(json.error || 'สร้างด้วย AI ไม่สำเร็จ')
       setForm((p) => ({ ...p, short_description: json.result }))
-      toast.success('Description generated')
+      toast.success('สร้างคำอธิบายแล้ว')
     } catch (err) {
       toast.error((err as Error).message)
     } finally {
@@ -114,9 +114,9 @@ export default function ProjectsPage() {
       fd.append('slug', slug)
       const res = await fetch('/api/admin/projects/upload', { method: 'POST', headers: getAdminHeaders(), body: fd })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error || 'Upload failed')
+      if (!res.ok) throw new Error(json.error || 'อัปโหลดไม่สำเร็จ')
       setForm((p) => ({ ...p, poster_url: json.publicUrl, poster_alt: p.poster_alt || file.name.replace(/\.[^.]+$/, '') }))
-      toast.success('Poster uploaded')
+      toast.success('อัปโหลดภาพหลักแล้ว')
     } catch (err) {
       toast.error((err as Error).message)
     } finally {
@@ -125,7 +125,7 @@ export default function ProjectsPage() {
     }
   }
 
-  if (loading) return <AdminLoading message="Loading projects..." />
+  if (loading) return <AdminLoading message="กำลังโหลดโปรเจกต์..." />
   if (error) return <AdminError error={error} onRetry={refetch} />
 
   const projects = data?.projects ?? []
@@ -150,12 +150,12 @@ export default function ProjectsPage() {
 
   async function handleSave() {
     if (!form.title.trim() || !form.slug.trim()) {
-      toast.error('Title and slug are required')
+      toast.error('กรุณากรอกชื่อโปรเจกต์และ slug')
       return
     }
     try {
       await saveProject(form)
-      toast.success(form.id ? 'Project updated' : 'Project created')
+      toast.success(form.id ? 'อัปเดตโปรเจกต์แล้ว' : 'เพิ่มโปรเจกต์แล้ว')
       setModalOpen(false)
       refetch()
     } catch (err) {
@@ -166,7 +166,7 @@ export default function ProjectsPage() {
   async function handleDelete(proj: Project) {
     try {
       await deleteProject(undefined, { id: proj.id })
-      toast.success(`Deleted "${proj.title}"`)
+      toast.success(`ลบ "${proj.title}" แล้ว`)
       setDeleteTarget(null)
       refetch()
     } catch (err) {
@@ -177,25 +177,25 @@ export default function ProjectsPage() {
   return (
     <AdminPageContainer>
       <AdminPageHeader
-        title="Project Center"
-        description={`Portfolio projects from Supabase · ${projects.length} total`}
+        title="ศูนย์โปรเจกต์"
+        description={`โปรเจกต์พอร์ตโฟลิโอจาก Supabase · ทั้งหมด ${projects.length} รายการ`}
       >
         <button
           onClick={openNew}
           className="flex items-center gap-1.5 rounded-lg bg-[#409EFE] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#60aeff]"
         >
           <Plus className="size-3.5" />
-          New Project
+          เพิ่มโปรเจกต์
         </button>
       </AdminPageHeader>
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Total', value: projects.length, color: 'text-[#FAFAFA]' },
-          { label: 'Active', value: active.length, color: 'text-[#22C55E]' },
-          { label: 'Featured', value: projects.filter((p) => p.featured).length, color: 'text-[#409EFE]' },
-          { label: 'Hidden', value: projects.filter((p) => !p.enabled).length, color: 'text-[#52525b]' },
+          { label: 'ทั้งหมด', value: projects.length, color: 'text-[#FAFAFA]' },
+          { label: 'ใช้งานอยู่', value: active.length, color: 'text-[#22C55E]' },
+          { label: 'โปรเจกต์เด่น', value: projects.filter((p) => p.featured).length, color: 'text-[#409EFE]' },
+          { label: 'ซ่อนอยู่', value: projects.filter((p) => !p.enabled).length, color: 'text-[#52525b]' },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border border-[#27272A] bg-[#18181B] px-4 py-3">
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
@@ -207,7 +207,7 @@ export default function ProjectsPage() {
       {active.length > 0 && (
         <div>
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#3f3f46]">
-            Active / Published ({active.length})
+            ใช้งานอยู่ / เผยแพร่แล้ว ({active.length})
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {active.map((proj) => (
@@ -220,7 +220,7 @@ export default function ProjectsPage() {
       {other.length > 0 && (
         <div>
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#3f3f46]">
-            Paused / Archived ({other.length})
+            พักไว้ / เก็บถาวร ({other.length})
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {other.map((proj) => (
@@ -231,7 +231,7 @@ export default function ProjectsPage() {
       )}
 
       {projects.length === 0 && (
-        <AdminEmpty title="No projects yet" description="Add your first portfolio project to get started" />
+        <AdminEmpty title="ยังไม่มีโปรเจกต์" description="เพิ่มโปรเจกต์แรกเพื่อเริ่มจัดการพอร์ตโฟลิโอ" />
       )}
 
       <AdminPagination
@@ -245,12 +245,12 @@ export default function ProjectsPage() {
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent aria-describedby={undefined} className="max-h-[90vh] overflow-y-auto border-[#27272A] bg-[#18181B] text-[#FAFAFA] sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-[#FAFAFA]">{form.id ? 'Edit Project' : 'New Project'}</DialogTitle>
+            <DialogTitle className="text-[#FAFAFA]">{form.id ? 'แก้ไขโปรเจกต์' : 'เพิ่มโปรเจกต์'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-1">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-[#A1A1AA]">Title *</Label>
+                <Label className="text-xs text-[#A1A1AA]">ชื่อโปรเจกต์ *</Label>
                 <Input
                   value={form.title}
                   onChange={(e) => {
@@ -273,7 +273,7 @@ export default function ProjectsPage() {
             </div>
             <div>
               <div className="flex items-center justify-between">
-                <Label className="text-xs text-[#A1A1AA]">Short Description</Label>
+                <Label className="text-xs text-[#A1A1AA]">คำอธิบายสั้น</Label>
                 <button
                   type="button"
                   onClick={generateDescription}
@@ -281,19 +281,19 @@ export default function ProjectsPage() {
                   className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-[#409EFE] hover:bg-[#409EFE]/10 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {generating ? <Loader2 className="size-3 animate-spin" /> : <Sparkles className="size-3" />}
-                  {generating ? 'Generating...' : 'AI Generate'}
+                  {generating ? 'กำลังสร้าง...' : 'สร้างด้วย AI'}
                 </button>
               </div>
               <Input
                 value={form.short_description}
                 onChange={(e) => setForm((p) => ({ ...p, short_description: e.target.value }))}
                 className="mt-1 h-9 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30"
-                placeholder="One-line description"
+                placeholder="คำอธิบายสั้นหนึ่งบรรทัด"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-[#A1A1AA]">Category</Label>
+                <Label className="text-xs text-[#A1A1AA]">หมวดหมู่</Label>
                 <Input
                   value={form.category}
                   onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
@@ -302,7 +302,7 @@ export default function ProjectsPage() {
                 />
               </div>
               <div>
-                <Label className="text-xs text-[#A1A1AA]">Status</Label>
+                <Label className="text-xs text-[#A1A1AA]">สถานะ</Label>
                 <select
                   value={form.status}
                   onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}
@@ -317,7 +317,7 @@ export default function ProjectsPage() {
 
             {/* Poster */}
             <div>
-              <Label className="text-xs text-[#A1A1AA]">Poster Image</Label>
+              <Label className="text-xs text-[#A1A1AA]">ภาพหลักโปรเจกต์</Label>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -344,7 +344,7 @@ export default function ProjectsPage() {
                         className="flex items-center gap-1 rounded-md border border-[#27272A] bg-[#09090B] px-2 py-1 text-[10px] text-[#A1A1AA] hover:text-[#FAFAFA] disabled:opacity-50"
                       >
                         {uploading ? <Loader2 className="size-3 animate-spin" /> : <ImagePlus className="size-3" />}
-                        Replace
+                        เปลี่ยนรูป
                       </button>
                       <button
                         type="button"
@@ -352,7 +352,7 @@ export default function ProjectsPage() {
                         className="flex items-center gap-1 rounded-md border border-[#27272A] bg-[#09090B] px-2 py-1 text-[10px] text-[#52525b] hover:text-[#EF4444]"
                       >
                         <X className="size-3" />
-                        Remove
+                        ลบรูป
                       </button>
                     </div>
                   </div>
@@ -366,24 +366,24 @@ export default function ProjectsPage() {
                     className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#27272A] bg-[#09090B] py-4 text-[11px] text-[#52525b] transition-colors hover:border-[#409EFE]/40 hover:text-[#409EFE] disabled:opacity-50"
                   >
                     {uploading ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />}
-                    {uploading ? 'Uploading...' : 'Upload poster image'}
+                    {uploading ? 'กำลังอัปโหลด...' : 'อัปโหลดภาพหลัก'}
                   </button>
                   <Input
                     value={form.poster_url}
                     onChange={(e) => setForm((p) => ({ ...p, poster_url: e.target.value }))}
                     className="h-8 border-[#27272A] bg-[#09090B] font-mono text-[11px] text-[#A1A1AA] focus-visible:ring-[#409EFE]/30"
-                    placeholder="or paste URL..."
+                    placeholder="หรือวาง URL..."
                   />
                 </div>
               )}
             </div>
             <div>
-              <Label className="text-xs text-[#A1A1AA]">Poster Alt Text</Label>
+              <Label className="text-xs text-[#A1A1AA]">คำอธิบายภาพ</Label>
               <Input
                 value={form.poster_alt}
                 onChange={(e) => setForm((p) => ({ ...p, poster_alt: e.target.value }))}
                 className="mt-1 h-9 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30"
-                placeholder="Image description..."
+                placeholder="คำอธิบายภาพ..."
               />
             </div>
 
@@ -406,7 +406,7 @@ export default function ProjectsPage() {
               />
             </div>
             <div>
-              <Label className="text-xs text-[#A1A1AA]">Tech Stack (comma-separated)</Label>
+              <Label className="text-xs text-[#A1A1AA]">Tech Stack (คั่นด้วย comma)</Label>
               <Input
                 value={form.tech_stack}
                 onChange={(e) => setForm((p) => ({ ...p, tech_stack: e.target.value }))}
@@ -416,11 +416,11 @@ export default function ProjectsPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center justify-between rounded-lg border border-[#27272A] px-3 py-2.5">
-                <p className="text-sm text-[#FAFAFA]">Featured</p>
+                <p className="text-sm text-[#FAFAFA]">โปรเจกต์เด่น</p>
                 <Switch checked={form.featured} onCheckedChange={(v) => setForm((p) => ({ ...p, featured: v }))} />
               </div>
               <div className="flex items-center justify-between rounded-lg border border-[#27272A] px-3 py-2.5">
-                <p className="text-sm text-[#FAFAFA]">Visible</p>
+                <p className="text-sm text-[#FAFAFA]">แสดงผล</p>
                 <Switch checked={form.enabled} onCheckedChange={(v) => setForm((p) => ({ ...p, enabled: v }))} />
               </div>
             </div>
@@ -431,7 +431,7 @@ export default function ProjectsPage() {
               onClick={() => setModalOpen(false)}
               className="h-8 border-[#27272A] bg-transparent text-[#A1A1AA] hover:bg-[#27272A] hover:text-[#FAFAFA]"
             >
-              Cancel
+              ยกเลิก
             </Button>
             <Button
               onClick={handleSave}
@@ -439,7 +439,7 @@ export default function ProjectsPage() {
               className="h-8 bg-[#409EFE] text-sm text-white hover:bg-[#60aeff] disabled:opacity-60"
             >
               {saving && <Loader2 className="mr-1.5 size-3 animate-spin" />}
-              {form.id ? 'Save Changes' : 'Create Project'}
+              {form.id ? 'บันทึกการแก้ไข' : 'สร้างโปรเจกต์'}
             </Button>
           </div>
         </DialogContent>
@@ -448,9 +448,9 @@ export default function ProjectsPage() {
       <ConfirmModal
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title={`Delete "${deleteTarget?.title}"?`}
-        description="This project will be permanently removed from your portfolio."
-        confirmLabel="Delete"
+        title={`ลบ "${deleteTarget?.title}"?`}
+        description="โปรเจกต์นี้จะถูกลบออกจากพอร์ตโฟลิโอถาวร"
+        confirmLabel="ลบ"
         destructive
         onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
       />
@@ -472,7 +472,7 @@ function ProjectCard({ proj, onEdit, onDelete }: { proj: Project; onEdit: () => 
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-sm font-semibold text-[#FAFAFA]">{proj.title}</h3>
               {proj.featured && (
-                <span className="rounded border border-[#409EFE]/20 bg-[#409EFE]/10 px-1.5 py-px text-[9px] font-semibold text-[#409EFE]">FEATURED</span>
+                <span className="rounded border border-[#409EFE]/20 bg-[#409EFE]/10 px-1.5 py-px text-[9px] font-semibold text-[#409EFE]">เด่น</span>
               )}
               <StatusBadge status={proj.status} />
             </div>
@@ -488,7 +488,7 @@ function ProjectCard({ proj, onEdit, onDelete }: { proj: Project; onEdit: () => 
         </div>
         <div className="mt-3 flex items-center justify-between">
           <p className="text-[10px] text-[#3f3f46]">
-            Updated {new Date(proj.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            อัปเดต {new Date(proj.updated_at).toLocaleDateString('th-TH', { month: 'short', day: 'numeric', year: 'numeric' })}
           </p>
           <div className="flex gap-1.5">
             {proj.github_url && (

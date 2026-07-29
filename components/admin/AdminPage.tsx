@@ -7,7 +7,7 @@ type AdminPageContainerProps = {
 
 export function AdminPageContainer({ children, className }: AdminPageContainerProps) {
   return (
-    <div className={cn('space-y-6 p-5', className)}>
+    <div className={cn('min-w-0 space-y-6 overflow-x-hidden p-5', className)}>
       {children}
     </div>
   )

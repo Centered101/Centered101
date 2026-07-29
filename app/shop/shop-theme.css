@@ -1,0 +1,119 @@
+/* ============================================================================
+   Shop theme — scoped to `.shop-theme` so it never touches Centered101's
+   global theme. Centered101 (Tailwind v4, @theme inline) compiles color
+   utilities to `var(--token)`, so overriding the raw tokens here re-skins the
+   whole shop subtree. Values come from center-shop-express src/index.css
+   (HSL triplets wrapped in hsl()).
+   ============================================================================ */
+
+.shop-theme {
+  --background: hsl(245 60% 96%);
+  --foreground: hsl(260 30% 15%);
+
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(260 30% 15%);
+
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(260 30% 15%);
+
+  --primary: hsl(261 100% 71%);
+  --primary-foreground: hsl(0 0% 100%);
+
+  --secondary: hsl(255 100% 76%);
+  --secondary-foreground: hsl(0 0% 100%);
+
+  --muted: hsl(250 50% 92%);
+  --muted-foreground: hsl(260 15% 45%);
+
+  --accent: hsl(255 60% 85%);
+  --accent-foreground: hsl(260 30% 15%);
+
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: hsl(0 0% 100%);
+
+  --border: hsl(250 30% 88%);
+  --input: hsl(250 30% 88%);
+  --ring: hsl(261 100% 71%);
+
+  --radius: 0.75rem;
+
+  --success: hsl(150 60% 45%);
+  --success-foreground: hsl(0 0% 100%);
+
+  min-height: 100vh;
+  background-color: hsl(245 60% 96%);
+  color: hsl(260 30% 15%);
+  font-family: 'Kanit', sans-serif;
+}
+
+.shop-theme .font-pixel {
+  font-family: 'Press Start 2P', 'Kanit', cursive;
+}
+
+/* Custom animations from the shop's Tailwind v3 config (not present in v4). */
+@keyframes shop-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes shop-pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px hsl(261 100% 71% / 0.3); }
+  50% { box-shadow: 0 0 40px hsl(261 100% 71% / 0.6); }
+}
+.shop-theme .animate-float {
+  animation: shop-float 3s ease-in-out infinite;
+}
+.shop-theme .animate-pulse-glow {
+  animation: shop-pulse-glow 2s ease-in-out infinite;
+}
+
+/* ── Full visual isolation from Centered101's global chrome ──────────────────
+   Centered101 forces a custom OS cursor, a dark body gradient, a dark text
+   selection and globally hidden scrollbars. Neutralise all of that inside the
+   shop so it looks and behaves as a completely standalone storefront. */
+
+/* Reset the custom cursor (global rules use !important, so match that). */
+.shop-theme,
+.shop-theme *,
+.shop-theme *::before,
+.shop-theme *::after {
+  cursor: auto !important;
+}
+.shop-theme a,
+.shop-theme button,
+.shop-theme label,
+.shop-theme summary,
+.shop-theme select,
+.shop-theme [role="button"],
+.shop-theme .cursor-pointer,
+.shop-theme [class^="btn-"] {
+  cursor: pointer !important;
+}
+.shop-theme input,
+.shop-theme textarea,
+.shop-theme [contenteditable="true"] {
+  cursor: text !important;
+}
+
+/* Shop-specific text selection (instead of Centered101's dark one). */
+.shop-theme ::selection {
+  background: hsl(261 100% 71%);
+  color: #fff;
+}
+
+/* Restore real, lightly-styled scrollbars inside the shop. */
+.shop-theme {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(261 100% 71% / 0.45) transparent;
+}
+.shop-theme ::-webkit-scrollbar {
+  display: block;
+  width: 8px;
+  height: 8px;
+}
+.shop-theme ::-webkit-scrollbar-thumb {
+  background: hsl(261 100% 71% / 0.4);
+  border-radius: 9999px;
+}
+.shop-theme ::-webkit-scrollbar-track {
+  background: transparent;
+}

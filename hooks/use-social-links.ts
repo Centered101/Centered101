@@ -1,6 +1,7 @@
 'use client'
 
 import useSWR from 'swr'
+import { fetchJson } from '@/lib/api-fetcher'
 import type { SocialLink } from '@/lib/social-links/types'
 
 interface SocialLinksData {
@@ -8,16 +9,12 @@ interface SocialLinksData {
   links: SocialLink[]
 }
 
-const fetcher = async (url: string) => {
-  const response = await fetch(url)
-  const data = await response.json()
-
-  if (!response.ok) {
-    throw new Error(data.error || 'Failed to fetch social links')
-  }
-
-  return data
+const fallbackSocialLinksData: SocialLinksData = {
+  configured: false,
+  links: [],
 }
+
+const fetcher = (url: string) => fetchJson<SocialLinksData>(url, fallbackSocialLinksData, 'Failed to fetch social links')
 
 export function useSocialLinks() {
   const { data, error, isLoading, mutate } = useSWR<SocialLinksData>(
