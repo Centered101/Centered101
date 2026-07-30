@@ -2,6 +2,13 @@
 
 import { useTheme } from 'next-themes'
 import { Toaster as Sonner, ToasterProps } from 'sonner'
+import {
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle2,
+  Info,
+  Loader2,
+} from 'lucide-react'
 
 // ─── PORTFOLIO TOASTER ────────────────────────────────────────────────────────
 // ออกแบบ: creative / personal — rounded, soft glow, navy bg
@@ -44,11 +51,11 @@ const portfolioToastOptions = {
 } as const
 
 const portfolioIcons = {
-  success: <i className="fa-solid fa-circle-check    text-[#1ED760] text-[15px]" />,
-  error:   <i className="fa-solid fa-circle-exclamation text-[#FE4040] text-[15px]" />,
-  info:    <i className="fa-solid fa-circle-info     text-[#409EFE] text-[15px]" />,
-  warning: <i className="fa-solid fa-triangle-exclamation text-[#FFB84D] text-[15px]" />,
-  loading: <i className="fa-solid fa-spinner        text-[#6b7a8d] text-[15px] animate-spin" />,
+  success: <CheckCircle2 className="size-[15px] text-[#1ED760]" />,
+  error: <AlertCircle className="size-[15px] text-[#FE4040]" />,
+  info: <Info className="size-[15px] text-[#409EFE]" />,
+  warning: <AlertTriangle className="size-[15px] text-[#FFB84D]" />,
+  loading: <Loader2 className="size-[15px] animate-spin text-[#6b7a8d]" />,
 } as const
 
 export function Toaster({ ...props }: ToasterProps) {
@@ -109,11 +116,11 @@ const adminToastOptions = {
 } as const
 
 const adminIcons = {
-  success: <i className="fa-solid fa-circle-check        text-[#22C55E] text-[13px]" />,
-  error:   <i className="fa-solid fa-circle-exclamation  text-[#EF4444] text-[13px]" />,
-  info:    <i className="fa-solid fa-circle-info         text-[#409EFE] text-[13px]" />,
-  warning: <i className="fa-solid fa-triangle-exclamation text-[#F59E0B] text-[13px]" />,
-  loading: <i className="fa-solid fa-spinner             text-[#52525b] text-[13px] animate-spin" />,
+  success: <CheckCircle2 className="size-[13px] text-[#22C55E]" />,
+  error: <AlertCircle className="size-[13px] text-[#EF4444]" />,
+  info: <Info className="size-[13px] text-[#409EFE]" />,
+  warning: <AlertTriangle className="size-[13px] text-[#F59E0B]" />,
+  loading: <Loader2 className="size-[13px] animate-spin text-[#52525b]" />,
 } as const
 
 export function AdminToaster({ ...props }: ToasterProps) {

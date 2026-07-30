@@ -195,7 +195,7 @@ export function Contact({ user, onSubmit }: ContactProps) {
   return (
     <section id="contact" className="px-4 py-16 sm:px-6 sm:py-24 relative overflow-hidden" data-aos="fade-up">
       <Script
-        src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&language=th"
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
         strategy="afterInteractive"
         onLoad={() => {
           setTurnstileReady(true)
@@ -255,7 +255,8 @@ export function Contact({ user, onSubmit }: ContactProps) {
             data-aos="fade-right"
             className="lg:col-span-2"
           >
-            <div className="glass-card flex h-full flex-col rounded-2xl p-4 sm:p-6">
+            <div className="flex h-full flex-col gap-4">
+              <div className="glass-card rounded-2xl p-4 sm:p-6">
               <h3 className="text-lg font-semibold mb-6">{copy.contact.connect}</h3>
               <div className="space-y-4">
                 {socialLinks.map((link) => (
@@ -279,9 +280,10 @@ export function Contact({ user, onSubmit }: ContactProps) {
                   </a>
                 ))}
               </div>
+              </div>
 
               {user?.location && (
-                <div className="mt-auto border-t border-border/60 pt-6">
+                <div className="glass-card rounded-2xl p-4 sm:p-6">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
                       <MapPin className="w-5 h-5 text-accent" />
@@ -306,9 +308,9 @@ export function Contact({ user, onSubmit }: ContactProps) {
             data-aos-delay="120"
             className="lg:col-span-3"
           >
-            <div className="glass-card h-full rounded-2xl p-5 sm:p-8">
+            <div className="glass-card rounded-2xl p-4 sm:p-6">
               <h3 className="text-lg font-semibold mb-2">{copy.contact.sendTitle}</h3>
-              <p className="text-sm text-muted-foreground mb-6">{copy.contact.sendSubtitle}</p>
+              <p className="text-sm text-muted-foreground mb-5">{copy.contact.sendSubtitle}</p>
 
               {formState === 'success' ? (
                 <motion.div
@@ -333,7 +335,7 @@ export function Contact({ user, onSubmit }: ContactProps) {
                 </motion.div>
               ) : (
                 <form onSubmit={handleSubmit}>
-                  <FieldGroup>
+                  <FieldGroup className="gap-4">
                     <div className="grid sm:grid-cols-2 gap-4">
                       <Field>
                         <FieldLabel htmlFor="name">{copy.contact.name}</FieldLabel>
@@ -386,7 +388,7 @@ export function Contact({ user, onSubmit }: ContactProps) {
                         rows={5}
                         required
                         disabled={formState === 'loading'}
-                        className="h-[172px] resize-none overflow-y-auto border-border/50 bg-secondary/50 [field-sizing:fixed] focus:border-accent/50"
+                        className="h-[120px] resize-none overflow-y-auto border-border/50 bg-secondary/50 [field-sizing:fixed] focus:border-accent/50"
                       />
                     </Field>
                     {needsBotCheck ? (
@@ -416,7 +418,7 @@ export function Contact({ user, onSubmit }: ContactProps) {
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full mt-6 h-12 glow-accent hover:glow-strong transition-shadow"
+                    className="w-full mt-5 h-11 glow-accent hover:glow-strong transition-shadow"
                     disabled={formState === 'loading'}
                   >
                     {formState === 'loading' ? (

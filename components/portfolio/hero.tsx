@@ -151,6 +151,7 @@ export function Hero({ user, totalStars = 0, organizations = [], isLoading, onRe
       })
     : null
   const resumeHref = '/api/portfolio/resume?download=1'
+  const shouldLoadTurnstile = messageOpen && needsBotCheck
 
   const handleResumeClick = async () => {
     onResumeDownload?.()
@@ -221,15 +222,17 @@ export function Hero({ user, totalStars = 0, organizations = [], isLoading, onRe
 
   return (
     <section id="home" className="relative flex min-h-screen min-h-[100svh] items-end overflow-hidden px-4 pb-8 pt-28 sm:px-6 sm:pb-24 md:pb-28 lg:px-8">
-      <Script
-        src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&language=th"
-        strategy="afterInteractive"
-        onLoad={() => {
-          setTurnstileReady(true)
-          setTurnstileFailed(false)
-        }}
-        onError={() => setTurnstileFailed(true)}
-      />
+      {shouldLoadTurnstile ? (
+          <Script
+            src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+          strategy="lazyOnload"
+          onLoad={() => {
+            setTurnstileReady(true)
+            setTurnstileFailed(false)
+          }}
+          onError={() => setTurnstileFailed(true)}
+        />
+      ) : null}
       <div className="absolute inset-0 z-0 grid-pattern" />
       <div className="pointer-events-none absolute inset-0 z-0 bg-[url('/porfilio/images/bg-portfolio.png')] bg-cover bg-center opacity-75" />
       <div className="pointer-events-none absolute inset-0 z-0 bg-background/62" />
@@ -248,6 +251,9 @@ export function Hero({ user, totalStars = 0, organizations = [], isLoading, onRe
         <img
           src={visualSettings.hero_image_url}
           alt=""
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
           draggable={false}
           onContextMenu={(event) => event.preventDefault()}
           className="size-full object-contain object-right-bottom"
@@ -261,6 +267,9 @@ export function Hero({ user, totalStars = 0, organizations = [], isLoading, onRe
         <img
           src={visualSettings.hero_image_url}
           alt=""
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
           draggable={false}
           className="size-full object-contain object-top"
         />
@@ -497,19 +506,24 @@ export function Hero({ user, totalStars = 0, organizations = [], isLoading, onRe
 
 function HeroSkeleton() {
   return (
-    <section className="relative flex min-h-screen min-h-[100svh] items-end overflow-hidden px-4 pb-8 pt-28 sm:px-6 sm:pb-24 lg:pb-28">
+    <section className="relative flex min-h-screen min-h-[100svh] items-end overflow-hidden px-4 pb-8 pt-28 sm:px-6 sm:pb-24 md:pb-28 lg:px-8">
       <div className="absolute inset-0 z-0 grid-pattern" />
       <div className="pointer-events-none absolute inset-0 z-0 bg-[url('/porfilio/images/bg-portfolio.png')] bg-cover bg-center opacity-75" />
       <div className="pointer-events-none absolute inset-0 z-0 bg-background/62" />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute bottom-0 right-64 z-0 hidden h-[min(82vh,760px)] w-[54vw] max-w-205 select-none opacity-95 lg:block"
+        className="pointer-events-none absolute bottom-0 z-0 hidden h-[min(76vh,700px)] select-none opacity-95 md:block lg:h-[min(80vh,740px)]"
+        style={{
+          right: 'clamp(40px, 160px, 14vw)',
+          width: 'min(50vw, 760px)',
+          maxWidth: '760px',
+        }}
       >
         <Image
           src="/porfilio/images/bg-avatar-hero.png"
           alt=""
           fill
-          sizes="54vw"
+          sizes="50vw"
           draggable={false}
           onContextMenu={(event) => event.preventDefault()}
           className="object-contain object-right-bottom"
@@ -517,7 +531,7 @@ function HeroSkeleton() {
       </div>
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-14 z-0 h-[48vh] w-[92vw] -translate-x-1/2 opacity-95 lg:hidden"
+        className="pointer-events-none absolute left-1/2 top-14 z-0 h-[48vh] w-[92vw] -translate-x-1/2 opacity-95 md:hidden"
       >
         <Image
           src="/porfilio/images/bg-avatar-hero.png"
@@ -528,24 +542,30 @@ function HeroSkeleton() {
           className="object-contain object-top"
         />
       </div>
-      <div className="relative z-10 mx-auto w-full max-w-[1400px]">
-        <div className="mx-auto w-full px-0">
-          <div className="grid grid-cols-[72px_1fr] gap-4 sm:grid-cols-[128px_1fr] sm:gap-8 lg:grid-cols-[160px_1fr]">
+      <div className="z-10 mx-auto w-full max-w-[1400px]">
+        <div className="w-full px-0 md:max-w-[58%] xl:max-w-none">
+          <div className="grid gap-5 sm:grid-cols-[128px_1fr] sm:gap-8 lg:grid-cols-[160px_1fr]">
             <div className="flex items-start justify-start">
               <div className="relative">
-                <div className="absolute inset-1.5 rounded bg-accent/35 opacity-80 blur-xl" />
-                <Skeleton className="relative size-18 rounded-3xl border border-primary bg-card sm:size-28 lg:size-36" />
+                <div className="absolute inset-1.5 rounded-3xl bg-accent/35 opacity-80 blur-xl" />
+                <Skeleton className="relative size-24 rounded border border-primary bg-card sm:size-28 lg:size-36" />
               </div>
             </div>
             <div className="min-w-0">
-              <Skeleton className="mb-5 h-10 w-64" />
-              <div className="mb-6 grid max-w-xl grid-cols-3 gap-3 sm:gap-8">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <div key={index} className="space-y-2">
-                    <Skeleton className="h-5 w-10" />
-                    <Skeleton className="h-4 w-20" />
+              <div className="mb-5 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
+                <div>
+                  <div className="mb-3 flex flex-wrap items-center gap-3">
+                    <Skeleton className="h-10 w-full max-w-[520px]" />
                   </div>
-                ))}
+                  <div className="grid max-w-xl grid-cols-3 gap-3 sm:gap-8">
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <div key={index} className="space-y-2">
+                        <Skeleton className="h-5 w-10" />
+                        <Skeleton className="h-4 w-20" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
               <div className="space-y-2">
                 <Skeleton className="h-5 w-32" />

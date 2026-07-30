@@ -146,6 +146,7 @@ export const translations = {
     wakatime_ranges: {
       last_7_days: 'Last 7 days',
       last_30_days: 'Last 30 days',
+      last_60_days: 'Last 60 days',
       last_6_months: 'Last 6 months',
       last_year: 'Last year',
       all_time: 'All time',
@@ -296,6 +297,7 @@ export const translations = {
     wakatime_ranges: {
       last_7_days: '7 วันล่าสุด',
       last_30_days: '30 วันล่าสุด',
+      last_60_days: '60 วันล่าสุด',
       last_6_months: '6 เดือนล่าสุด',
       last_year: 'ปีที่ผ่านมา',
       all_time: 'ทั้งหมด',

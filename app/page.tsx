@@ -45,7 +45,6 @@ export default function Home() {
   const [homepageResolved, setHomepageResolved] = useState(false)
   const [isSupabaseReady, setIsSupabaseReady] = useState(false)
   const [showPortfolio, setShowPortfolio] = useState(false)
-  const [bootTimedOut, setBootTimedOut] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -78,9 +77,6 @@ export default function Home() {
   useEffect(() => {
     if (!homepageResolved) return
     let isMounted = true
-    const fallbackTimer = window.setTimeout(() => {
-      if (isMounted) setBootTimedOut(true)
-    }, 2400)
 
     const preload = async () => {
       const minimumDelay = new Promise((resolve) => window.setTimeout(resolve, 650))
@@ -90,7 +86,7 @@ export default function Home() {
         fetch('/api/portfolio/tools'),
         fetch('/api/portfolio/learning-story?locale=en'),
         fetch('/api/social-links'),
-        fetch('/api/wakatime?range=last_7_days'),
+        fetch('/api/wakatime?range=last_60_days'),
         minimumDelay,
       ])
 
@@ -103,19 +99,14 @@ export default function Home() {
 
     return () => {
       isMounted = false
-      window.clearTimeout(fallbackTimer)
     }
   }, [homepageResolved])
 
   useEffect(() => {
-    if (homepageResolved && (bootTimedOut || (!isLoading && isSupabaseReady))) {
+    if (homepageResolved && !isLoading && isSupabaseReady) {
       setShowPortfolio(true)
     }
-  }, [bootTimedOut, homepageResolved, isLoading, isSupabaseReady])
-
-  useEffect(() => {
-    if (homepageResolved && !showPortfolio) setShowPortfolio(true)
-  }, [homepageResolved, showPortfolio])
+  }, [homepageResolved, isLoading, isSupabaseReady])
 
   return (
     <>

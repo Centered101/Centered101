@@ -10,7 +10,7 @@ import { useLanguage } from '@/components/language-provider'
 
 export function WakaTimeStats() {
   const { copy } = useLanguage()
-  const { data, isLoading, error } = useWakaTime('last_30_days')
+  const { data, isLoading, error } = useWakaTime('last_60_days')
 
   if (isLoading) {
     return <WakaTimeSkeleton />

@@ -55,12 +55,6 @@ export default function RootLayout({
       className={`${kanit.variable} ${geistMono.variable} bg-background`}
       suppressHydrationWarning
     >
-      <head>
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-        />
-      </head>
       <body
         className="font-sans antialiased bg-background text-foreground min-h-screen min-h-dvh"
         suppressHydrationWarning

@@ -1,6 +1,5 @@
 // Content-Security-Policy — allowlist built from what the site actually loads:
 //  - self-hosted Next.js assets + next/font (Kanit, Geist Mono)
-//  - Font Awesome CSS/webfonts from cdnjs
 //  - Vercel Analytics (va.vercel-scripts.com)
 //  - Supabase REST/Storage/Realtime (browser calls from shop + admin)
 //  - Images from Supabase storage, GitHub avatars, next/image
@@ -24,9 +23,9 @@ const cspDirectives = {
     'https://challenges.cloudflare.com',
     ...(isDev ? ["'unsafe-eval'"] : []),
   ],
-  'style-src': ["'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com'],
+  'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
   'img-src': ["'self'", 'data:', 'blob:', 'https:'],
-  'font-src': ["'self'", 'data:', 'https://cdnjs.cloudflare.com', 'https://fonts.gstatic.com'],
+  'font-src': ["'self'", 'data:', 'https://fonts.gstatic.com'],
   'connect-src': [
     "'self'",
     'https://*.supabase.co',

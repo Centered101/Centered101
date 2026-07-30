@@ -56,6 +56,8 @@ function ProjectCard({
 }) {
   const { copy } = useLanguage()
   const [active, setActive] = useState(false)
+  const [shouldLoadPoster, setShouldLoadPoster] = useState(false)
+  const [posterReady, setPosterReady] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const primaryUrl = project.live_url || project.github_url || project.docs_url
   const description = project.short_description || project.description
@@ -93,6 +95,15 @@ function ProjectCard({
     return () => document.removeEventListener('pointerdown', handlePointerDown)
   }, [active])
 
+  useEffect(() => {
+    setPosterReady(false)
+    setShouldLoadPoster(false)
+    if (!project.poster_url) return
+
+    const timer = window.setTimeout(() => setShouldLoadPoster(true), 180)
+    return () => window.clearTimeout(timer)
+  }, [project.poster_url])
+
   if (project.poster_url) {
     return (
       <motion.div
@@ -111,15 +122,46 @@ function ProjectCard({
             primaryUrl ? 'cursor-pointer' : ''
           }`}
         >
-          <Image
-            src={project.poster_url}
-            alt={project.poster_alt || `${project.title} poster`}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            draggable={false}
-            onContextMenu={(event) => event.preventDefault()}
-            className={`select-none object-cover transition-transform duration-700 group-hover:scale-105 ${active ? 'scale-105' : ''}`}
-          />
+          <div className="absolute inset-0 bg-secondary">
+            <div className="absolute inset-0 grid-pattern opacity-70" />
+            <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-background/70 to-secondary" />
+            <div className="absolute inset-x-6 bottom-6 flex items-end gap-3">
+              {project.logo_url ? (
+                <span className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-background/80 backdrop-blur">
+                  <Image
+                    src={project.logo_url}
+                    alt=""
+                    fill
+                    sizes="48px"
+                    draggable={false}
+                    onContextMenu={(event) => event.preventDefault()}
+                    className="object-cover"
+                  />
+                </span>
+              ) : null}
+              <div className="min-w-0">
+                <p className="truncate text-lg font-semibold text-foreground">{project.title}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{project.category}</p>
+              </div>
+            </div>
+          </div>
+
+          {shouldLoadPoster ? (
+            <Image
+              src={project.poster_url}
+              alt={project.poster_alt || `${project.title} poster`}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              loading="lazy"
+              draggable={false}
+              onLoad={() => setPosterReady(true)}
+              onError={() => setPosterReady(true)}
+              onContextMenu={(event) => event.preventDefault()}
+              className={`select-none object-cover transition-[opacity,transform] duration-700 group-hover:scale-105 ${
+                active ? 'scale-105' : ''
+              } ${posterReady ? 'opacity-100' : 'opacity-0'}`}
+            />
+          ) : null}
 
           <div className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/52 to-black/10 transition-opacity duration-300 group-hover:opacity-100 ${active ? 'opacity-100' : 'opacity-0'}`} />
 
@@ -347,6 +389,8 @@ function ProjectLogoLink({
   const primaryUrl = project.live_url || project.github_url || project.docs_url
   const githubUrl = project.github_url
   const [active, setActive] = useState(false)
+  const [shouldLoadPoster, setShouldLoadPoster] = useState(false)
+  const [posterReady, setPosterReady] = useState(false)
   const cardRef = useRef<HTMLButtonElement>(null)
 
   const openProject = () => {
@@ -384,6 +428,15 @@ function ProjectLogoLink({
     return () => document.removeEventListener('pointerdown', handlePointerDown)
   }, [active])
 
+  useEffect(() => {
+    setPosterReady(false)
+    setShouldLoadPoster(false)
+    if (!project.poster_url) return
+
+    const timer = window.setTimeout(() => setShouldLoadPoster(true), 180)
+    return () => window.clearTimeout(timer)
+  }, [project.poster_url])
+
   return (
     <motion.button
       ref={cardRef}
@@ -401,14 +454,23 @@ function ProjectLogoLink({
     >
       {project.poster_url ? (
         <>
-          <img
-            src={project.poster_url}
-            alt=""
-            aria-hidden="true"
-            draggable={false}
-            onContextMenu={(event) => event.preventDefault()}
-            className={`absolute inset-0 h-full w-full object-cover opacity-90 transition-transform duration-500 group-hover:scale-110 ${active ? 'scale-110' : 'scale-105'}`}
-          />
+          <span className="absolute inset-0 grid-pattern opacity-60" />
+          <span className="absolute inset-0 bg-gradient-to-r from-accent/10 via-background/70 to-secondary/80" />
+          {shouldLoadPoster ? (
+            <img
+              src={project.poster_url}
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+              draggable={false}
+              onLoad={() => setPosterReady(true)}
+              onError={() => setPosterReady(true)}
+              onContextMenu={(event) => event.preventDefault()}
+              className={`absolute inset-0 h-full w-full object-cover transition-[opacity,transform] duration-500 group-hover:scale-110 ${
+                active ? 'scale-110' : 'scale-105'
+              } ${posterReady ? 'opacity-90' : 'opacity-0'}`}
+            />
+          ) : null}
           <span className={`absolute inset-0 transition-colors group-hover:bg-background/52 ${active ? 'bg-background/52' : 'bg-background/62'}`} />
         </>
       ) : null}

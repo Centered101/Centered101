@@ -26,9 +26,6 @@ export function PortfolioBootScreen({
         }}
       />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,rgba(64,158,254,0.28),rgba(11,27,45,0.34)_18rem,transparent_36rem)]" />
-      <div className="absolute left-4 top-4 grid size-10 place-items-center rounded-full border border-white/15 bg-black/25 text-sm font-black text-white shadow-[0_18px_48px_-28px_rgba(64,158,254,0.75)]">
-        N
-      </div>
 
       <motion.div
         initial="hidden"
