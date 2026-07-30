@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { ImagePlus, Loader2, RotateCcw, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { AdminError, AdminLoading } from '@/components/admin/AdminStates'
 import { useAdminApi } from '@/lib/hooks/useAdminApi'
 import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 
@@ -32,6 +33,8 @@ export function AppearanceTab() {
   const [form, setForm] = useState(DEFAULTS)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [resetting, setResetting] = useState(false)
+  const [draggingHero, setDraggingHero] = useState(false)
   const [message, setMessage] = useState('')
 
   useEffect(() => {
@@ -58,12 +61,16 @@ export function AppearanceTab() {
   }
 
   async function uploadHeroImage(file: File) {
+    if (!file.type.startsWith('image/')) {
+      setMessage('กรุณาวางไฟล์รูปภาพเท่านั้น')
+      return
+    }
     setUploading(true)
     setMessage('')
     try {
       const body = new FormData()
       body.append('file', file)
-      body.append('bucket', 'public')
+      body.append('bucket', 'portfolio')
       body.append('alt_text', 'Portfolio hero image')
       const response = await adminFetch('/api/admin/assets/upload', { method: 'POST', body })
       const json = await response.json()
@@ -76,6 +83,42 @@ export function AppearanceTab() {
       setMessage(err instanceof Error ? err.message : 'อัปโหลดรูปไม่สำเร็จ')
     } finally {
       setUploading(false)
+    }
+  }
+
+  function handleHeroDrop(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault()
+    setDraggingHero(false)
+    const file = event.dataTransfer.files?.[0]
+    if (file) uploadHeroImage(file)
+  }
+
+  function isPublicBucketHeroUrl(value: string) {
+    return value.includes('/storage/v1/object/public/public/')
+      || value.includes('/storage/v1/object/public/portfolio/portfolio/hero/')
+      || value.includes('/storage/v1/object/public/portfolio/hero/')
+  }
+
+  async function resetToDefaults() {
+    setResetting(true)
+    setMessage('')
+    const previousUrl = form.hero_image_url
+    try {
+      if (previousUrl && previousUrl !== DEFAULTS.hero_image_url && isPublicBucketHeroUrl(previousUrl)) {
+        const response = await adminFetch(`/api/admin/assets?public_url=${encodeURIComponent(previousUrl)}`, {
+          method: 'DELETE',
+        })
+        const json = await response.json()
+        if (!response.ok) throw new Error(json.error || 'ลบรูปเก่าไม่สำเร็จ')
+        setMessage('ลบรูปเก่าออกจาก bucket public แล้ว กดบันทึกเพื่อใช้ค่าเริ่มต้น')
+      } else {
+        setMessage('กลับไปใช้ค่าเริ่มต้นแล้ว กดบันทึกเพื่อยืนยัน')
+      }
+      setForm(DEFAULTS)
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'รีเซตค่าเริ่มต้นไม่สำเร็จ')
+    } finally {
+      setResetting(false)
     }
   }
 
@@ -99,8 +142,8 @@ export function AppearanceTab() {
     }
   }
 
-  if (loading) return <div className="rounded-lg border border-border bg-card p-5 text-sm text-muted-foreground">กำลังโหลดการตั้งค่าหน้าเว็บ...</div>
-  if (error) return <div className="rounded-lg border border-border bg-card p-5 text-sm text-destructive">{error}</div>
+  if (loading) return <AdminLoading message="กำลังโหลดการตั้งค่าหน้าเว็บ..." />
+  if (error) return <AdminError error={error} onRetry={refetch} />
 
   return (
     <div className="grid gap-5 xl:grid-cols-[1fr_420px]">
@@ -140,10 +183,11 @@ export function AppearanceTab() {
               type="button"
               variant="outline"
               className="h-9"
-              onClick={() => setForm(DEFAULTS)}
+              disabled={resetting || uploading || saving}
+              onClick={resetToDefaults}
             >
-              <RotateCcw className="size-4" />
-              ค่าเริ่มต้น
+              {resetting ? <Loader2 className="size-4 animate-spin" /> : <RotateCcw className="size-4" />}
+              {resetting ? 'กำลังรีเซต...' : 'ค่าเริ่มต้น'}
             </Button>
           </div>
 
@@ -188,8 +232,34 @@ export function AppearanceTab() {
           <h2 className="text-sm font-black text-foreground">ตัวอย่าง</h2>
           <p className="mt-1 text-xs text-muted-foreground">พรีวิวตำแหน่งรูปแบบย่อ</p>
         </div>
-        <div className="relative h-[360px] overflow-hidden bg-white">
+        <div
+          className={`relative h-[360px] overflow-hidden bg-white transition ${
+            draggingHero ? 'ring-2 ring-[#409EFE] ring-offset-0' : ''
+          }`}
+          onDragEnter={(event) => {
+            event.preventDefault()
+            setDraggingHero(true)
+          }}
+          onDragOver={(event) => {
+            event.preventDefault()
+            setDraggingHero(true)
+          }}
+          onDragLeave={(event) => {
+            if (event.currentTarget.contains(event.relatedTarget as Node | null)) return
+            setDraggingHero(false)
+          }}
+          onDrop={handleHeroDrop}
+        >
           <div className="absolute inset-0 grid-pattern opacity-70" />
+          <div className={`pointer-events-none absolute inset-3 z-30 grid place-items-center rounded-xl border border-dashed border-[#409EFE] bg-[#f6fbff]/85 text-center transition ${
+            draggingHero ? 'opacity-100' : 'opacity-0'
+          }`}>
+            <div>
+              <ImagePlus className="mx-auto size-6 text-[#409EFE]" />
+              <p className="mt-2 text-sm font-black text-[#09090b]">วางรูปเพื่ออัปโหลด</p>
+              <p className="mt-1 text-xs font-semibold text-[#647084]">รูปนี้จะถูกใช้เป็น Hero บนหน้า portfolio</p>
+            </div>
+          </div>
           <div className="absolute left-6 top-18 z-10 max-w-62">
             <p className="text-2xl font-black text-[#090c13]">CENTERED101</p>
             <p className="mt-3 text-sm font-semibold text-[#747b86]">Learning to build cool things with code</p>

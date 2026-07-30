@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 
-export type IconVariant = 'default' | 'mono' | 'light' | 'dark' | 'wordmark'
+export type IconVariant = 'default' | 'mono' | 'light' | 'dark' | 'wordmark' | 'wm-light' | 'wm-dark'
 
-export const ICON_VARIANTS: IconVariant[] = ['default', 'mono', 'light', 'dark', 'wordmark']
+export const ICON_VARIANTS: IconVariant[] = ['default', 'mono', 'light', 'dark', 'wordmark', 'wm-light', 'wm-dark']
 
 interface TheSvgIconProps {
   label: string

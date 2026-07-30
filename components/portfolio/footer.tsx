@@ -57,7 +57,7 @@ export function Footer({ user, onResumeDownload }: FooterProps) {
   ]
 
   const profileName = user?.name || user?.login || 'centered101'
-  const resumeHref = 'https://wwcduaaqtyopvofzlouw.supabase.co/storage/v1/object/public/general/Centered101-resume.pdf?download=Centered101-resume.pdf'
+  const resumeHref = '/api/portfolio/resume?download=1'
 
   return (
     <>

@@ -9,6 +9,7 @@ import { TheSvgIcon } from '@/components/the-svg-icon'
 import { usePortfolioTools } from '@/hooks/use-portfolio-tools'
 import type { LanguageStats } from '@/lib/github/types'
 import type { PortfolioTool } from '@/lib/portfolio/types'
+import { comparePortfolioToolGroups, getPortfolioToolGroup } from '@/lib/portfolio/tool-groups'
 
 interface SkillsProps {
   topLanguages?: LanguageStats[]
@@ -23,39 +24,6 @@ const languageIcons: Record<string, string> = {
   CSS: 'css',
   'C++': 'cplusplus',
   C: 'c',
-}
-
-// Display taxonomy for the "Tools I work with" wall. Groups render in this order.
-const TOOL_GROUP_ORDER = [
-  'Language', 'Library', 'Editor', 'Design', 'Gaming', 'Software', 'Cloud', 'Database',
-  // legacy categories kept last so older data still renders sensibly
-  'Frontend', 'Backend', 'DevOps', 'Tools',
-]
-
-const NEW_GROUPS = new Set([
-  'Language', 'Library', 'Editor', 'Design', 'Gaming', 'Software', 'Cloud', 'Database',
-])
-
-// Curated tool → group map so existing tools sort into the new groups with no
-// manual re-categorising. Keyed by lower-cased tool name.
-const TOOL_NAME_GROUPS: Record<string, string> = {
-  html: 'Language', html5: 'Language', css: 'Language', css3: 'Language',
-  javascript: 'Language', typescript: 'Language', python: 'Language', 'c++': 'Language', c: 'Language',
-  react: 'Library', 'next.js': 'Library', nextjs: 'Library', jquery: 'Library', 'tailwind css': 'Library', tailwindcss: 'Library',
-  vscode: 'Editor', 'vs code': 'Editor', obsidian: 'Editor',
-  figma: 'Design', adobe: 'Design', blender: 'Design',
-  godot: 'Gaming',
-  cloudflare: 'Cloud', netlify: 'Cloud', vercel: 'Cloud', 'google cloud': 'Cloud', firebase: 'Cloud',
-  postgresql: 'Database', supabase: 'Database',
-  git: 'Software', github: 'Software', npm: 'Software', 'node.js': 'Software', nodejs: 'Software',
-  postman: 'Software', notion: 'Software', ubuntu: 'Software', windows: 'Software', 'kali linux': 'Software',
-}
-
-// An admin-set new-taxonomy category wins; otherwise use the curated map, then
-// fall back to whatever category is stored.
-function groupForTool(tool: PortfolioTool): string {
-  if (NEW_GROUPS.has(tool.category)) return tool.category
-  return TOOL_NAME_GROUPS[(tool.name || '').trim().toLowerCase()] ?? tool.category
 }
 
 function AnimatedProgressBar({ percentage, color, delay }: { percentage: number; color: string; delay: number }) {
@@ -101,17 +69,13 @@ export function Skills({ topLanguages = [], isLoading }: SkillsProps) {
   // order them. A running index lets the mobile collapse hide the overflow.
   const groupMap = new Map<string, PortfolioTool[]>()
   for (const tool of visibleTools) {
-    const group = groupForTool(tool)
+    const group = getPortfolioToolGroup(tool)
     const bucket = groupMap.get(group)
     if (bucket) bucket.push(tool)
     else groupMap.set(group, [tool])
   }
   const toolGroups = Array.from(groupMap.entries())
-    .sort(([a], [b]) => {
-      const ia = TOOL_GROUP_ORDER.indexOf(a)
-      const ib = TOOL_GROUP_ORDER.indexOf(b)
-      return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib)
-    })
+    .sort(([a], [b]) => comparePortfolioToolGroups(a, b))
     .map(([name, items]) => ({ name, items }))
   const toolsMarqueeDuration = Math.max(16, visibleTools.length * 1.25)
 

@@ -87,7 +87,7 @@ export function Navigation({ user }: NavigationProps) {
                 {(user?.login || '').slice(0, 2).toUpperCase()}
               </span>
               <Image
-                src="https://wwcduaaqtyopvofzlouw.supabase.co/storage/v1/object/public/general/Tes-D.png"
+                src="/api/portfolio/logo"
                 alt=""
                 aria-hidden="true"
                 fill

@@ -167,7 +167,7 @@ export default function SettingsPage() {
     github_username: authInfo?.githubUsername || '',
   })
   const [security, setSecurity] = useState({
-    session_timeout: '24 hours',
+    session_timeout: '6 hours',
     github_oauth: true,
     ip_allowlist: false,
     force_https: true,
@@ -218,7 +218,7 @@ export default function SettingsPage() {
     const sec = s.security as Record<string, unknown> | undefined
     if (sec) {
       setSecurity({
-        session_timeout: (sec.session_timeout as string) ?? '24 hours',
+        session_timeout: (sec.session_timeout as string) ?? '6 hours',
         github_oauth: (sec.github_oauth as boolean) ?? true,
         ip_allowlist: (sec.ip_allowlist as boolean) ?? false,
         force_https: (sec.force_https as boolean) ?? true,

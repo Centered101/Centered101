@@ -3,6 +3,9 @@ import { createClient } from '@/lib/supabase/server'
 
 function getOAuthErrorMessage(error: unknown) {
   const message = error instanceof Error ? error.message : 'OAuth callback failed'
+  if (message.toLowerCase().includes('code verifier')) {
+    return 'เซสชันเข้าสู่ระบบหมดอายุ กรุณากดเข้าสู่ระบบด้วย GitHub ใหม่อีกครั้ง'
+  }
   if (message.toLowerCase().includes('fetch failed')) {
     return 'เชื่อมต่อ Supabase ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
   }

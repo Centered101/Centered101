@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 import { cn } from '@/lib/utils'
+import { rememberAdminWorkspace, sortAdminWorkspaces } from '@/lib/admin-switcher'
 
 const navItems = [
   { label: 'คนติดต่อมา', href: '/portfolio/admin', tab: 'overview', icon: Inbox },
@@ -88,7 +89,9 @@ export function PortfolioAdminShell({ children }: { children: React.ReactNode })
   const searchParams = useSearchParams()
   const activeTab = searchParams.get('tab') || 'overview'
   const [isMounted, setIsMounted] = React.useState(false)
+  const [bootTimedOut, setBootTimedOut] = React.useState(false)
   const [switcherOpen, setSwitcherOpen] = React.useState(false)
+  const [orderedSwitcherItems, setOrderedSwitcherItems] = React.useState(switcherItems)
   const [hostInfo, setHostInfo] = React.useState<{ protocol: string; hostname: string; port: string } | null>(null)
 
   React.useEffect(() => {
@@ -96,6 +99,19 @@ export function PortfolioAdminShell({ children }: { children: React.ReactNode })
     const { protocol, hostname, port } = window.location
     setHostInfo({ protocol, hostname, port })
   }, [])
+
+  React.useEffect(() => {
+    setOrderedSwitcherItems(sortAdminWorkspaces(switcherItems))
+  }, [pathname])
+
+  React.useEffect(() => {
+    if (!isBooting) {
+      setBootTimedOut(false)
+      return
+    }
+    const timer = window.setTimeout(() => setBootTimedOut(true), 2200)
+    return () => window.clearTimeout(timer)
+  }, [isBooting])
 
   function appHref(item: SwitcherItem) {
     if (!hostInfo || !item.subdomain) return item.href
@@ -114,7 +130,24 @@ export function PortfolioAdminShell({ children }: { children: React.ReactNode })
     return pathname.startsWith(item.href)
   }
 
-  if (!isMounted || isBooting) {
+  function portfolioSiteHref() {
+    if (!hostInfo) return '/'
+
+    const { protocol, hostname, port } = hostInfo
+    const parts = hostname.split('.')
+    if (parts.length > 1 && APP_SUBDOMAINS.includes(parts[0])) {
+      const root = parts.slice(1).join('.')
+      return `${protocol}//portfolio.${root}${port ? `:${port}` : ''}/`
+    }
+
+    return '/'
+  }
+
+  const adminRoleLabel = authInfo?.roles?.[0] || 'Portfolio Admin'
+  const publicPortfolioHref = portfolioSiteHref()
+  const activeNavItem = navItems.find((item) => item.tab === activeTab) ?? navItems[0]
+
+  if (!isMounted || (isBooting && !bootTimedOut)) {
     return (
       <div className="portfolio-classic-theme portfolio-admin-theme grid min-h-screen place-items-center bg-background text-foreground">
         <div className="absolute inset-0 grid-pattern opacity-60" />
@@ -166,7 +199,10 @@ export function PortfolioAdminShell({ children }: { children: React.ReactNode })
           <div className="relative flex h-14 items-center border-b border-border px-3">
             <button
               type="button"
-              onClick={() => setSwitcherOpen((v) => !v)}
+              onClick={() => {
+                setOrderedSwitcherItems(sortAdminWorkspaces(switcherItems))
+                setSwitcherOpen((v) => !v)
+              }}
               className="flex h-10 w-full items-center gap-2.5 rounded-xl px-2 text-left transition hover:bg-secondary"
             >
               <span className="size-8 shrink-0 overflow-hidden rounded-xl border border-border bg-secondary">
@@ -189,14 +225,17 @@ export function PortfolioAdminShell({ children }: { children: React.ReactNode })
                     <p className="mt-0.5 text-[10px] text-muted-foreground">แสดงเฉพาะ workspace ที่มีหน้าจัดการจริง</p>
                   </div>
                   <div className="p-1.5">
-                    {switcherItems.map((item) => {
+                    {orderedSwitcherItems.map((item) => {
                       const Icon = item.icon
                       const active = isSwitcherActive(item)
                       return (
                         <a
                           key={item.label}
                           href={appHref(item)}
-                          onClick={() => setSwitcherOpen(false)}
+                          onClick={() => {
+                            rememberAdminWorkspace(item.href)
+                            setSwitcherOpen(false)
+                          }}
                           className={cn(
                             'group relative flex h-12 items-center gap-2.5 rounded-lg px-2.5 transition-colors',
                             active ? 'bg-secondary' : 'hover:bg-secondary'
@@ -258,14 +297,20 @@ export function PortfolioAdminShell({ children }: { children: React.ReactNode })
 
           <div className="border-t border-border p-3">
             <div className="flex items-center gap-2 rounded-lg border border-border bg-background/70 px-2.5 py-2">
-              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-secondary text-[11px] font-black text-accent">
-                {(authInfo?.displayName || authInfo?.githubUsername || 'A')[0].toUpperCase()}
+              <span className="size-8 shrink-0 overflow-hidden rounded-full border border-border bg-secondary">
+                <Image
+                  src={authInfo?.avatarUrl || '/admin/favicon.png'}
+                  alt={authInfo?.displayName || authInfo?.githubUsername || 'Admin'}
+                  width={32}
+                  height={32}
+                  className="size-full object-cover"
+                />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-xs font-bold text-foreground">
                   {authInfo?.displayName || authInfo?.githubUsername || 'Admin'}
                 </span>
-                <span className="block truncate text-[10px] text-muted-foreground">GitHub OAuth</span>
+                <span className="block truncate text-[10px] text-muted-foreground">{adminRoleLabel}</span>
               </span>
               <button
                 type="button"
@@ -282,14 +327,27 @@ export function PortfolioAdminShell({ children }: { children: React.ReactNode })
         <div className="min-w-0 flex-1 overflow-hidden">
           <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-3 border-b border-border bg-background/88 px-4 backdrop-blur-xl">
             <nav className="flex min-w-0 items-center gap-1.5 text-sm">
-              <span className="hidden text-muted-foreground sm:inline">Centered101</span>
+              <a
+                href={publicPortfolioHref}
+                className="hidden text-muted-foreground transition hover:text-foreground sm:inline"
+                title={publicPortfolioHref}
+              >
+                Centered101
+              </a>
               <span className="text-muted-foreground">/</span>
-              <span className="font-bold text-foreground">Portfolio Admin</span>
+              <Link href="/portfolio/admin" className="text-muted-foreground transition hover:text-foreground">
+                Portfolio Admin
+              </Link>
+              <span className="text-muted-foreground">/</span>
+              <Link href={activeNavItem.href} className="truncate font-bold text-foreground transition hover:text-accent">
+                {activeNavItem.label}
+              </Link>
             </nav>
             <a
-              href="/"
+              href={publicPortfolioHref}
               target="_blank"
               rel="noopener noreferrer"
+              title={publicPortfolioHref}
               className="flex h-8 items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
             >
               <ExternalLink className="size-3" />

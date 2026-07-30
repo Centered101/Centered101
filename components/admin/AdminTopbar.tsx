@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Brain,
@@ -18,28 +19,88 @@ import { cn } from '@/lib/utils'
 import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 import { NotificationCenter } from '@/components/admin/NotificationCenter'
 
-const breadcrumbs: Record<string, string[]> = {
-  '/admin': ['แดชบอร์ด'],
-  '/admin/portfolio': ['พอร์ตโฟลิโอ', 'จัดการข้อมูล'],
-  '/portfolio/admin': ['พอร์ตโฟลิโอ', 'Portfolio Admin'],
-  '/admin/content': ['คอนเทนต์', 'จัดการบทความ'],
-  '/admin/projects': ['โปรเจกต์', 'ศูนย์จัดการ'],
-  '/admin/business': ['ธุรกิจ', 'ศูนย์ติดต่อ'],
-  '/admin/stripe': ['การชำระเงิน', 'Stripe'],
-  '/admin/open-source': ['โอเพนซอร์ส', 'ฮับ'],
-  '/admin/assets': ['ไฟล์ดิจิทัล', 'สินทรัพย์'],
-  '/admin/database': ['ฐานข้อมูล', 'สำรวจข้อมูล'],
-  '/admin/analytics': ['วิเคราะห์ข้อมูล', 'ศูนย์สถิติ'],
-  '/admin/ai': ['AI', 'ศูนย์ควบคุม'],
-  '/admin/ai/memory/new': ['AI', 'เพิ่มความจำ'],
-  '/admin/ai/memory': ['AI', 'ความจำ'],
-  '/admin/storage': ['พื้นที่จัดเก็บ', 'จัดการไฟล์'],
-  '/admin/subdomains': ['ซับโดเมน', 'จัดการโดเมน'],
-  '/admin/monitoring': ['ระบบ', 'มอนิเตอร์'],
-  '/admin/logs': ['Audit', 'บันทึกระบบ'],
-  '/admin/security': ['ความปลอดภัย', 'สิทธิ์เข้าถึง'],
-  '/admin/users': ['ผู้ดูแล', 'สิทธิ์เข้าถึง'],
-  '/admin/settings': ['ตั้งค่า'],
+type Breadcrumb = { label: string; href: string }
+
+const breadcrumbs: Record<string, Breadcrumb[]> = {
+  '/admin': [{ label: 'แดชบอร์ด', href: '/admin' }],
+  '/admin/portfolio': [
+    { label: 'พอร์ตโฟลิโอ', href: '/portfolio/admin' },
+    { label: 'จัดการข้อมูล', href: '/admin/portfolio' },
+  ],
+  '/portfolio/admin': [
+    { label: 'พอร์ตโฟลิโอ', href: '/' },
+    { label: 'Portfolio Admin', href: '/portfolio/admin' },
+  ],
+  '/admin/content': [
+    { label: 'คอนเทนต์', href: '/admin/content' },
+    { label: 'จัดการบทความ', href: '/admin/content' },
+  ],
+  '/admin/projects': [
+    { label: 'โปรเจกต์', href: '/admin/projects' },
+    { label: 'ศูนย์จัดการ', href: '/admin/projects' },
+  ],
+  '/admin/business': [
+    { label: 'ธุรกิจ', href: '/admin/business' },
+    { label: 'ศูนย์ติดต่อ', href: '/admin/business' },
+  ],
+  '/admin/stripe': [
+    { label: 'การชำระเงิน', href: '/admin/stripe' },
+    { label: 'Stripe', href: '/admin/stripe' },
+  ],
+  '/admin/open-source': [
+    { label: 'โอเพนซอร์ส', href: '/admin/open-source' },
+    { label: 'ฮับ', href: '/admin/open-source' },
+  ],
+  '/admin/assets': [
+    { label: 'ไฟล์ดิจิทัล', href: '/admin/assets' },
+    { label: 'สินทรัพย์', href: '/admin/assets' },
+  ],
+  '/admin/database': [
+    { label: 'ฐานข้อมูล', href: '/admin/database' },
+    { label: 'สำรวจข้อมูล', href: '/admin/database' },
+  ],
+  '/admin/analytics': [
+    { label: 'วิเคราะห์ข้อมูล', href: '/admin/analytics' },
+    { label: 'ศูนย์สถิติ', href: '/admin/analytics' },
+  ],
+  '/admin/ai': [
+    { label: 'AI', href: '/admin/ai' },
+    { label: 'ศูนย์ควบคุม', href: '/admin/ai' },
+  ],
+  '/admin/ai/memory/new': [
+    { label: 'AI', href: '/admin/ai' },
+    { label: 'ความจำ', href: '/admin/ai/memory' },
+    { label: 'เพิ่มความจำ', href: '/admin/ai/memory/new' },
+  ],
+  '/admin/ai/memory': [
+    { label: 'AI', href: '/admin/ai' },
+    { label: 'ความจำ', href: '/admin/ai/memory' },
+  ],
+  '/admin/storage': [
+    { label: 'พื้นที่จัดเก็บ', href: '/admin/storage' },
+    { label: 'จัดการไฟล์', href: '/admin/storage' },
+  ],
+  '/admin/subdomains': [
+    { label: 'ซับโดเมน', href: '/admin/subdomains' },
+    { label: 'จัดการโดเมน', href: '/admin/subdomains' },
+  ],
+  '/admin/monitoring': [
+    { label: 'ระบบ', href: '/admin/monitoring' },
+    { label: 'มอนิเตอร์', href: '/admin/monitoring' },
+  ],
+  '/admin/logs': [
+    { label: 'Audit', href: '/admin/logs' },
+    { label: 'บันทึกระบบ', href: '/admin/logs' },
+  ],
+  '/admin/security': [
+    { label: 'ความปลอดภัย', href: '/admin/security' },
+    { label: 'สิทธิ์เข้าถึง', href: '/admin/security' },
+  ],
+  '/admin/users': [
+    { label: 'ผู้ดูแล', href: '/admin/users' },
+    { label: 'สิทธิ์เข้าถึง', href: '/admin/users' },
+  ],
+  '/admin/settings': [{ label: 'ตั้งค่า', href: '/admin/settings' }],
 }
 
 type Props = {
@@ -74,13 +135,17 @@ export function AdminTopbar({ onMenuOpen, onCommandOpen, onAIToggle, aiOpen }: P
   useEffect(() => { setSiteUrl(getMainSiteUrl()) }, [])
 
   // Try exact match first, then dynamic patterns for agent memory sub-routes
-  function resolveCrumbs(path: string): string[] {
+  function resolveCrumbs(path: string): Breadcrumb[] {
     if (breadcrumbs[path]) return breadcrumbs[path]
     if (path.startsWith('/admin/ai/memory/')) {
-      if (path.endsWith('/edit')) return ['AI', 'ความจำ', 'แก้ไข']
-      return ['AI', 'ความจำ', 'รายละเอียด']
+      const detailHref = path.endsWith('/edit') ? path.replace(/\/edit$/, '') : path
+      return [
+        { label: 'AI', href: '/admin/ai' },
+        { label: 'ความจำ', href: '/admin/ai/memory' },
+        { label: path.endsWith('/edit') ? 'แก้ไข' : 'รายละเอียด', href: detailHref },
+      ]
     }
-    return ['แดชบอร์ด']
+    return [{ label: 'แดชบอร์ด', href: '/admin' }]
   }
   const crumbs = resolveCrumbs(pathname)
 
@@ -98,13 +163,21 @@ export function AdminTopbar({ onMenuOpen, onCommandOpen, onAIToggle, aiOpen }: P
         </button>
 
         <nav className="flex items-center gap-1.5 text-sm">
-          <span className="hidden text-[#52525b] sm:inline">Centered101</span>
+          <Link href="/admin" className="hidden text-[#52525b] transition hover:text-[#A1A1AA] sm:inline">
+            Centered101
+          </Link>
           {crumbs.map((crumb, i) => (
-            <span key={crumb} className="flex items-center gap-1.5">
+            <span key={`${crumb.href}-${crumb.label}`} className="flex items-center gap-1.5">
               <ChevronRight className="size-3 text-[#3f3f46]" />
-              <span className={i === crumbs.length - 1 ? 'font-medium text-[#FAFAFA]' : 'text-[#52525b]'}>
-                {crumb}
-              </span>
+              <Link
+                href={crumb.href}
+                className={cn(
+                  'transition hover:text-[#FAFAFA]',
+                  i === crumbs.length - 1 ? 'font-medium text-[#FAFAFA]' : 'text-[#52525b]'
+                )}
+              >
+                {crumb.label}
+              </Link>
             </span>
           ))}
         </nav>

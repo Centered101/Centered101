@@ -103,6 +103,8 @@ export function FeaturedTab() {
   const [orderDirty, setOrderDirty] = useState(false)
   const [savingOrder, setSavingOrder] = useState(false)
   const [page, setPage] = useState(1)
+  const [draggingPoster, setDraggingPoster] = useState(false)
+  const [draggingLogo, setDraggingLogo] = useState(false)
   const posterInputRef = useRef<HTMLInputElement>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
 
@@ -146,6 +148,11 @@ export function FeaturedTab() {
   }
 
   async function handleImageUpload(file: File, kind: 'poster' | 'logo') {
+    if (!file.type.startsWith('image/')) {
+      toast.error('กรุณาวางไฟล์รูปภาพเท่านั้น')
+      return
+    }
+
     setUploading(true)
     try {
       const fd = new FormData()
@@ -167,6 +174,20 @@ export function FeaturedTab() {
       if (posterInputRef.current) posterInputRef.current.value = ''
       if (logoInputRef.current) logoInputRef.current.value = ''
     }
+  }
+
+  function handleImageDrop(event: React.DragEvent<HTMLElement>, kind: 'poster' | 'logo') {
+    event.preventDefault()
+    event.stopPropagation()
+    setDraggingPoster(false)
+    setDraggingLogo(false)
+    const file = event.dataTransfer.files?.[0]
+    if (file) handleImageUpload(file, kind)
+  }
+
+  function setDragging(kind: 'poster' | 'logo', value: boolean) {
+    if (kind === 'poster') setDraggingPoster(value)
+    else setDraggingLogo(value)
   }
 
   function moveProject(index: number, direction: -1 | 1) {
@@ -328,7 +349,7 @@ export function FeaturedTab() {
                       </div>
                     </div>
 
-                    <div className="flex shrink-0 flex-wrap items-center gap-2 lg:self-end lg:justify-end lg:pb-1">
+                    <div className="flex shrink-0 flex-nowrap items-center justify-end gap-2 lg:self-center">
                       <button
                         type="button"
                         onClick={() => moveProject(index, -1)}
@@ -348,24 +369,32 @@ export function FeaturedTab() {
                         <ArrowDown className="size-3.5" />
                       </button>
                       <label className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
-                        แสดงบนเว็บ
+                        <span className="w-18 text-right">แสดงบนเว็บ</span>
                         <Switch
                           checked={p.enabled}
                           disabled={toggling === `${p.id}-enabled`}
                           onCheckedChange={(v) => toggle(p.id, 'enabled', v)}
                         />
                       </label>
-                      {p.live_url && (
+                      {p.live_url ? (
                         <a href={p.live_url} target="_blank" rel="noopener noreferrer"
                           className="grid size-8 place-items-center rounded-md border border-border text-muted-foreground transition hover:border-[#409EFE]/40 hover:text-[#409EFE]">
                           <ExternalLink className="size-3.5" />
                         </a>
+                      ) : (
+                        <span className="grid size-8 place-items-center rounded-md border border-border text-muted-foreground/25 opacity-45">
+                          <ExternalLink className="size-3.5" />
+                        </span>
                       )}
-                      {p.github_url && (
+                      {p.github_url ? (
                         <a href={p.github_url} target="_blank" rel="noopener noreferrer"
                           className="grid size-8 place-items-center rounded-md border border-border text-muted-foreground transition hover:border-[#409EFE]/40 hover:text-[#409EFE]">
                           <Github className="size-3.5" />
                         </a>
+                      ) : (
+                        <span className="grid size-8 place-items-center rounded-md border border-border text-muted-foreground/25 opacity-45">
+                          <Github className="size-3.5" />
+                        </span>
                       )}
                       <button onClick={() => openEdit(p)}
                         className="grid size-8 place-items-center rounded-md border border-border text-muted-foreground transition hover:border-[#409EFE]/40 hover:text-[#409EFE]">
@@ -474,7 +503,16 @@ export function FeaturedTab() {
               <input ref={posterInputRef} type="file" accept="image/*" className="hidden"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f, 'poster') }} />
               {form.poster_url ? (
-                <div className="mt-1 flex gap-2">
+                <div
+                  className={`mt-1 flex gap-2 rounded-lg transition ${draggingPoster ? 'bg-[#f6fbff] ring-2 ring-[#409EFE]/35' : ''}`}
+                  onDragEnter={(e) => { e.preventDefault(); setDragging('poster', true) }}
+                  onDragOver={(e) => { e.preventDefault(); setDragging('poster', true) }}
+                  onDragLeave={(e) => {
+                    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
+                    setDragging('poster', false)
+                  }}
+                  onDrop={(e) => handleImageDrop(e, 'poster')}
+                >
                   <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded-lg border border-[#dfe3e8] bg-white">
                     <img src={form.poster_url} alt="" className="h-full w-full object-cover" />
                   </div>
@@ -496,9 +534,17 @@ export function FeaturedTab() {
               ) : (
                 <div className="mt-1 space-y-2">
                   <button type="button" onClick={() => posterInputRef.current?.click()} disabled={uploading}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#dfe3e8] bg-white py-4 text-[11px] font-semibold text-[#647084] transition hover:border-[#409EFE]/40 hover:text-[#409EFE] disabled:opacity-50">
+                    onDragEnter={(e) => { e.preventDefault(); setDragging('poster', true) }}
+                    onDragOver={(e) => { e.preventDefault(); setDragging('poster', true) }}
+                    onDragLeave={() => setDragging('poster', false)}
+                    onDrop={(e) => handleImageDrop(e, 'poster')}
+                    className={`flex w-full items-center justify-center gap-2 rounded-lg border border-dashed py-4 text-[11px] font-semibold transition disabled:opacity-50 ${
+                      draggingPoster
+                        ? 'border-[#409EFE] bg-[#f6fbff] text-[#409EFE] ring-2 ring-[#409EFE]/20'
+                        : 'border-[#dfe3e8] bg-white text-[#647084] hover:border-[#409EFE]/40 hover:text-[#409EFE]'
+                    }`}>
                     {uploading ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />}
-                    {uploading ? 'กำลังอัปโหลด...' : 'อัปโหลดรูปโปรเจกต์'}
+                    {uploading ? 'กำลังอัปโหลด...' : draggingPoster ? 'ปล่อยไฟล์เพื่ออัปโหลดรูปโปรเจกต์' : 'อัปโหลดรูปโปรเจกต์'}
                   </button>
                   <Input value={form.poster_url} onChange={(e) => setForm((p) => ({ ...p, poster_url: e.target.value }))}
                     className="h-8 !border-[#dfe3e8] !bg-white font-mono text-[11px] !text-[#647084] focus-visible:ring-[#409EFE]/30"
@@ -512,7 +558,16 @@ export function FeaturedTab() {
               <input ref={logoInputRef} type="file" accept="image/*" className="hidden"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f, 'logo') }} />
               {form.logo_url ? (
-                <div className="mt-2 flex gap-2">
+                <div
+                  className={`mt-2 flex gap-2 rounded-lg transition ${draggingLogo ? 'bg-[#f6fbff] ring-2 ring-[#409EFE]/35' : ''}`}
+                  onDragEnter={(e) => { e.preventDefault(); setDragging('logo', true) }}
+                  onDragOver={(e) => { e.preventDefault(); setDragging('logo', true) }}
+                  onDragLeave={(e) => {
+                    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
+                    setDragging('logo', false)
+                  }}
+                  onDrop={(e) => handleImageDrop(e, 'logo')}
+                >
                   <div className="relative size-14 shrink-0 overflow-hidden rounded-lg border border-[#dfe3e8] bg-white">
                     <img src={form.logo_url} alt="" className="h-full w-full object-contain p-2" />
                   </div>
@@ -534,9 +589,17 @@ export function FeaturedTab() {
               ) : (
                 <div className="mt-2 space-y-2">
                   <button type="button" onClick={() => logoInputRef.current?.click()} disabled={uploading}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#dfe3e8] bg-white py-4 text-[11px] font-semibold text-[#647084] transition hover:border-[#409EFE]/40 hover:text-[#409EFE] disabled:opacity-50">
+                    onDragEnter={(e) => { e.preventDefault(); setDragging('logo', true) }}
+                    onDragOver={(e) => { e.preventDefault(); setDragging('logo', true) }}
+                    onDragLeave={() => setDragging('logo', false)}
+                    onDrop={(e) => handleImageDrop(e, 'logo')}
+                    className={`flex w-full items-center justify-center gap-2 rounded-lg border border-dashed py-4 text-[11px] font-semibold transition disabled:opacity-50 ${
+                      draggingLogo
+                        ? 'border-[#409EFE] bg-[#f6fbff] text-[#409EFE] ring-2 ring-[#409EFE]/20'
+                        : 'border-[#dfe3e8] bg-white text-[#647084] hover:border-[#409EFE]/40 hover:text-[#409EFE]'
+                    }`}>
                     {uploading ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />}
-                    {uploading ? 'กำลังอัปโหลด...' : 'อัปโหลดโลโก้'}
+                    {uploading ? 'กำลังอัปโหลด...' : draggingLogo ? 'ปล่อยไฟล์เพื่ออัปโหลดโลโก้' : 'อัปโหลดโลโก้'}
                   </button>
                   <Input value={form.logo_url} onChange={(e) => setForm((p) => ({ ...p, logo_url: e.target.value }))}
                     className="h-8 !border-[#dfe3e8] !bg-white font-mono text-[11px] !text-[#647084] focus-visible:ring-[#409EFE]/30"

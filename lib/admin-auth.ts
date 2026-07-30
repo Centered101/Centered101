@@ -440,10 +440,57 @@ async function getDatabaseContext(
   }
 }
 
-// Server-side auth cache — avoids 6+ DB queries on every request
-// TTL 60s. Safe because tokens are validated on first hit; cached result is scoped to that token.
+const DEFAULT_AUTH_TTL = 6 * 60 * 60 * 1000
+const MIN_AUTH_TTL = 5 * 60 * 1000
+const MAX_AUTH_TTL = 7 * 24 * 60 * 60 * 1000
+
+function parseDurationMs(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.min(Math.max(value, MIN_AUTH_TTL), MAX_AUTH_TTL)
+  }
+
+  const raw = typeof value === 'string' ? value.trim().toLowerCase() : ''
+  if (!raw) return DEFAULT_AUTH_TTL
+
+  const compact = raw.replace(/\s+/g, '')
+  const match = compact.match(/^(\d+(?:\.\d+)?)(ms|msec|milliseconds?|s|sec|seconds?|m|min|minutes?|h|hr|hrs|hours?|d|days?)$/)
+  if (!match) return DEFAULT_AUTH_TTL
+
+  const amount = Number(match[1])
+  if (!Number.isFinite(amount) || amount <= 0) return DEFAULT_AUTH_TTL
+
+  const unit = match[2]
+  const multiplier =
+    unit.startsWith('ms') || unit.startsWith('msec') ? 1 :
+      unit === 's' || unit.startsWith('sec') ? 1000 :
+        unit === 'm' || unit.startsWith('min') ? 60 * 1000 :
+          unit === 'h' || unit.startsWith('hr') || unit.startsWith('hour') ? 60 * 60 * 1000 :
+            unit === 'd' || unit.startsWith('day') ? 24 * 60 * 60 * 1000 :
+              1
+
+  return Math.min(Math.max(Math.round(amount * multiplier), MIN_AUTH_TTL), MAX_AUTH_TTL)
+}
+
+export async function getAdminSessionTimeoutMs(
+  supabase = createAdminClient()
+): Promise<number> {
+  if (!supabase) return DEFAULT_AUTH_TTL
+
+  const { data, error } = await supabase
+    .from('system_settings')
+    .select('value')
+    .eq('key', 'security')
+    .maybeSingle()
+
+  if (error || !data) return DEFAULT_AUTH_TTL
+
+  const security = data.value as Record<string, unknown> | null
+  return parseDurationMs(security?.session_timeout)
+}
+
+// Server-side auth cache — avoids 6+ DB queries on every request.
+// TTL comes from system_settings.security.session_timeout.
 const AUTH_CACHE = new Map<string, { ctx: AdminAuthContext | null; exp: number }>()
-const AUTH_TTL = 60_000
 
 function getCacheKey(request: Request): string | null {
   const token = getBearerToken(request)
@@ -463,7 +510,7 @@ export async function getAdminAuthContext(request: Request) {
 
   const passwordContext = getPasswordContext(request)
   if (passwordContext) {
-    if (key) AUTH_CACHE.set(key, { ctx: passwordContext, exp: Date.now() + AUTH_TTL })
+    if (key) AUTH_CACHE.set(key, { ctx: passwordContext, exp: Date.now() + await getAdminSessionTimeoutMs() })
     return passwordContext
   }
 
@@ -471,7 +518,7 @@ export async function getAdminAuthContext(request: Request) {
   if (!supabase) return null
 
   const ctx = await getDatabaseContext(request, supabase)
-  if (key) AUTH_CACHE.set(key, { ctx, exp: Date.now() + AUTH_TTL })
+  if (key) AUTH_CACHE.set(key, { ctx, exp: Date.now() + await getAdminSessionTimeoutMs(supabase) })
   return ctx
 }
 

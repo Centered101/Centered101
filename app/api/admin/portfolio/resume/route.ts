@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server'
 import { requireAnyAdminPermission, writeAdminAuditLog } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const BUCKET = 'general'
-const RESUME_PATH = 'Centered101-resume.pdf'
+const BUCKET = 'portfolio'
+const RESUME_PATH = 'resume/Centered101-resume.pdf'
 const DOWNLOAD_NAME = 'Centered101-resume.pdf'
 const MAX_SIZE = 10 * 1024 * 1024
 

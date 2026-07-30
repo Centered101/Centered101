@@ -22,6 +22,7 @@ type AdminAuthContextValue = {
   isLoading: boolean
   authMode: 'token' | 'github'
   authInfo: AdminAuthInfo | null
+  sessionTimeoutMs: number
   token: string
   adminUsername: string
   setAdminUsername: (v: string) => void
@@ -36,6 +37,7 @@ type AdminAuthContextValue = {
 
 const TOKEN_KEY = 'centered101_admin_token'
 const USERNAME_KEY = 'centered101_admin_username'
+const DEFAULT_SESSION_TIMEOUT_MS = 6 * 60 * 60 * 1000
 
 export const AdminAuthContext = createContext<AdminAuthContextValue | null>(null)
 
@@ -55,6 +57,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false)
   const [authMode, setAuthMode] = useState<'token' | 'github'>('token')
   const [authInfo, setAuthInfo] = useState<AdminAuthInfo | null>(null)
+  const [sessionTimeoutMs, setSessionTimeoutMs] = useState(DEFAULT_SESSION_TIMEOUT_MS)
   const refreshPromiseRef = React.useRef<Promise<Record<string, string> | null> | null>(null)
 
   function getAdminHeaders(
@@ -82,6 +85,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     const response = await fetch('/api/admin/auth/me', { headers })
     const data = await response.json()
     if (!response.ok) throw new Error(data.error || 'ตรวจสอบสิทธิ์ admin ไม่สำเร็จ')
+    setSessionTimeoutMs(Number(data.sessionTimeoutMs) || DEFAULT_SESSION_TIMEOUT_MS)
     return data.admin as AdminAuthInfo
   }
 
@@ -96,6 +100,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       const accessToken = String(data.accessToken || '')
       const nextAuthInfo = data.admin as AdminAuthInfo
       if (!accessToken || !nextAuthInfo) return false
+      setSessionTimeoutMs(Number(data.sessionTimeoutMs) || DEFAULT_SESSION_TIMEOUT_MS)
       setToken(accessToken)
       setAuthMode('github')
       setAuthInfo(nextAuthInfo)
@@ -119,6 +124,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       const accessToken = String(data.accessToken || '')
       const nextAuthInfo = data.admin as AdminAuthInfo
       if (!accessToken || !nextAuthInfo) return null
+      setSessionTimeoutMs(Number(data.sessionTimeoutMs) || DEFAULT_SESSION_TIMEOUT_MS)
       setToken(accessToken)
       setAuthMode('github')
       setAuthInfo(nextAuthInfo)
@@ -224,8 +230,38 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     setIsAuthenticated(false)
     setAuthMode('token')
     setAuthInfo(null)
+    setSessionTimeoutMs(DEFAULT_SESSION_TIMEOUT_MS)
     toast.info('ออกจากระบบ admin แล้ว')
   }
+
+  useEffect(() => {
+    if (!isAuthenticated || sessionTimeoutMs <= 0) return
+
+    let timeoutId: number | undefined
+    const activityEvents = ['pointerdown', 'keydown', 'wheel', 'touchstart', 'scroll'] as const
+
+    const resetTimer = () => {
+      if (timeoutId) window.clearTimeout(timeoutId)
+      timeoutId = window.setTimeout(() => {
+        toast.info('หมดเวลาเซสชัน admin แล้ว')
+        logout()
+      }, sessionTimeoutMs)
+    }
+
+    resetTimer()
+    for (const event of activityEvents) {
+      window.addEventListener(event, resetTimer, { passive: true })
+    }
+
+    return () => {
+      if (timeoutId) window.clearTimeout(timeoutId)
+      for (const event of activityEvents) {
+        window.removeEventListener(event, resetTimer)
+      }
+    }
+    // logout is intentionally omitted so activity listeners do not reset on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, sessionTimeoutMs])
 
   return (
     <AdminAuthContext.Provider
@@ -235,6 +271,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         authMode,
         authInfo,
+        sessionTimeoutMs,
         token,
         adminUsername,
         setAdminUsername,

@@ -25,6 +25,7 @@ import {
   Users,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { rememberAdminWorkspace, sortAdminWorkspaces } from '@/lib/admin-switcher'
 import type { AdminAuthInfo } from '@/components/admin/AdminAuthProvider'
 
 type NavChild = { href: string; label: string; icon: React.ElementType }
@@ -131,6 +132,7 @@ export function AdminSidebar({ authInfo, authMode, adminUsername, onNavClick }: 
   const { data: assetsData } = useAdminApi<AssetsData>('/api/admin/assets')
   const usedStorageGB = (assetsData?.storageByBucket ?? []).reduce((s, b) => s + b.usedGB, 0)
   const [switcherOpen, setSwitcherOpen] = React.useState(false)
+  const [orderedSwitcherItems, setOrderedSwitcherItems] = React.useState(switcherItems)
   const [hostInfo, setHostInfo] = React.useState<{ protocol: string; hostname: string; port: string } | null>(null)
 
   const [compact, setCompact] = React.useState(() =>
@@ -194,7 +196,8 @@ export function AdminSidebar({ authInfo, authMode, adminUsername, onNavClick }: 
   React.useEffect(() => {
     const { protocol, hostname, port } = window.location
     setHostInfo({ protocol, hostname, port })
-  }, [])
+    setOrderedSwitcherItems(sortAdminWorkspaces(switcherItems))
+  }, [pathname])
 
   function accentBg(opacity: number) {
     const r = parseInt(accent.slice(1, 3), 16)
@@ -230,7 +233,10 @@ export function AdminSidebar({ authInfo, authMode, adminUsername, onNavClick }: 
       <div className="relative flex h-14 items-center border-b border-[#27272A] px-3">
         <button
           type="button"
-          onClick={() => setSwitcherOpen((v) => !v)}
+          onClick={() => {
+            setOrderedSwitcherItems(sortAdminWorkspaces(switcherItems))
+            setSwitcherOpen((v) => !v)
+          }}
           className="flex h-10 w-full items-center gap-2.5 rounded-xl px-2 text-left transition-colors hover:bg-[#18181B]"
         >
           <div className="size-8 shrink-0 overflow-hidden rounded-xl">
@@ -257,7 +263,7 @@ export function AdminSidebar({ authInfo, authMode, adminUsername, onNavClick }: 
                 <p className="mt-0.5 text-[10px] text-[#52525b]">แสดงเฉพาะ workspace ที่มีหน้าจัดการจริง</p>
               </div>
               <div className="p-1.5">
-                {switcherItems.map((item) => {
+                {orderedSwitcherItems.map((item) => {
                   const Icon = item.icon
                   const active = isSwitcherActive(item)
                   return (
@@ -265,6 +271,7 @@ export function AdminSidebar({ authInfo, authMode, adminUsername, onNavClick }: 
                       key={item.label}
                       href={appHref(item)}
                       onClick={() => {
+                        rememberAdminWorkspace(item.href)
                         setSwitcherOpen(false)
                         onNavClick?.()
                       }}

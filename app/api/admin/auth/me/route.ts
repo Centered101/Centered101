@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getAdminAuthContext } from '@/lib/admin-auth'
+import { getAdminAuthContext, getAdminSessionTimeoutMs } from '@/lib/admin-auth'
 
 export async function GET(request: Request) {
   const auth = await getAdminAuthContext(request)
@@ -8,6 +8,7 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json({
+    sessionTimeoutMs: await getAdminSessionTimeoutMs(),
     admin: {
       source: auth.source,
       authUserId: auth.authUserId,

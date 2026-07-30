@@ -2,6 +2,24 @@ import { NextResponse } from 'next/server'
 import { requireAnyAdminPermission, writeAdminAuditLog } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+const STORAGE_PUBLIC_PATH = '/storage/v1/object/public/'
+
+function parsePublicStorageUrl(value: string) {
+  try {
+    const url = new URL(value)
+    const index = url.pathname.indexOf(STORAGE_PUBLIC_PATH)
+    if (index === -1) return null
+
+    const tail = url.pathname.slice(index + STORAGE_PUBLIC_PATH.length)
+    const [bucket, ...pathParts] = tail.split('/').map((part) => decodeURIComponent(part))
+    const filePath = pathParts.join('/')
+    if (!bucket || !filePath) return null
+    return { bucket, filePath }
+  } catch {
+    return null
+  }
+}
+
 export async function GET(request: Request) {
   const auth = await requireAnyAdminPermission(request, ['manage_media', 'upload_media'])
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -49,7 +67,7 @@ export async function GET(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const auth = await requireAnyAdminPermission(request, ['manage_media', 'delete_media'])
+  const auth = await requireAnyAdminPermission(request, ['manage_portfolio', 'manage_media', 'delete_media'])
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const supabase = createAdminClient()
@@ -57,6 +75,43 @@ export async function DELETE(request: Request) {
 
   const url = new URL(request.url)
   const id = url.searchParams.get('id')?.trim()
+  const publicUrl = url.searchParams.get('public_url')?.trim()
+
+  if (publicUrl && !id) {
+    const parsed = parsePublicStorageUrl(publicUrl)
+    if (!parsed) return NextResponse.json({ error: 'Invalid public storage URL' }, { status: 400 })
+    if (!['public', 'portfolio'].includes(parsed.bucket)) {
+      return NextResponse.json({ error: 'Only public or portfolio bucket files can be deleted from this action' }, { status: 400 })
+    }
+
+    const { error: storageError } = await supabase.storage.from(parsed.bucket).remove([parsed.filePath])
+    if (storageError) {
+      await writeAdminAuditLog(request, auth, {
+        action: 'asset.storage_delete',
+        resource: 'storage',
+        resourceId: parsed.filePath,
+        outcome: 'failed',
+        metadata: { bucket: parsed.bucket, error: storageError.message },
+      })
+      return NextResponse.json({ error: storageError.message }, { status: 500 })
+    }
+
+    await supabase
+      .from('digital_assets')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('bucket', parsed.bucket)
+      .eq('file_path', parsed.filePath)
+
+    await writeAdminAuditLog(request, auth, {
+      action: 'asset.storage_delete',
+      resource: 'storage',
+      resourceId: parsed.filePath,
+      metadata: { bucket: parsed.bucket, public_url: publicUrl },
+    })
+
+    return NextResponse.json({ ok: true, bucket: parsed.bucket, file_path: parsed.filePath })
+  }
+
   if (!id) return NextResponse.json({ error: 'Asset id is required' }, { status: 400 })
 
   const { error } = await supabase

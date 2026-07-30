@@ -55,3 +55,5 @@ AGENTS.md
 supabase/
 supabase-shop/
 newtab/
+!components/newtab/
+!components/newtab/**

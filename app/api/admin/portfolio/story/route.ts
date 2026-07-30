@@ -43,6 +43,31 @@ export async function POST(request: Request) {
   return NextResponse.json({ entry: data })
 }
 
+export async function PATCH(request: Request) {
+  const auth = await requireAnyAdminPermission(request, ['manage_portfolio', 'edit_portfolio'])
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const supabase = createAdminClient()
+  if (!supabase) return NextResponse.json({ error: 'DB not configured' }, { status: 503 })
+
+  const { items } = await request.json()
+  if (!Array.isArray(items)) return NextResponse.json({ error: 'items required' }, { status: 400 })
+
+  const updates = items
+    .filter((item) => item?.id)
+    .map((item, index) =>
+      supabase
+        .from('learning_story')
+        .update({ sort_order: Number(item.sort_order ?? (index + 1) * 100) })
+        .eq('id', item.id)
+    )
+
+  const results = await Promise.all(updates)
+  const error = results.find((result) => result.error)?.error
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  return NextResponse.json({ success: true })
+}
+
 export async function DELETE(request: Request) {
   const auth = await requireAnyAdminPermission(request, ['manage_portfolio', 'delete_portfolio'])
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

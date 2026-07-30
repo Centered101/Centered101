@@ -1,7 +1,6 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useGitHub } from '@/hooks/use-github'
@@ -9,6 +8,7 @@ import { useAnalytics } from '@/hooks/use-analytics'
 import { Navigation } from '@/components/portfolio/navigation'
 import { Hero } from '@/components/portfolio/hero'
 import { Projects } from '@/components/portfolio/projects'
+import { PortfolioBootScreen } from '@/components/portfolio/PortfolioBootScreen'
 
 const Stats = dynamic(() => import('@/components/portfolio/stats').then((module) => module.Stats), {
   loading: () => null,
@@ -45,11 +45,15 @@ export default function Home() {
   const [homepageResolved, setHomepageResolved] = useState(false)
   const [isSupabaseReady, setIsSupabaseReady] = useState(false)
   const [showPortfolio, setShowPortfolio] = useState(false)
+  const [bootTimedOut, setBootTimedOut] = useState(false)
 
   useEffect(() => {
     let isMounted = true
 
     async function resolveHomepage() {
+      const fallbackTimer = window.setTimeout(() => {
+        if (isMounted) setHomepageResolved(true)
+      }, 1800)
       try {
         const res = await fetch('/api/site/homepage', { cache: 'no-store' })
         const data = await res.json()
@@ -61,6 +65,7 @@ export default function Home() {
       } catch {
         // Keep the portfolio as the safe default homepage.
       }
+      window.clearTimeout(fallbackTimer)
       if (isMounted) setHomepageResolved(true)
     }
 
@@ -73,6 +78,9 @@ export default function Home() {
   useEffect(() => {
     if (!homepageResolved) return
     let isMounted = true
+    const fallbackTimer = window.setTimeout(() => {
+      if (isMounted) setBootTimedOut(true)
+    }, 2400)
 
     const preload = async () => {
       const minimumDelay = new Promise((resolve) => window.setTimeout(resolve, 650))
@@ -95,24 +103,19 @@ export default function Home() {
 
     return () => {
       isMounted = false
+      window.clearTimeout(fallbackTimer)
     }
   }, [homepageResolved])
 
   useEffect(() => {
-    if (homepageResolved && !isLoading && isSupabaseReady) {
-      const timeout = window.setTimeout(() => setShowPortfolio(true), 120)
-      return () => window.clearTimeout(timeout)
+    if (homepageResolved && (bootTimedOut || (!isLoading && isSupabaseReady))) {
+      setShowPortfolio(true)
     }
-  }, [homepageResolved, isLoading, isSupabaseReady])
+  }, [bootTimedOut, homepageResolved, isLoading, isSupabaseReady])
 
   useEffect(() => {
-    if (!showPortfolio) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => { document.body.style.overflow = '' }
-  }, [showPortfolio])
+    if (homepageResolved && !showPortfolio) setShowPortfolio(true)
+  }, [homepageResolved, showPortfolio])
 
   return (
     <>
@@ -178,70 +181,5 @@ export default function Home() {
       </motion.div>
       </div>
     </>
-  )
-}
-
-function PortfolioBootScreen() {
-  return (
-    <motion.div
-      initial={{ y: 0, opacity: 1 }}
-      exit={{ y: '-100%', opacity: 1 }}
-      transition={{ duration: 0.75, ease: [0.76, 0, 0.24, 1] }}
-      className="fixed inset-0 z-[999] grid place-items-center overflow-hidden bg-background"
-    >
-      {/* Backdrop */}
-      <div className="absolute inset-0 grid-pattern opacity-60" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(64,158,254,0.18),transparent_36rem)]" />
-      <div
-        aria-hidden
-        className="absolute left-1/2 top-1/2 size-[26rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-3xl"
-      />
-
-      <motion.div
-        initial="hidden"
-        animate="show"
-        variants={{ hidden: {}, show: { transition: { staggerChildren: 0.12, delayChildren: 0.05 } } }}
-        className="relative flex flex-col items-center text-center"
-      >
-        {/* Logo with rotating conic ring */}
-        <motion.div
-          variants={{ hidden: { opacity: 0, scale: 0.8 }, show: { opacity: 1, scale: 1 } }}
-          transition={{ type: 'spring', stiffness: 220, damping: 18 }}
-          className="relative grid size-28 place-items-center"
-        >
-          <span aria-hidden className="absolute size-16 rounded-2xl border-2 border-primary/70 animate-ping" />
-          <span aria-hidden className="absolute size-16 rounded-2xl border-2 border-primary/40 animate-ping [animation-delay:0.5s]" />
-          <span aria-hidden className="absolute size-16 rounded-2xl bg-primary/10 blur-md" />
-          <div className="relative size-16 overflow-hidden rounded-2xl border border-primary/25 bg-white shadow-[0_22px_80px_-38px_rgba(64,158,254,0.95)]">
-            <Image
-              src="https://wwcduaaqtyopvofzlouw.supabase.co/storage/v1/object/public/general/Tes-D.png"
-              alt="Centered101"
-              fill
-              sizes="64px"
-              priority
-              draggable={false}
-              onContextMenu={(event) => event.preventDefault()}
-              className="select-none object-cover"
-            />
-          </div>
-        </motion.div>
-
-        {/* Brand */}
-        <motion.p
-          variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}
-          className="gradient-text mt-7 text-lg font-black uppercase tracking-[0.34em]"
-        >
-          Centered101
-        </motion.p>
-
-        {/* Status */}
-        <motion.p
-          variants={{ hidden: { opacity: 0 }, show: { opacity: 1 } }}
-          className="mt-3 text-[0.7rem] uppercase tracking-[0.25em] text-muted-foreground"
-        >
-          Loading portfolio data
-        </motion.p>
-      </motion.div>
-    </motion.div>
   )
 }

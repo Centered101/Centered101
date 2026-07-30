@@ -3,6 +3,9 @@ import { createShopServerClient } from '@/lib/shop/supabase-server'
 
 function getOAuthErrorMessage(error: unknown) {
   const message = error instanceof Error ? error.message : 'Shop OAuth callback failed'
+  if (message.toLowerCase().includes('code verifier')) {
+    return 'เซสชันเข้าสู่ระบบร้านค้าหมดอายุ กรุณากดเข้าสู่ระบบใหม่อีกครั้ง'
+  }
   if (message.toLowerCase().includes('fetch failed')) {
     return 'เชื่อมต่อ Shop Supabase ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
   }

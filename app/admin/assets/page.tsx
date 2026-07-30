@@ -37,10 +37,7 @@ type AssetsData = {
 }
 
 const BUCKET_COLORS: Record<string, string> = {
-  public: '#A1A1AA',
-  content: '#22C55E',
-  projects: '#F59E0B',
-  backups: '#409EFE',
+  portfolio: '#409EFE',
 }
 
 function formatBytes(bytes: number): string {
@@ -81,7 +78,7 @@ export default function AssetsPage() {
     try {
       const form = new FormData()
       form.append('file', file)
-      form.append('bucket', 'public')
+      form.append('bucket', 'portfolio')
       const res = await fetch('/api/admin/assets/upload', {
         method: 'POST',
         headers: getAdminHeaders(),

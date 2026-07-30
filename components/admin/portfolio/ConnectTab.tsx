@@ -2,14 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { ArrowDown, ArrowUp, Check, ExternalLink, Loader2, Mail, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, Check, ExternalLink, Loader2, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { AdminPageHeader } from '@/components/admin/AdminPage'
 import { AdminEmpty, AdminError, AdminLoading } from '@/components/admin/AdminStates'
 import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 import { useAdminApi } from '@/lib/hooks/useAdminApi'
 import { useAdminRealtime } from '@/lib/hooks/useAdminRealtime'
 import { TheSvgIcon, parseIconValue, buildIconValue, ICON_VARIANTS, type IconVariant } from '@/components/the-svg-icon'
+import { cn } from '@/lib/utils'
 
 type SocialLink = {
   id: string
@@ -42,11 +44,54 @@ const BLANK_LINK: DraftLink = {
   sort_order: 0,
 }
 
-function formatDate(iso: string) {
-  return new Intl.DateTimeFormat('th-TH', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(iso))
+const ICON_VARIANT_LABELS: Record<IconVariant, string> = {
+  default: 'Default',
+  mono: 'Mono',
+  light: 'Light',
+  dark: 'Dark',
+  wordmark: 'Wordmark',
+  'wm-light': 'WM Light',
+  'wm-dark': 'WM Dark',
+}
+
+function LinkIconVariantButton({
+  slug,
+  label,
+  option,
+  selected,
+  onSelect,
+}: {
+  slug: string | null
+  label: string
+  option: IconVariant
+  selected: boolean
+  onSelect: () => void
+}) {
+  const needsDarkPreview = option === 'dark' || option === 'wordmark' || option === 'wm-dark'
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      disabled={!slug}
+      className={cn(
+        'flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition disabled:cursor-not-allowed disabled:opacity-45',
+        selected
+          ? 'border-[#409EFE] bg-[#409EFE]/10 text-[#409EFE] ring-2 ring-[#409EFE]/15'
+          : 'border-[#dfe3e8] bg-white text-[#647084] hover:border-[#409EFE]/40',
+      )}
+    >
+      <TheSvgIcon
+        label={label || 'link'}
+        slug={slug ? buildIconValue(slug, option) : ''}
+        className={cn(
+          'size-9 rounded-lg !border-[#dfe3e8] [&_img]:size-5',
+          needsDarkPreview ? '!bg-[#09090b]' : '!bg-white',
+        )}
+      />
+      <span className="text-xs font-bold">{ICON_VARIANT_LABELS[option]}</span>
+    </button>
+  )
 }
 
 function LinkEditor({
@@ -54,11 +99,13 @@ function LinkEditor({
   saving,
   onCancel,
   onSave,
+  onDelete,
 }: {
   initial: DraftLink
   saving: boolean
   onCancel: () => void
   onSave: (value: DraftLink) => void
+  onDelete?: () => void
 }) {
   const [value, setValue] = useState(initial)
   const parsedIcon = parseIconValue(value.icon)
@@ -68,82 +115,113 @@ function LinkEditor({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-background p-4 shadow-sm">
-      <div className="grid items-end gap-3 lg:grid-cols-12">
-        <label className="space-y-1.5 lg:col-span-3">
-          <span className="text-[11px] font-semibold text-muted-foreground">ชื่อระบบ</span>
-          <input
-            value={value.name}
-            onChange={(event) => update('name', event.target.value)}
-            placeholder="github"
-            className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none transition focus:border-accent"
+    <div className="flex min-h-[calc(90vh-6.5rem)] flex-col justify-between gap-4 py-1">
+      <div className="space-y-4">
+        <div className="flex items-center gap-3 rounded-xl border border-[#dfe3e8] bg-[#fbfdff] p-3">
+          <TheSvgIcon
+            label={value.label || value.name || 'link'}
+            slug={value.icon}
+            className="size-12 shrink-0 rounded-xl border border-[#dfe3e8] bg-white"
           />
-        </label>
-        <label className="space-y-1.5 lg:col-span-3">
-          <span className="text-[11px] font-semibold text-muted-foreground">ชื่อที่แสดง</span>
-          <input
-            value={value.label}
-            onChange={(event) => update('label', event.target.value)}
-            placeholder="GitHub"
-            className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none transition focus:border-accent"
-          />
-        </label>
-        <label className="space-y-1.5 lg:col-span-6">
-          <span className="text-[11px] font-semibold text-muted-foreground">ลิงก์</span>
-          <input
-            value={value.href}
-            onChange={(event) => update('href', event.target.value)}
-            placeholder="https://github.com/centered101"
-            className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none transition focus:border-accent"
-          />
-        </label>
-        <label className="space-y-1.5 lg:col-span-7">
-          <span className="text-[11px] font-semibold text-muted-foreground">ไอคอน thesvg</span>
-          <div className="flex items-center gap-2">
-            <TheSvgIcon
-              label={value.label || value.name || 'link'}
-              slug={value.icon}
-              className="size-10 shrink-0 rounded-md border border-border bg-card"
-            />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-black text-[#09090b]">{value.label || value.name || 'Preview ลิงก์'}</p>
+            <p className="mt-0.5 truncate text-xs font-semibold text-[#647084]">{value.href || 'ใส่ลิงก์ที่ต้องการแสดงบนหน้า portfolio'}</p>
+          </div>
+        </div>
+
+        <div className="grid items-start gap-4 lg:grid-cols-[1fr_320px]">
+          <div className="grid content-start gap-3 sm:grid-cols-2">
+            <label className="space-y-1.5">
+              <span className="text-xs font-bold text-[#647084]">ชื่อระบบ</span>
+              <input
+                value={value.name}
+                onChange={(event) => update('name', event.target.value)}
+                placeholder="github"
+                className="h-10 w-full rounded-lg border border-[#dfe3e8] bg-white px-3 text-sm font-semibold text-[#09090b] outline-none transition focus:border-[#409EFE] focus:ring-4 focus:ring-[#409EFE]/10"
+              />
+            </label>
+            <label className="space-y-1.5">
+              <span className="text-xs font-bold text-[#647084]">ชื่อที่แสดง</span>
+              <input
+                value={value.label}
+                onChange={(event) => update('label', event.target.value)}
+                placeholder="GitHub"
+                className="h-10 w-full rounded-lg border border-[#dfe3e8] bg-white px-3 text-sm font-semibold text-[#09090b] outline-none transition focus:border-[#409EFE] focus:ring-4 focus:ring-[#409EFE]/10"
+              />
+            </label>
+            <label className="space-y-1.5 sm:col-span-2">
+              <span className="text-xs font-bold text-[#647084]">ลิงก์</span>
+              <input
+                value={value.href}
+                onChange={(event) => update('href', event.target.value)}
+                placeholder="https://github.com/centered101"
+                className="h-10 w-full rounded-lg border border-[#dfe3e8] bg-white px-3 text-sm font-semibold text-[#09090b] outline-none transition focus:border-[#409EFE] focus:ring-4 focus:ring-[#409EFE]/10"
+              />
+            </label>
+            <label className="space-y-1.5 sm:col-span-2">
+              <span className="text-xs font-bold text-[#647084]">Slug ไอคอน thesvg</span>
+              <div className="flex items-center gap-2">
+                <TheSvgIcon
+                  label={value.label || value.name || 'link'}
+                  slug={value.icon}
+                  className="size-10 shrink-0 rounded-md !border-[#dfe3e8] !bg-white"
+                />
             <input
               value={parsedIcon.slug ?? ''}
               onChange={(event) => update('icon', buildIconValue(event.target.value, parsedIcon.variant))}
               placeholder="github, x, linkedin"
-              className="h-10 min-w-0 flex-1 rounded-md border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none transition focus:border-accent"
+                  className="h-10 min-w-0 flex-1 rounded-lg border border-[#dfe3e8] bg-white px-3 text-sm font-semibold text-[#09090b] outline-none transition focus:border-[#409EFE] focus:ring-4 focus:ring-[#409EFE]/10"
             />
+              </div>
+            </label>
           </div>
-        </label>
-        <label className="space-y-1.5 lg:col-span-2">
-          <span className="text-[11px] font-semibold text-muted-foreground">รูปแบบ</span>
-          <select
-            value={parsedIcon.variant}
-            onChange={(event) => update('icon', buildIconValue(parsedIcon.slug ?? '', event.target.value as IconVariant))}
-            className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none transition focus:border-accent"
+
+          <div className="space-y-1.5">
+            <span className="text-xs font-bold text-[#647084]">รูปแบบไอคอน</span>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {ICON_VARIANTS.map((variant) => (
+                <LinkIconVariantButton
+                  key={variant}
+                  slug={parsedIcon.slug}
+                  label={value.label || value.name || 'link'}
+                  option={variant}
+                  selected={parsedIcon.variant === variant}
+                  onSelect={() => update('icon', buildIconValue(parsedIcon.slug ?? '', variant))}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#e5e7eb] pt-3">
+        <div>
+          {onDelete ? (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="flex h-9 items-center gap-1.5 rounded-md border border-[#fecaca] bg-[#fff7f7] px-3 text-xs font-bold text-[#ef4444] transition hover:border-[#ef4444]/40 hover:bg-[#fee2e2]"
+            >
+              <Trash2 className="size-3.5" /> ลบลิงก์
+            </button>
+          ) : null}
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex h-9 items-center gap-1.5 rounded-md border border-[#dfe3e8] bg-white px-3 text-xs font-bold text-[#647084] transition hover:border-[#409EFE]/40 hover:text-[#409EFE]"
           >
-            {ICON_VARIANTS.map((variant) => (
-              <option key={variant} value={variant}>
-                {variant}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="flex gap-2 lg:col-span-3">
+            <X className="size-3.5" /> ยกเลิก
+          </button>
           <button
             type="button"
             onClick={() => onSave(value)}
             disabled={saving || !value.href.trim()}
-            className="flex h-10 flex-1 items-center justify-center gap-2 rounded-md border border-accent bg-accent px-4 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-9 items-center gap-1.5 rounded-md border border-[#409EFE] bg-[#409EFE] px-4 text-xs font-bold text-white transition hover:bg-[#60aeff] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Check className="size-4" />
             บันทึก
-          </button>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="grid size-10 place-items-center rounded-md border border-border bg-card text-muted-foreground transition hover:border-accent/40 hover:text-accent"
-            aria-label="ยกเลิก"
-          >
-            <X className="size-4" />
           </button>
         </div>
       </div>
@@ -159,12 +237,13 @@ export function ConnectTab() {
     error: linksError,
     refetch: refetchLinks,
   } = useAdminApi<{ links: SocialLink[] }>('/api/admin/portfolio/social')
-  const { data: messagesData, loading: messagesLoading } = useAdminApi<{ messages: ContactMessage[] }>('/api/admin/contacts')
+  const { data: messagesData } = useAdminApi<{ messages: ContactMessage[] }>('/api/admin/contacts')
 
   useAdminRealtime(['social_links'], refetchLinks)
 
   const [adding, setAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [savingOrder, setSavingOrder] = useState(false)
   const [togglingId, setTogglingId] = useState<string | null>(null)
@@ -175,6 +254,7 @@ export function ConnectTab() {
   const links = serverLinks ?? []
   const activeLinks = orderedLinks.filter((link) => link.is_active)
   const messages = messagesData?.messages ?? []
+  const editingLink = editingId ? orderedLinks.find((link) => link.id === editingId) : null
 
   useEffect(() => {
     if (!orderDirty) setOrderedLinks(serverLinks ?? [])
@@ -223,6 +303,7 @@ export function ConnectTab() {
       toast.success(payload.id ? 'อัปเดตช่องทางติดต่อแล้ว' : 'เพิ่มช่องทางติดต่อแล้ว')
       setAdding(false)
       setEditingId(null)
+      setModalOpen(false)
       refetchLinks()
     } catch (error) {
       toast.error((error as Error).message)
@@ -298,6 +379,8 @@ export function ConnectTab() {
       toast.success('ลบช่องทางติดต่อแล้ว')
       setOrderedLinks((current) => current.filter((link) => link.id !== id))
       if (editingId === id) setEditingId(null)
+      setModalOpen(false)
+      setAdding(false)
       refetchLinks()
     }
   }
@@ -356,42 +439,26 @@ export function ConnectTab() {
                   </button>
                 </>
               )}
-              {!adding && (
-                <button
-                  type="button"
-                  onClick={() => setAdding(true)}
-                  className="flex h-9 items-center gap-2 rounded-md border border-accent bg-accent px-3 text-xs font-bold text-accent-foreground transition hover:bg-accent/90"
-                >
-                  <Plus className="size-4" />
-                  เพิ่มลิงก์
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingId(null)
+                  setAdding(true)
+                  setModalOpen(true)
+                }}
+                className="flex h-9 items-center gap-2 rounded-md border border-accent bg-accent px-3 text-xs font-bold text-accent-foreground transition hover:bg-accent/90"
+              >
+                <Plus className="size-4" />
+                เพิ่มลิงก์
+              </button>
             </div>
           </div>
 
           <div className="space-y-3 p-5">
-            {adding && <LinkEditor initial={BLANK_LINK} saving={saving} onCancel={() => setAdding(false)} onSave={saveLink} />}
-
-            {orderedLinks.length === 0 && !adding ? (
+            {orderedLinks.length === 0 ? (
               <AdminEmpty title="ยังไม่มีช่องทางติดต่อ" description="เพิ่มลิงก์แรกเพื่อแสดงในหน้า portfolio" />
             ) : (
-              orderedLinks.map((link, index) =>
-                editingId === link.id ? (
-                  <LinkEditor
-                    key={link.id}
-                    initial={{
-                      name: link.name,
-                      label: link.label,
-                      href: link.href,
-                      icon: link.icon,
-                      is_active: link.is_active,
-                      sort_order: link.sort_order,
-                    }}
-                    saving={saving}
-                    onCancel={() => setEditingId(null)}
-                    onSave={(value) => saveLink({ ...value, id: link.id })}
-                  />
-                ) : (
+              orderedLinks.map((link, index) => (
                   <div
                     key={link.id}
                     className="group flex items-center gap-3 rounded-lg border border-border bg-background px-4 py-3 transition hover:border-accent/35 hover:bg-secondary/50"
@@ -447,24 +514,19 @@ export function ConnectTab() {
                       </a>
                       <button
                         type="button"
-                        onClick={() => setEditingId(link.id)}
+                        onClick={() => {
+                          setAdding(false)
+                          setEditingId(link.id)
+                          setModalOpen(true)
+                        }}
                         className="grid size-8 place-items-center rounded-md border border-border bg-card text-muted-foreground transition hover:border-accent/40 hover:text-accent"
                         aria-label="แก้ไข"
                       >
                         <Pencil className="size-3.5" />
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => deleteLink(link.id)}
-                        className="grid size-8 place-items-center rounded-md border border-border bg-card text-muted-foreground transition hover:border-destructive/30 hover:text-destructive"
-                        aria-label="ลบ"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
                     </div>
                   </div>
-                )
-              )
+              ))
             )}
           </div>
         </section>
@@ -501,39 +563,53 @@ export function ConnectTab() {
               )}
             </div>
           </section>
-
-          <section className="rounded-lg border border-border bg-card shadow-sm">
-            <div className="border-b border-border px-5 py-4">
-              <h2 className="text-sm font-black text-foreground">ข้อความล่าสุด</h2>
-              <p className="mt-0.5 text-xs text-muted-foreground">อ่านละเอียดที่หน้า คนติดต่อมา</p>
-            </div>
-            {messagesLoading ? (
-              <div className="p-5 text-sm text-muted-foreground">กำลังโหลดข้อความ...</div>
-            ) : messages.length === 0 ? (
-              <div className="p-5 text-sm text-muted-foreground">ยังไม่มีข้อความ</div>
-            ) : (
-              <div className="divide-y divide-border">
-                {messages.slice(0, 5).map((message) => (
-                  <div key={message.id} className="flex gap-3 px-5 py-4">
-                    <span className="mt-1 grid size-8 shrink-0 place-items-center rounded-full bg-secondary">
-                      <Mail className="size-4 text-accent" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="truncate text-sm font-black text-foreground">{message.name}</p>
-                        {!message.is_read && <span className="size-2 rounded-full bg-accent" />}
-                      </div>
-                      <p className="mt-1 truncate text-xs text-muted-foreground">{message.email}</p>
-                      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{message.message}</p>
-                      <p className="mt-2 text-[11px] text-muted-foreground">{formatDate(message.created_at)}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
         </aside>
       </div>
+
+      <Dialog
+        open={modalOpen}
+        onOpenChange={(open) => {
+          setModalOpen(open)
+          if (!open) {
+            setAdding(false)
+            setEditingId(null)
+          }
+        }}
+      >
+        <DialogContent
+          aria-describedby={undefined}
+          className="flex h-[90vh] max-h-[90vh] flex-col overflow-hidden !border-[#dfe3e8] !bg-white !p-6 !text-[#090c13] shadow-[0_24px_80px_-48px_rgba(64,158,254,0.65)] sm:max-w-3xl [&_label]:!text-[#647084] [&_input]:!border-[#dfe3e8] [&_input]:!bg-white [&_input]:!text-[#090c13] [&_input::placeholder]:!text-[#9aa2ad] [&_select]:!border-[#dfe3e8] [&_select]:!bg-white [&_select]:!text-[#090c13]"
+        >
+          <DialogHeader>
+            <DialogTitle className="!text-[#090c13]">
+              {editingLink ? 'แก้ไขลิงก์' : 'เพิ่มลิงก์ใหม่'}
+            </DialogTitle>
+          </DialogHeader>
+          <LinkEditor
+            key={editingLink?.id ?? (adding ? 'adding' : 'blank')}
+            initial={
+              editingLink
+                ? {
+                    name: editingLink.name,
+                    label: editingLink.label,
+                    href: editingLink.href,
+                    icon: editingLink.icon,
+                    is_active: editingLink.is_active,
+                    sort_order: editingLink.sort_order,
+                  }
+                : BLANK_LINK
+            }
+            saving={saving}
+            onCancel={() => {
+              setModalOpen(false)
+              setAdding(false)
+              setEditingId(null)
+            }}
+            onSave={(value) => saveLink(editingLink ? { ...value, id: editingLink.id } : value)}
+            onDelete={editingLink ? () => deleteLink(editingLink.id) : undefined}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -150,7 +150,7 @@ export function Hero({ user, totalStars = 0, organizations = [], isLoading, onRe
         year: 'numeric',
       })
     : null
-  const resumeHref = 'https://wwcduaaqtyopvofzlouw.supabase.co/storage/v1/object/public/general/Centered101-resume.pdf?download=Centered101-resume.pdf'
+  const resumeHref = '/api/portfolio/resume?download=1'
 
   const handleResumeClick = async () => {
     onResumeDownload?.()

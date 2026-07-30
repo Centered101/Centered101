@@ -62,10 +62,7 @@ function FileIcon({ mime, isFolder }: { mime: string; isFolder?: boolean }) {
 }
 
 const BUCKET_COLORS: Record<string, string> = {
-  public: '#22C55E',
-  content: '#409EFE',
-  projects: '#A855F7',
-  backups: '#F59E0B',
+  portfolio: '#409EFE',
 }
 function bucketColor(name: string) {
   return BUCKET_COLORS[name] ?? '#52525b'

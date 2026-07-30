@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireAnyAdminPermission, writeAdminAuditLog } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const BUCKET = process.env.SUPABASE_PORTFOLIO_BUCKET || 'portfolio-projects'
+const BUCKET = process.env.SUPABASE_PORTFOLIO_BUCKET || 'portfolio'
 
 const ALLOWED_TYPES = new Set([
   'image/png',
@@ -97,7 +97,8 @@ export async function POST(request: Request) {
 
   const extension = EXTENSION_BY_TYPE[contentType] || inferredExtension || 'img'
   const baseName = safeName(file.name.replace(/\.[^.]+$/, '')) || kind
-  const filePath = `projects/${slug || 'project'}/${kind}s/${Date.now()}-${baseName}.${extension}`
+  const folder = kind === 'logo' ? 'logo' : 'posters'
+  const filePath = `projects/${folder}/${slug || 'project'}/${Date.now()}-${baseName}.${extension}`
   const buffer = Buffer.from(await file.arrayBuffer())
 
   let uploadResult = await supabase.storage
