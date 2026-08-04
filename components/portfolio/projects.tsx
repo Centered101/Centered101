@@ -45,6 +45,27 @@ interface ProjectsProps {
   onRepoClick?: (repoName: string, repoUrl: string) => void
 }
 
+function ProjectImageLoader({ compact = false }: { compact?: boolean }) {
+  return (
+    <span
+      className={`pointer-events-none absolute inset-0 overflow-hidden transition-opacity duration-500 ${
+        compact ? 'project-image-loader project-image-loader-compact' : 'project-image-loader'
+      }`}
+      aria-hidden="true"
+    >
+      <span className="absolute inset-0 grid-pattern opacity-60" />
+      <span className="project-image-loader-orb project-image-loader-orb-one" />
+      <span className="project-image-loader-orb project-image-loader-orb-two" />
+      <span className="project-image-loader-shine" />
+      <span className="project-image-loader-ping">
+        <span className="project-image-loader-ping-ring" />
+        <span className="project-image-loader-ping-ring project-image-loader-ping-ring-delay" />
+        <span className="project-image-loader-ping-core" />
+      </span>
+    </span>
+  )
+}
+
 function ProjectCard({
   project,
   index,
@@ -118,14 +139,18 @@ function ProjectCard({
         <div
           ref={cardRef}
           onClick={handleCardClick}
-        className={`glass-card relative isolate aspect-[4/5] overflow-hidden rounded-2xl p-0 hover-lift ${
+          className={`glass-card relative isolate aspect-[4/5] transform-gpu overflow-hidden rounded-2xl p-0 hover-lift ${
             primaryUrl ? 'cursor-pointer' : ''
           }`}
         >
           <div className="absolute inset-0 bg-secondary">
             <div className="absolute inset-0 grid-pattern opacity-70" />
             <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-background/70 to-secondary" />
-            <div className="absolute inset-x-6 bottom-6 flex items-end gap-3">
+            <div
+              className={`absolute inset-x-6 bottom-6 z-20 flex items-end gap-3 transition-[opacity,transform] duration-500 ease-out ${
+                posterReady ? 'translate-y-3 opacity-0' : 'translate-y-0 opacity-100'
+              }`}
+            >
               {project.logo_url ? (
                 <span className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-background/80 backdrop-blur">
                   <Image
@@ -146,6 +171,8 @@ function ProjectCard({
             </div>
           </div>
 
+          {!posterReady ? <ProjectImageLoader /> : null}
+
           {shouldLoadPoster ? (
             <Image
               src={project.poster_url}
@@ -157,15 +184,15 @@ function ProjectCard({
               onLoad={() => setPosterReady(true)}
               onError={() => setPosterReady(true)}
               onContextMenu={(event) => event.preventDefault()}
-              className={`select-none object-cover transition-[opacity,transform] duration-700 group-hover:scale-105 ${
+              className={`select-none object-cover transition-[opacity,transform] duration-700 ease-out group-hover:scale-[1.035] ${
                 active ? 'scale-105' : ''
               } ${posterReady ? 'opacity-100' : 'opacity-0'}`}
             />
           ) : null}
 
-          <div className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/52 to-black/10 transition-opacity duration-300 group-hover:opacity-100 ${active ? 'opacity-100' : 'opacity-0'}`} />
+          <div className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/52 to-black/10 transition-opacity duration-500 ease-out group-hover:opacity-100 ${active ? 'opacity-100' : 'opacity-0'}`} />
 
-          <div className={`absolute inset-x-0 bottom-0 p-4 text-white transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 sm:p-6 ${active ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+          <div className={`absolute inset-x-0 bottom-0 p-4 text-white transition-[opacity,transform] duration-500 ease-out group-hover:translate-y-0 group-hover:opacity-100 sm:p-6 ${active ? 'translate-y-0 opacity-100' : 'translate-y-5 opacity-0'}`}>
             <div className="mb-3 flex items-center gap-3">
               {project.logo_url ? (
                 <span className="relative isolate grid size-12 shrink-0 place-items-center overflow-hidden rounded-xl border border-white/30 bg-white/25 text-sm font-black text-white shadow-[0_12px_34px_-18px_rgba(0,0,0,0.85)] backdrop-blur-xl">
@@ -269,14 +296,19 @@ function ProjectCard({
         <div className="relative z-10 flex h-full flex-col">
           {project.poster_url ? (
             <div className="relative -mx-6 -mt-6 mb-5 aspect-[4/5] overflow-hidden border-b border-border/50 bg-secondary">
+              {!posterReady ? <ProjectImageLoader /> : null}
               <Image
                 src={project.poster_url}
                 alt={project.poster_alt || `${project.title} poster`}
                 fill
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 draggable={false}
+                onLoad={() => setPosterReady(true)}
+                onError={() => setPosterReady(true)}
                 onContextMenu={(event) => event.preventDefault()}
-                className={`select-none object-cover transition-transform duration-500 group-hover:scale-105 ${active ? 'scale-105' : ''}`}
+                className={`select-none object-cover transition-[opacity,transform] duration-500 group-hover:scale-105 ${
+                  active ? 'scale-105' : ''
+                } ${posterReady ? 'opacity-100' : 'opacity-0'}`}
               />
               <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-card/80 to-transparent" />
             </div>
@@ -456,6 +488,7 @@ function ProjectLogoLink({
         <>
           <span className="absolute inset-0 grid-pattern opacity-60" />
           <span className="absolute inset-0 bg-gradient-to-r from-accent/10 via-background/70 to-secondary/80" />
+          {!posterReady ? <ProjectImageLoader compact /> : null}
           {shouldLoadPoster ? (
             <img
               src={project.poster_url}

@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowUpRight, CheckCircle2, CircleDashed } from 'lucide-react'
+import { CheckCircle2, CircleDashed } from 'lucide-react'
 import { aboutTimeline, ecosystemPages, ecosystemServices } from '@/lib/ecosystem'
 
 interface EcosystemPageProps {
@@ -76,13 +76,9 @@ export function EcosystemPage({ slug }: EcosystemPageProps) {
             <div>
               <h2 className="text-2xl font-bold">Next step</h2>
               <p className="mt-2 text-muted-foreground">
-                This route is ready for real content, Supabase data, and admin controls.
+                This route is ready for real content, Supabase data, and connected public services.
               </p>
             </div>
-            <a href="/admin" className="inline-flex items-center gap-2 border border-border px-4 py-2 text-sm font-bold hover:border-accent hover:text-accent">
-              Open Admin
-              <ArrowUpRight className="size-4" />
-            </a>
           </div>
         </section>
       </div>

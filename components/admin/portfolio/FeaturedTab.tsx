@@ -8,10 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { StatusBadge } from '@/components/admin/StatusBadge'
 import { AdminLoading, AdminError, AdminEmpty } from '@/components/admin/AdminStates'
 import { ConfirmModal } from '@/components/admin/ConfirmModal'
-import { AdminPageSection } from '@/components/admin/AdminPage'
 import { AdminPagination } from '@/components/admin/AdminPagination'
 import { useAdminApi, useAdminMutation } from '@/lib/hooks/useAdminApi'
 import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
@@ -57,35 +55,6 @@ function autoCommaList(value: string) {
 
 const PAGE_SIZE = 10
 
-function ProjectStateBadges({ project, position }: { project: Project; position: number }) {
-  const isMainCard = project.enabled && position <= 3
-  const isLogoLink = project.enabled && position > 3 && Boolean(project.logo_url)
-  return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <span
-        className={
-          project.enabled
-            ? 'rounded-md border border-[#409EFE]/25 bg-[#409EFE]/10 px-2 py-0.5 text-[10px] font-bold text-[#409EFE]'
-            : 'rounded-md border border-[#94a3b8]/25 bg-[#f1f5f9] px-2 py-0.5 text-[10px] font-bold text-[#647084]'
-        }
-      >
-        {project.enabled ? 'แสดงบนเว็บ' : 'ซ่อนจากเว็บ'}
-      </span>
-      {project.enabled ? <StatusBadge status={project.status} /> : null}
-      {isMainCard ? (
-        <span className="rounded-md border border-[#409EFE]/25 bg-[#409EFE]/10 px-2 py-0.5 text-[10px] font-bold text-[#409EFE]">
-          การ์ดหลัก #{position}
-        </span>
-      ) : null}
-      {isLogoLink ? (
-        <span className="rounded-md border border-[#8b5cf6]/25 bg-[#8b5cf6]/10 px-2 py-0.5 text-[10px] font-bold text-[#8b5cf6]">
-          ไอคอนโลโก้
-        </span>
-      ) : null}
-    </div>
-  )
-}
-
 export function FeaturedTab() {
   const { getAdminHeaders } = useAdminAuth()
   const { data: projData, loading, error, refetch } = useAdminApi<{ projects: Project[] }>('/api/admin/projects')
@@ -110,10 +79,8 @@ export function FeaturedTab() {
 
   const projects = projData?.projects ?? []
   const repos = ghData?.repos ?? []
-  const visibleProjects = orderedProjects.filter((project) => project.enabled)
-  const mainCards = visibleProjects.slice(0, 3)
-  const logoLinks = visibleProjects.slice(3).filter((project) => project.logo_url)
   const paged = orderedProjects.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const editingProject = form.id ? projects.find((project) => project.id === form.id) ?? null : null
 
   useEffect(() => {
     if (!orderDirty) setOrderedProjects(projects)
@@ -246,7 +213,12 @@ export function FeaturedTab() {
     try {
       await deleteProject(undefined, { id: p.id })
       toast.success(`Deleted "${p.title}"`)
-      setDeleteTarget(null); refetch()
+      setDeleteTarget(null)
+      if (form.id === p.id) {
+        setModalOpen(false)
+        setForm(BLANK)
+      }
+      refetch()
     } catch (err) { toast.error((err as Error).message) }
   }
 
@@ -254,26 +226,22 @@ export function FeaturedTab() {
   if (error) return <AdminError error={error} onRetry={refetch} />
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-3 sm:space-y-6 sm:p-6">
       {/* Projects */}
-      <AdminPageSection
-        title={`โปรเจกต์ Portfolio (${projects.length})`}
-        description={`${mainCards.length} การ์ดหลัก · ${logoLinks.length} ไอคอนโลโก้ · จัดลำดับก่อนแล้วค่อยบันทึก`}
-      >
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-2 text-[11px] font-semibold">
-            <span className="rounded-md border border-[#409EFE]/25 bg-[#409EFE]/10 px-2 py-1 text-[#409EFE]">อันดับ 1-3 = การ์ดหลัก</span>
-            <span className="rounded-md border border-[#8b5cf6]/25 bg-[#8b5cf6]/10 px-2 py-1 text-[#8b5cf6]">อันดับ 4+ = ไอคอนโลโก้</span>
-            <span className="rounded-md border border-[#94a3b8]/25 bg-[#f1f5f9] px-2 py-1 text-[#647084]">ปิดแสดง = ไม่ขึ้นหน้าเว็บ</span>
+      <div className="space-y-3 sm:space-y-4">
+        <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-[#dfe3e8] bg-[#fbfdff] px-3 py-3 sm:mb-4 sm:px-4">
+          <div className="min-w-0">
+            <p className="text-sm font-black text-[#09090b]">จัดการโปรเจกต์ที่แสดงบนหน้าเว็บ</p>
+            <p className="mt-0.5 truncate text-xs text-[#647084]">จัดลำดับจากปุ่มขึ้น/ลง แล้วค่อยกดบันทึกลำดับ</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             {orderDirty ? (
               <>
                 <button
                   type="button"
                   onClick={discardOrder}
                   disabled={savingOrder}
-                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-[#409EFE]/40 hover:text-[#409EFE] disabled:opacity-50"
+                  className="flex h-9 min-w-28 items-center justify-center rounded-lg border border-[#dfe3e8] bg-white px-3 text-xs font-bold text-[#647084] transition hover:border-[#409EFE]/40 hover:text-[#409EFE] disabled:opacity-50"
                 >
                   ยกเลิกการจัด
                 </button>
@@ -281,7 +249,7 @@ export function FeaturedTab() {
                   type="button"
                   onClick={saveOrder}
                   disabled={savingOrder}
-                  className="flex items-center gap-1.5 rounded-lg bg-[#409EFE] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#60aeff] disabled:opacity-50"
+                  className="flex h-9 min-w-28 items-center justify-center gap-1.5 rounded-lg bg-[#409EFE] px-3 text-xs font-bold text-white transition hover:bg-[#60aeff] disabled:opacity-50"
                 >
                   {savingOrder ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
                   บันทึกลำดับ
@@ -290,7 +258,7 @@ export function FeaturedTab() {
             ) : null}
           <button
             onClick={() => { setForm(BLANK); setModalOpen(true) }}
-            className="flex items-center gap-1.5 rounded-lg bg-[#409EFE] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#60aeff]"
+            className="flex h-9 min-w-28 items-center justify-center gap-1.5 rounded-lg bg-[#409EFE] px-3 text-xs font-bold text-white transition hover:bg-[#60aeff]"
           >
             <Plus className="size-3.5" /> เพิ่มโปรเจกต์
           </button>
@@ -304,22 +272,13 @@ export function FeaturedTab() {
             <div className="overflow-hidden rounded-lg border border-border bg-background">
               {paged.map((p, index) => {
                 const absoluteIndex = (page - 1) * PAGE_SIZE + index
-                const visiblePosition = visibleProjects.findIndex((project) => project.id === p.id) + 1
-                const displayMode = !p.enabled
-                  ? 'ซ่อนอยู่'
-                  : visiblePosition > 0 && visiblePosition <= 3
-                    ? `การ์ดหลัก #${visiblePosition}`
-                    : p.logo_url
-                      ? 'ไอคอนโลโก้'
-                      : 'รอโลโก้'
-
                 return (
                   <div
                     key={p.id}
-                    className="grid gap-4 border-b border-border/80 p-4 transition-colors last:border-b-0 hover:bg-[#409EFE]/[0.035] lg:grid-cols-[88px_1fr_auto]"
+                    className="grid gap-3 border-b border-border/80 p-3 transition-colors last:border-b-0 hover:bg-[#409EFE]/[0.035] sm:gap-4 sm:p-4 lg:grid-cols-[88px_1fr_auto]"
                   >
-                    <div className="flex items-center gap-3 lg:block">
-                      <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded-lg border border-border bg-secondary">
+                    <div className="relative h-24 w-20 shrink-0">
+                      <div className="relative h-20 w-16 overflow-hidden rounded-lg border border-border bg-secondary shadow-sm">
                         {p.poster_url ? (
                           <img src={p.poster_url} alt={p.title} className="h-full w-full object-cover" />
                         ) : (
@@ -327,7 +286,7 @@ export function FeaturedTab() {
                         )}
                       </div>
                       {p.logo_url ? (
-                        <div className="relative -mt-6 ml-10 size-10 overflow-hidden rounded-lg border border-border bg-white lg:ml-auto lg:mr-0">
+                        <div className="absolute bottom-0 right-0 size-11 overflow-hidden rounded-lg border border-border bg-white shadow-[0_10px_24px_-14px_rgba(15,23,42,0.45)]">
                           <img src={p.logo_url} alt={`${p.title} logo`} className="h-full w-full object-contain p-1.5" />
                         </div>
                       ) : null}
@@ -337,8 +296,6 @@ export function FeaturedTab() {
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="rounded-md border border-border bg-card px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">#{absoluteIndex + 1}</span>
                         <span className="truncate text-sm font-black text-foreground">{p.title}</span>
-                        <ProjectStateBadges project={p} position={visiblePosition} />
-                        <span className="rounded-md border border-[#94a3b8]/25 bg-[#f1f5f9] px-2 py-0.5 text-[10px] font-bold text-[#647084]">{displayMode}</span>
                       </div>
                       <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">{p.short_description || 'ยังไม่มีคำอธิบายสั้น'}</p>
                       <div className="grid gap-2 text-[11px] text-muted-foreground sm:grid-cols-2 xl:grid-cols-4">
@@ -349,7 +306,7 @@ export function FeaturedTab() {
                       </div>
                     </div>
 
-                    <div className="flex shrink-0 flex-nowrap items-center justify-end gap-2 lg:self-center">
+                    <div className="flex min-w-0 flex-wrap items-center justify-start gap-2 lg:flex-nowrap lg:justify-end lg:self-center">
                       <button
                         type="button"
                         onClick={() => moveProject(index, -1)}
@@ -368,8 +325,8 @@ export function FeaturedTab() {
                       >
                         <ArrowDown className="size-3.5" />
                       </button>
-                      <label className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
-                        <span className="w-18 text-right">แสดงบนเว็บ</span>
+                      <label className="flex h-8 items-center gap-1.5 rounded-md border border-border px-2 text-[11px] font-semibold text-muted-foreground lg:border-0 lg:px-0">
+                        <span className="whitespace-nowrap lg:w-18 lg:text-right">แสดงบนเว็บ</span>
                         <Switch
                           checked={p.enabled}
                           disabled={toggling === `${p.id}-enabled`}
@@ -400,10 +357,6 @@ export function FeaturedTab() {
                         className="grid size-8 place-items-center rounded-md border border-border text-muted-foreground transition hover:border-[#409EFE]/40 hover:text-[#409EFE]">
                         <Pencil className="size-3" />
                       </button>
-                      <button onClick={() => setDeleteTarget(p)}
-                        className="grid size-8 place-items-center rounded-md border border-border text-muted-foreground transition hover:border-[#ef4444]/30 hover:text-[#ef4444]">
-                        <Trash2 className="size-3" />
-                      </button>
                     </div>
                   </div>
                 )
@@ -412,10 +365,15 @@ export function FeaturedTab() {
             <AdminPagination page={page} total={orderedProjects.length} pageSize={PAGE_SIZE} onChange={setPage} className="mt-3 border-t border-border pt-3" />
           </>
         )}
-      </AdminPageSection>
+      </div>
 
       {/* GitHub repos */}
-      <AdminPageSection title="GitHub Repositories" description="Repo สาธารณะที่ cache จาก GitHub API">
+      <section className="rounded-lg border border-border bg-card shadow-sm">
+        <div className="border-b border-border px-3 py-3 sm:px-5 sm:py-4">
+          <h2 className="text-sm font-black text-foreground">GitHub Repositories</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">Repo สาธารณะที่ cache จาก GitHub API</p>
+        </div>
+        <div className="p-3 sm:p-5">
         {ghLoading ? (
           <div className="py-8 text-center text-sm text-muted-foreground">กำลังโหลด repo...</div>
         ) : repos.length === 0 ? (
@@ -446,17 +404,42 @@ export function FeaturedTab() {
             ))}
           </div>
         )}
-      </AdminPageSection>
+        </div>
+      </section>
 
       {/* Edit/Create modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent aria-describedby={undefined}
-          className="max-h-[90vh] overflow-y-auto !border-[#dfe3e8] !bg-white !text-[#090c13] shadow-[0_24px_80px_-48px_rgba(64,158,254,0.65)] sm:max-w-lg [&_label]:!text-[#647084] [&_input]:!border-[#dfe3e8] [&_input]:!bg-white [&_input]:!text-[#090c13] [&_input::placeholder]:!text-[#9aa2ad] [&_select]:!border-[#dfe3e8] [&_select]:!bg-white [&_select]:!text-[#090c13]">
-          <DialogHeader>
-            <DialogTitle className="!text-[#090c13]">{form.id ? 'แก้ไขโปรเจกต์' : 'โปรเจกต์ใหม่'}</DialogTitle>
+          className="max-h-[90vh] overflow-y-auto !border-[#dfe3e8] !bg-white !p-0 !text-[#090c13] shadow-[0_24px_80px_-48px_rgba(64,158,254,0.65)] sm:max-w-3xl [&_label]:!text-[#647084] [&_input]:!border-[#dfe3e8] [&_input]:!bg-white [&_input]:!text-[#090c13] [&_input::placeholder]:!text-[#9aa2ad] [&_select]:!border-[#dfe3e8] [&_select]:!bg-white [&_select]:!text-[#090c13]">
+          <DialogHeader className="sticky top-0 z-10 border-b border-[#e5e7eb] bg-white px-6 py-4">
+            <DialogTitle className="text-center !text-[#090c13]">{form.id ? 'แก้ไขโปรเจกต์' : 'เพิ่มโปรเจกต์ใหม่'}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-1">
-            <div className="grid grid-cols-2 gap-3">
+          <div className="mx-6 mt-4 flex items-center gap-3 rounded-xl border border-[#dfe3e8] bg-[#fbfdff] p-3">
+            <div className="relative h-16 w-14 shrink-0">
+              <div className="relative h-14 w-11 overflow-hidden rounded-lg border border-[#dfe3e8] bg-white">
+                {form.poster_url ? (
+                  <img src={form.poster_url} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <ImagePlus className="m-auto mt-4 size-4 text-[#94a3b8]" />
+                )}
+              </div>
+              {form.logo_url ? (
+                <div className="absolute bottom-0 right-0 size-8 overflow-hidden rounded-lg border border-[#dfe3e8] bg-white shadow-[0_10px_24px_-14px_rgba(15,23,42,0.45)]">
+                  <img src={form.logo_url} alt="" className="h-full w-full object-contain p-1" />
+                </div>
+              ) : null}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-black text-[#09090b]">{form.title || 'Preview โปรเจกต์'}</p>
+              <p className="mt-0.5 truncate text-xs font-semibold text-[#647084]">
+                {form.category || 'หมวดหมู่'} · {form.enabled ? 'แสดงบนหน้า portfolio' : 'ซ่อนจากหน้า portfolio'}
+              </p>
+            </div>
+          </div>
+
+          <div className="px-6 py-4">
+            <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <Label className="text-xs text-muted-foreground">ชื่อโปรเจกต์ *</Label>
                 <Input value={form.title}
@@ -636,15 +619,33 @@ export function FeaturedTab() {
                 <Switch checked={form.enabled} onCheckedChange={(v) => setForm((p) => ({ ...p, enabled: v }))} />
               </div>
             </div>
+            </div>
           </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setModalOpen(false)}
-              className="h-8 border-border bg-transparent text-muted-foreground hover:bg-secondary hover:text-accent">ยกเลิก</Button>
-            <Button onClick={handleSave} disabled={saving}
-              className="h-8 bg-[#409EFE] text-sm text-white hover:bg-[#60aeff] disabled:opacity-60">
-              <Loader2 className={`mr-1.5 size-3 ${saving ? 'animate-spin opacity-100' : 'opacity-0'}`} />
-              {form.id ? 'บันทึกการแก้ไข' : 'สร้างโปรเจกต์'}
-            </Button>
+          <div className="sticky bottom-0 z-10 mt-2 flex w-full flex-wrap items-center justify-between gap-2 border-t border-[#e5e7eb] bg-white px-6 py-3">
+            <div>
+              {editingProject ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDeleteTarget(editingProject)}
+                  className="flex h-9 items-center gap-1.5 rounded-md border border-[#fecaca] bg-[#fff7f7] px-3 text-xs font-bold text-[#ef4444] transition hover:border-[#ef4444]/40 hover:bg-[#fee2e2]"
+                >
+                  <Trash2 className="size-3.5" />
+                  ลบโปรเจกต์
+                </Button>
+              ) : null}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => setModalOpen(false)}
+                className="flex h-9 items-center gap-1.5 rounded-md border border-[#dfe3e8] bg-white px-3 text-xs font-bold text-[#647084] transition hover:border-[#409EFE]/40 hover:text-[#409EFE]">
+                <X className="size-3.5" /> ยกเลิก
+              </Button>
+              <Button onClick={handleSave} disabled={saving}
+                className="flex h-9 items-center gap-1.5 rounded-md border border-[#409EFE] bg-[#409EFE] px-4 text-xs font-bold text-white transition hover:bg-[#60aeff] disabled:opacity-60">
+                {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+                {form.id ? 'บันทึก' : 'สร้าง'}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

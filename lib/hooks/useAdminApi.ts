@@ -9,6 +9,15 @@ export type ApiState<T> = {
   error: string | null
 }
 
+function getApiErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : 'เกิดข้อผิดพลาด'
+  const normalized = message.toLowerCase()
+  if (normalized.includes('failed to fetch') || normalized.includes('fetch failed') || normalized.includes('networkerror')) {
+    return 'เชื่อมต่อ API ไม่สำเร็จ กรุณาตรวจสอบว่า dev server ยังทำงานอยู่ แล้วลองใหม่อีกครั้ง'
+  }
+  return message
+}
+
 export function useAdminApi<T>(path: string) {
   const auth = useAdminAuth()
   const [state, setState] = useState<ApiState<T>>({ data: null, loading: true, error: null })
@@ -44,7 +53,7 @@ export function useAdminApi<T>(path: string) {
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`)
       setState({ data: json as T, loading: false, error: null })
     } catch (err) {
-      setState((s) => ({ ...s, loading: false, error: (err as Error).message }))
+      setState((s) => ({ ...s, loading: false, error: getApiErrorMessage(err) }))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth.isAuthenticated])
@@ -94,7 +103,7 @@ export function useAdminMutation<TInput, TResult = unknown>(
         if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`)
         return json as TResult
       } catch (err) {
-        const msg = (err as Error).message
+        const msg = getApiErrorMessage(err)
         setError(msg)
         throw err
       } finally {

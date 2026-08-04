@@ -11,7 +11,7 @@ import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 type SettingsData = { settings: Record<string, unknown> }
 
 const DEFAULTS = {
-  hero_image_url: '/porfilio/images/bg-avatar-hero.png',
+  hero_image_url: '/portfolio/images/bg-avatar-hero.png',
   hero_image_x: 160,
   hero_image_y: -12,
   hero_image_width: 50,
@@ -146,20 +146,20 @@ export function AppearanceTab() {
   if (error) return <AdminError error={error} onRetry={refetch} />
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[1fr_420px]">
+    <div className="grid gap-3 sm:gap-5 xl:grid-cols-[1fr_420px]">
       <section className="rounded-lg border border-border bg-card">
-        <div className="border-b border-border px-5 py-4">
+        <div className="border-b border-border px-3 py-3 sm:px-5 sm:py-4">
           <h2 className="text-sm font-black text-foreground">รูป Hero หน้าแรก</h2>
           <p className="mt-1 text-xs text-muted-foreground">เปลี่ยนรูปและเลื่อนตำแหน่งรูปด้านขวาบนหน้า portfolio</p>
         </div>
 
-        <div className="space-y-5 p-5">
+        <div className="space-y-4 p-3 sm:space-y-5 sm:p-5">
           <div>
             <label className="mb-1.5 block text-xs font-bold text-muted-foreground">URL รูป Hero</label>
             <Input
               value={form.hero_image_url}
               onChange={(event) => setForm((current) => ({ ...current, hero_image_url: event.target.value }))}
-              placeholder="/porfilio/images/bg-avatar-hero.png"
+              placeholder="/portfolio/images/bg-avatar-hero.png"
             />
           </div>
 
@@ -228,7 +228,7 @@ export function AppearanceTab() {
       </section>
 
       <section className="rounded-lg border border-border bg-card">
-        <div className="border-b border-border px-5 py-4">
+        <div className="border-b border-border px-3 py-3 sm:px-5 sm:py-4">
           <h2 className="text-sm font-black text-foreground">ตัวอย่าง</h2>
           <p className="mt-1 text-xs text-muted-foreground">พรีวิวตำแหน่งรูปแบบย่อ</p>
         </div>

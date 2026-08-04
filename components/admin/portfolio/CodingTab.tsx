@@ -55,7 +55,7 @@ export function CodingTab() {
   const maxSummary = Math.max(...summaries.map((s) => s.grand_total.total_seconds), 1)
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-3 sm:space-y-6 sm:p-6">
       {/* Range selector */}
       <div className="inline-flex rounded-lg border border-border bg-card p-1 shadow-sm">
         {RANGES.map((r) => (

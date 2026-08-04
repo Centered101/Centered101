@@ -560,6 +560,15 @@ export async function requireAnyAdminPermission(
   return context
 }
 
+export async function requireAdminOwner(request: Request) {
+  const context = await getAdminAuthContext(request)
+  if (!context || !context.roles.includes('owner')) {
+    return null
+  }
+
+  return context
+}
+
 export async function writeAdminAuditLog(
   request: Request,
   context: AdminAuthContext,

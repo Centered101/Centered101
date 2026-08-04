@@ -115,8 +115,8 @@ function LinkEditor({
   }
 
   return (
-    <div className="flex min-h-[calc(90vh-6.5rem)] flex-col justify-between gap-4 py-1">
-      <div className="space-y-4">
+    <div className="space-y-4 bg-white">
+      <div className="space-y-4 px-6 py-1">
         <div className="flex items-center gap-3 rounded-xl border border-[#dfe3e8] bg-[#fbfdff] p-3">
           <TheSvgIcon
             label={value.label || value.name || 'link'}
@@ -194,7 +194,7 @@ function LinkEditor({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#e5e7eb] pt-3">
+      <div className="sticky bottom-0 z-10 mt-2 flex w-full flex-wrap items-center justify-between gap-2 border-t border-[#e5e7eb] bg-white px-6 py-3">
         <div>
           {onDelete ? (
             <button
@@ -410,14 +410,14 @@ export function ConnectTab() {
         </div>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
+      <div className="grid gap-3 sm:gap-5 xl:grid-cols-[1fr_360px]">
         <section className="rounded-lg border border-border bg-card shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
-            <div>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border px-3 py-3 sm:px-5 sm:py-4">
+            <div className="min-w-0">
               <h2 className="text-sm font-black text-foreground">ลิงก์ติดต่อบนหน้า Portfolio</h2>
-              <p className="mt-0.5 text-xs text-muted-foreground">เรียงตามลำดับ และเปิด/ปิดการแสดงผลได้ทันที</p>
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">เรียงตามลำดับ และเปิด/ปิดการแสดงผลได้ทันที</p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               {orderDirty && (
                 <>
                   <button
@@ -454,14 +454,14 @@ export function ConnectTab() {
             </div>
           </div>
 
-          <div className="space-y-3 p-5">
+          <div className="space-y-3 p-3 sm:p-5">
             {orderedLinks.length === 0 ? (
               <AdminEmpty title="ยังไม่มีช่องทางติดต่อ" description="เพิ่มลิงก์แรกเพื่อแสดงในหน้า portfolio" />
             ) : (
               orderedLinks.map((link, index) => (
                   <div
                     key={link.id}
-                    className="group flex items-center gap-3 rounded-lg border border-border bg-background px-4 py-3 transition hover:border-accent/35 hover:bg-secondary/50"
+                    className="group flex flex-wrap items-center gap-3 rounded-lg border border-border bg-background px-4 py-3 transition hover:border-accent/35 hover:bg-secondary/50 sm:flex-nowrap"
                   >
                     <TheSvgIcon
                       label={link.label || link.name}
@@ -477,7 +477,7 @@ export function ConnectTab() {
                       </div>
                       <p className="mt-1 truncate text-xs text-muted-foreground">{link.href}</p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="ml-auto flex w-full items-center justify-end gap-2 sm:w-auto">
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
@@ -533,11 +533,11 @@ export function ConnectTab() {
 
         <aside className="space-y-5">
           <section className="rounded-lg border border-border bg-card shadow-sm">
-            <div className="border-b border-border px-5 py-4">
+            <div className="border-b border-border px-3 py-3 sm:px-5 sm:py-4">
               <h2 className="text-sm font-black text-foreground">ตัวอย่างบนหน้าเว็บ</h2>
               <p className="mt-0.5 text-xs text-muted-foreground">แสดงเฉพาะลิงก์ที่เปิดใช้งาน</p>
             </div>
-            <div className="space-y-4 p-5">
+            <div className="space-y-4 p-3 sm:p-5">
               {activeLinks.length === 0 ? (
                 <p className="text-sm text-muted-foreground">ยังไม่มีลิงก์ที่เปิดใช้งาน</p>
               ) : (
@@ -578,10 +578,10 @@ export function ConnectTab() {
       >
         <DialogContent
           aria-describedby={undefined}
-          className="flex h-[90vh] max-h-[90vh] flex-col overflow-hidden !border-[#dfe3e8] !bg-white !p-6 !text-[#090c13] shadow-[0_24px_80px_-48px_rgba(64,158,254,0.65)] sm:max-w-3xl [&_label]:!text-[#647084] [&_input]:!border-[#dfe3e8] [&_input]:!bg-white [&_input]:!text-[#090c13] [&_input::placeholder]:!text-[#9aa2ad] [&_select]:!border-[#dfe3e8] [&_select]:!bg-white [&_select]:!text-[#090c13]"
+          className="max-h-[90vh] overflow-y-auto !border-[#dfe3e8] !bg-white !p-0 !text-[#090c13] shadow-[0_24px_80px_-48px_rgba(64,158,254,0.65)] sm:max-w-3xl [&_label]:!text-[#647084] [&_input]:!border-[#dfe3e8] [&_input]:!bg-white [&_input]:!text-[#090c13] [&_input::placeholder]:!text-[#9aa2ad] [&_select]:!border-[#dfe3e8] [&_select]:!bg-white [&_select]:!text-[#090c13]"
         >
-          <DialogHeader>
-            <DialogTitle className="!text-[#090c13]">
+          <DialogHeader className="sticky top-0 z-10 border-b border-[#e5e7eb] bg-white px-6 py-4">
+            <DialogTitle className="text-center !text-[#090c13]">
               {editingLink ? 'แก้ไขลิงก์' : 'เพิ่มลิงก์ใหม่'}
             </DialogTitle>
           </DialogHeader>

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { requireAnyAdminPermission, writeAdminAuditLog } from '@/lib/admin-auth'
+import { requireAdminOwner, writeAdminAuditLog } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 const BUCKET = process.env.SUPABASE_PORTFOLIO_BUCKET || 'portfolio'
@@ -69,9 +69,9 @@ function errorMessage(error: unknown, fallback: string) {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireAnyAdminPermission(request, ['manage_portfolio', 'manage_media', 'upload_media'])
+  const auth = await requireAdminOwner(request)
   if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: 'Owner role required' }, { status: 403 })
   }
 
   const supabase = createAdminClient()

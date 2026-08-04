@@ -1,6 +1,23 @@
 import { NextResponse } from 'next/server'
-import { requireAnyAdminPermission, writeAdminAuditLog } from '@/lib/admin-auth'
+import { requireAdminOwner, requireAnyAdminPermission, writeAdminAuditLog } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+
+const OWNER_ONLY_SETTING_PREFIXES = ['portfolio_', 'newtab_']
+const OWNER_ONLY_SETTING_KEYS = new Set([
+  'homepage_target',
+  'homepage_custom_path',
+  'hero_image_url',
+  'hero_image_alt',
+  'hero_image_position_x',
+  'hero_image_position_y',
+])
+
+function hasOwnerOnlySetting(keys: string[]) {
+  return keys.some((key) =>
+    OWNER_ONLY_SETTING_KEYS.has(key) ||
+    OWNER_ONLY_SETTING_PREFIXES.some((prefix) => key.startsWith(prefix))
+  )
+}
 
 export async function GET(request: Request) {
   const auth = await requireAnyAdminPermission(request, ['manage_settings'])
@@ -29,13 +46,16 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const auth = await requireAnyAdminPermission(request, ['manage_settings'])
-  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const body = (await request.json()) as Record<string, unknown>
+  const keys = Object.keys(body)
+  const auth = hasOwnerOnlySetting(keys)
+    ? await requireAdminOwner(request)
+    : await requireAnyAdminPermission(request, ['manage_settings'])
+  if (!auth) return NextResponse.json({ error: hasOwnerOnlySetting(keys) ? 'Owner role required' : 'Unauthorized' }, { status: hasOwnerOnlySetting(keys) ? 403 : 401 })
 
   const supabase = createAdminClient()
   if (!supabase) return NextResponse.json({ error: 'Database not configured' }, { status: 503 })
 
-  const body = (await request.json()) as Record<string, unknown>
   const updates = Object.entries(body).map(([key, value]) => ({
     key,
     value: value as never,

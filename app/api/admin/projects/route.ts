@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { requireAnyAdminPermission, writeAdminAuditLog } from '@/lib/admin-auth'
+import { requireAdminOwner, requireAnyAdminPermission, writeAdminAuditLog } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { writeNotification } from '@/lib/admin-notifications'
 
@@ -73,9 +73,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireAnyAdminPermission(request, ['manage_portfolio', 'create_portfolio', 'edit_portfolio'])
+  const auth = await requireAdminOwner(request)
   if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: 'Owner role required' }, { status: 403 })
   }
 
   const payload = (await request.json()) as PortfolioProjectPayload
@@ -169,9 +169,9 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const auth = await requireAnyAdminPermission(request, ['manage_portfolio', 'delete_portfolio'])
+  const auth = await requireAdminOwner(request)
   if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: 'Owner role required' }, { status: 403 })
   }
 
   const url = new URL(request.url)
@@ -223,8 +223,8 @@ export async function DELETE(request: Request) {
 
 // Quick toggle: featured / enabled / sort_order
 export async function PATCH(request: Request) {
-  const auth = await requireAnyAdminPermission(request, ['manage_portfolio', 'edit_portfolio'])
-  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireAdminOwner(request)
+  if (!auth) return NextResponse.json({ error: 'Owner role required' }, { status: 403 })
   const supabase = createAdminClient()
   if (!supabase) return NextResponse.json({ error: 'DB not configured' }, { status: 503 })
   const body = await request.json() as { id?: string; featured?: boolean; enabled?: boolean; sort_order?: number; order?: { id: string; sort_order?: number }[] }

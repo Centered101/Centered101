@@ -43,10 +43,23 @@ export const AdminAuthContext = createContext<AdminAuthContextValue | null>(null
 
 function getAuthErrorMessage(message: string) {
   const normalized = message.toLowerCase()
-  if (normalized.includes('fetch failed') || normalized.includes('connect_timeout')) {
+  if (
+    normalized.includes('failed to fetch') ||
+    normalized.includes('fetch failed') ||
+    normalized.includes('networkerror') ||
+    normalized.includes('connect_timeout')
+  ) {
     return 'เชื่อมต่อ Supabase ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง หรือตรวจสอบอินเทอร์เน็ต/Firewall/VPN ของเครื่อง dev server'
   }
   return message
+}
+
+async function readAuthJson(response: Response) {
+  try {
+    return await response.json()
+  } catch {
+    return { error: response.statusText || `HTTP ${response.status}` }
+  }
 }
 
 export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
@@ -83,7 +96,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       Authorization: mode === 'github' ? `Bearer ${nextToken}` : '',
     }
     const response = await fetch('/api/admin/auth/me', { headers })
-    const data = await response.json()
+    const data = await readAuthJson(response)
     if (!response.ok) throw new Error(data.error || 'ตรวจสอบสิทธิ์ admin ไม่สำเร็จ')
     setSessionTimeoutMs(Number(data.sessionTimeoutMs) || DEFAULT_SESSION_TIMEOUT_MS)
     return data.admin as AdminAuthInfo
@@ -96,7 +109,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         credentials: 'same-origin',
       })
       if (!response.ok) return false
-      const data = await response.json()
+      const data = await readAuthJson(response)
       const accessToken = String(data.accessToken || '')
       const nextAuthInfo = data.admin as AdminAuthInfo
       if (!accessToken || !nextAuthInfo) return false
@@ -120,7 +133,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         credentials: 'same-origin',
       })
       if (!response.ok) return null
-      const data = await response.json()
+      const data = await readAuthJson(response)
       const accessToken = String(data.accessToken || '')
       const nextAuthInfo = data.admin as AdminAuthInfo
       if (!accessToken || !nextAuthInfo) return null
@@ -195,7 +208,8 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       setIsAuthenticated(true)
       toast.success('เข้าสู่ระบบแล้ว', { id: toastId })
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'เกิดข้อผิดพลาด'
+      const rawMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาด'
+      const message = getAuthErrorMessage(rawMessage)
       toast.error(message, { id: toastId })
     } finally {
       setIsLoading(false)
@@ -214,7 +228,8 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       })
       if (error) throw error
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'GitHub login failed'
+      const rawMessage = error instanceof Error ? error.message : 'GitHub login failed'
+      const message = getAuthErrorMessage(rawMessage)
       toast.error(message)
       setIsLoading(false)
     }

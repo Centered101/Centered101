@@ -1,18 +1,31 @@
 'use client'
 
-import { usePageTitle } from '@/lib/hooks/use-page-title'
-import { useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import {
-  Archive, ChevronDown, ChevronRight, Copy, ExternalLink,
-  File, FileCode, FileText, FileVideo, Folder, Globe,
-  HardDrive, Image, Lock, Loader2, Music, RefreshCw, Upload,
+  Archive,
+  Copy,
+  ExternalLink,
+  File,
+  FileCode,
+  FileText,
+  FileVideo,
+  Folder,
+  Globe,
+  HardDrive,
+  Image,
+  Lock,
+  Loader2,
+  Music,
+  RefreshCw,
+  Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { AdminLoading, AdminError, AdminEmpty } from '@/components/admin/AdminStates'
+import { AdminEmpty, AdminError, AdminLoading } from '@/components/admin/AdminStates'
+import { AdminPageContainer, AdminPageHeader, AdminPageSection } from '@/components/admin/AdminPage'
 import { useAdminApi } from '@/lib/hooks/useAdminApi'
 import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
-import { AdminPageContainer, AdminPageHeader } from '@/components/admin/AdminPage'
+import { usePageTitle } from '@/lib/hooks/use-page-title'
 import { cn } from '@/lib/utils'
 
 type BucketInfo = {
@@ -39,33 +52,55 @@ type FileItem = {
   url: string
 }
 
-type BucketsData = { buckets: BucketInfo[]; files: FileItem[]; activeBucket: string | null }
-type BucketFilesData = { buckets: BucketInfo[]; files: FileItem[]; activeBucket: string | null }
+type StorageData = {
+  buckets: BucketInfo[]
+  files: FileItem[]
+  activeBucket: string | null
+}
 
 function formatBytes(bytes: number) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B'
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`
   return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`
 }
 
-function FileIcon({ mime, isFolder }: { mime: string; isFolder?: boolean }) {
-  const cls = 'size-3.5 shrink-0'
-  if (isFolder) return <Folder className={cls} style={{ color: '#F59E0B' }} />
-  if (mime.startsWith('image/')) return <Image className={cls} style={{ color: '#409EFE' }} />
-  if (mime === 'application/pdf') return <FileText className={cls} style={{ color: '#EF4444' }} />
-  if (mime.includes('zip') || mime.includes('gzip')) return <Archive className={cls} style={{ color: '#F59E0B' }} />
-  if (mime.startsWith('video/')) return <FileVideo className={cls} style={{ color: '#A855F7' }} />
-  if (mime.startsWith('audio/')) return <Music className={cls} style={{ color: '#22C55E' }} />
-  if (mime.startsWith('text/') || mime.includes('json')) return <FileCode className={cls} style={{ color: '#A1A1AA' }} />
-  return <File className={cls} style={{ color: '#52525b' }} />
+function formatDate(iso: string) {
+  if (!iso) return '-'
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return '-'
+  return date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-const BUCKET_COLORS: Record<string, string> = {
-  portfolio: '#409EFE',
-}
 function bucketColor(name: string) {
-  return BUCKET_COLORS[name] ?? '#52525b'
+  if (name === 'portfolio') return '#409EFE'
+  if (name === 'public') return '#22C55E'
+  if (name === 'general') return '#A1A1AA'
+  return '#84D4FA'
+}
+
+function fileIconClass(mime: string, isFolder?: boolean) {
+  if (isFolder) return 'text-warning'
+  if (mime.startsWith('image/')) return 'text-[var(--admin-accent)]'
+  if (mime === 'application/pdf') return 'text-destructive'
+  if (mime.includes('zip') || mime.includes('gzip')) return 'text-warning'
+  if (mime.startsWith('video/')) return 'text-[#A855F7]'
+  if (mime.startsWith('audio/')) return 'text-success'
+  if (mime.startsWith('text/') || mime.includes('json')) return 'text-foreground-light'
+  return 'text-foreground-muted'
+}
+
+function FileIcon({ mime, isFolder }: { mime: string; isFolder?: boolean }) {
+  const className = cn('size-4 shrink-0', fileIconClass(mime, isFolder))
+  if (isFolder) return <Folder className={className} />
+  if (mime.startsWith('image/')) return <Image className={className} />
+  if (mime === 'application/pdf') return <FileText className={className} />
+  if (mime.includes('zip') || mime.includes('gzip')) return <Archive className={className} />
+  if (mime.startsWith('video/')) return <FileVideo className={className} />
+  if (mime.startsWith('audio/')) return <Music className={className} />
+  if (mime.startsWith('text/') || mime.includes('json')) return <FileCode className={className} />
+  return <File className={className} />
 }
 
 function copyUrl(url: string) {
@@ -73,203 +108,277 @@ function copyUrl(url: string) {
   toast.success('คัดลอก URL แล้ว')
 }
 
-// ---------- per-bucket section ----------
-function BucketSection({ bucket, onUpload }: { bucket: BucketInfo; onUpload: (bucketName: string) => void }) {
-  const [open, setOpen] = useState(true)
-  const { data, loading } = useAdminApi<BucketFilesData>(
-    `/api/admin/storage?bucket=${encodeURIComponent(bucket.name)}`
-  )
-  const files = data?.files ?? []
-  const color = bucketColor(bucket.name)
-  const pct = bucket.totalMB > 0 ? Math.min((bucket.totalMB / 1024) * 100, 100) : 0
-
+function SummaryCard({
+  label,
+  value,
+  detail,
+}: {
+  label: string
+  value: string | number
+  detail: string
+}) {
   return (
-    <div className="rounded-xl border border-[#27272A] bg-[#18181B] overflow-hidden">
-      {/* Bucket header */}
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => setOpen((v) => !v)}
-        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setOpen((v) => !v)}
-        className="flex w-full cursor-pointer items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-[#27272A]/30"
-      >
-        <div
-          className="grid size-9 shrink-0 place-items-center rounded-lg"
-          style={{ backgroundColor: color + '18', color }}
-        >
-          <HardDrive className="size-4" />
-        </div>
-
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-sm font-semibold text-[#FAFAFA]">{bucket.name}</span>
-              <span
-                className="flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold"
-                style={{
-                  borderColor: bucket.public ? '#22C55E33' : '#52525b33',
-                  color: bucket.public ? '#22C55E' : '#52525b',
-                  backgroundColor: bucket.public ? '#22C55E0d' : 'transparent',
-                }}
-              >
-                {bucket.public ? <Globe className="size-2.5" /> : <Lock className="size-2.5" />}
-                {bucket.public ? 'สาธารณะ' : 'ส่วนตัว'}
-              </span>
-            </div>
-            <p className="mt-0.5 text-[11px] text-[#52525b]">
-              {bucket.fileCount} ไฟล์ · {bucket.folderCount} โฟลเดอร์ · {formatBytes(bucket.totalBytes)}
-              {bucket.fileSizeLimit ? ` · สูงสุด ${formatBytes(bucket.fileSizeLimit)}/ไฟล์` : ''}
-            </p>
-          </div>
-
-          {/* Usage bar */}
-          <div className="hidden flex-1 max-w-32 sm:block">
-            <div className="h-1 overflow-hidden rounded-full bg-[#27272A]">
-              <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2">
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onUpload(bucket.name) }}
-            className="hidden h-7 items-center gap-1.5 rounded-lg border border-[#27272A] bg-[#09090B] px-2.5 text-[11px] text-[#A1A1AA] transition-colors hover:border-[#409EFE]/30 hover:text-[#409EFE] sm:flex"
-          >
-            <Upload className="size-3" />
-            อัปโหลด
-          </button>
-          {open
-            ? <ChevronDown className="size-4 text-[#3f3f46]" />
-            : <ChevronRight className="size-4 text-[#3f3f46]" />}
-        </div>
-      </div>
-
-      {/* File list */}
-      {open && (
-        <div className="border-t border-[#27272A]">
-          {loading ? (
-            <div className="flex h-20 items-center justify-center gap-2 text-[12px] text-[#52525b]">
-              <Loader2 className="size-3.5 animate-spin" />
-              กำลังโหลดไฟล์...
-            </div>
-          ) : files.length === 0 ? (
-            <div className="flex h-20 items-center justify-center text-[12px] text-[#3f3f46]">
-              Bucket นี้ยังว่าง
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-150 text-left">
-                <thead>
-                  <tr className="border-b border-[#27272A] text-[10px] font-semibold uppercase tracking-widest text-[#3f3f46]">
-                    <th className="px-5 py-2.5">Path</th>
-                    <th className="px-4 py-2.5">ประเภท</th>
-                    <th className="px-4 py-2.5">ขนาด</th>
-                    <th className="px-4 py-2.5">แก้ไขล่าสุด</th>
-                    <th className="px-4 py-2.5" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#27272A]/40">
-                  {files.map((f) => {
-                    const depth = f.path.split('/').length - 1
-                    return (
-                    <tr key={f.path} className={cn('transition-colors hover:bg-[#27272A]/20', f.isFolder && 'bg-[#27272A]/10')}>
-                      <td className="px-5 py-2.5">
-                        <div className="flex items-center gap-2" style={{ paddingLeft: `${depth * 16}px` }}>
-                          <FileIcon mime={f.mimeType} isFolder={f.isFolder} />
-                          <span className="max-w-60 truncate font-mono text-xs text-[#A1A1AA]">{f.name}</span>
-                          {depth > 0 && (
-                            <span className="truncate font-mono text-[10px] text-[#3f3f46]">ใน {f.path.split('/').slice(0, -1).join('/')}</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-2.5 font-mono text-[11px] text-[#52525b]">
-                        {f.isFolder ? 'โฟลเดอร์' : (f.mimeType || '—')}
-                      </td>
-                      <td className="px-4 py-2.5 font-mono text-xs text-[#52525b]">
-                        {f.isFolder ? '—' : formatBytes(f.size)}
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-[#52525b]">
-                        {f.lastModified
-                          ? new Date(f.lastModified).toLocaleDateString('th-TH', { month: 'short', day: 'numeric', year: 'numeric' })
-                          : '—'}
-                      </td>
-                      <td className="px-4 py-2.5">
-                        {!f.isFolder && (
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => copyUrl(f.url)}
-                            className="grid size-7 place-items-center rounded-lg border border-[#27272A] text-[#52525b] hover:border-[#3f3f46] hover:text-[#A1A1AA]"
-                            title="คัดลอก URL"
-                          >
-                            <Copy className="size-3" />
-                          </button>
-                          <a
-                            href={f.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="grid size-7 place-items-center rounded-lg border border-[#27272A] text-[#52525b] hover:border-[#3f3f46] hover:text-[#A1A1AA]"
-                            title="เปิดไฟล์"
-                          >
-                            <ExternalLink className="size-3" />
-                          </a>
-                        </div>
-                        )}
-                      </td>
-                    </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
+    <div className="rounded-lg border border-surface-300 bg-surface-100 p-3 sm:p-4">
+      <p className="text-[11px] font-bold text-foreground-muted">{label}</p>
+      <p className="mt-2 text-2xl font-black text-foreground">{value}</p>
+      <p className="mt-1 truncate text-xs text-foreground-faint">{detail}</p>
     </div>
   )
 }
 
-// ---------- main page ----------
+function BucketButton({
+  bucket,
+  active,
+  onClick,
+}: {
+  bucket: BucketInfo
+  active: boolean
+  onClick: () => void
+}) {
+  const color = bucketColor(bucket.name)
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'group w-full rounded-lg border p-3 text-left transition',
+        active
+          ? 'border-[var(--admin-accent)]/50 bg-[var(--admin-accent)]/10'
+          : 'border-surface-300 bg-dash-canvas hover:border-surface-400 hover:bg-surface-200'
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <span
+          className="grid size-10 shrink-0 place-items-center rounded-lg border border-surface-300"
+          style={{ color, backgroundColor: `${color}18` }}
+        >
+          <HardDrive className="size-4" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="truncate font-mono text-sm font-black text-foreground">{bucket.name}</span>
+            <span
+              className={cn(
+                'inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-bold',
+                bucket.public
+                  ? 'border-success/25 bg-success/10 text-success'
+                  : 'border-surface-400 bg-surface-100 text-foreground-muted'
+              )}
+            >
+              {bucket.public ? <Globe className="size-2.5" /> : <Lock className="size-2.5" />}
+              {bucket.public ? 'public' : 'private'}
+            </span>
+          </span>
+          <span className="mt-1 block text-xs text-foreground-muted">
+            {bucket.fileCount} ไฟล์ · {bucket.folderCount} โฟลเดอร์
+          </span>
+          <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-surface-300">
+            <span
+              className="block h-full rounded-full"
+              style={{
+                width: `${Math.min((bucket.totalBytes / (1024 * 1024 * 1024)) * 100, 100)}%`,
+                backgroundColor: color,
+              }}
+            />
+          </span>
+        </span>
+      </div>
+    </button>
+  )
+}
+
+function FileRow({ file }: { file: FileItem }) {
+  const folder = file.path.split('/').slice(0, -1).join('/')
+  return (
+    <div className="grid gap-3 border-b border-surface-300/60 px-3 py-3 last:border-b-0 md:grid-cols-[minmax(0,1fr)_180px_120px_120px] md:items-center md:px-4">
+      <div className="flex min-w-0 items-start gap-3">
+        <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-lg border border-surface-300 bg-dash-canvas">
+          <FileIcon mime={file.mimeType} isFolder={file.isFolder} />
+        </span>
+        <div className="min-w-0">
+          <p className="truncate font-mono text-sm font-bold text-foreground">{file.name}</p>
+          <p className="mt-0.5 truncate text-xs text-foreground-muted">
+            {folder ? `ใน ${folder}` : file.path}
+          </p>
+        </div>
+      </div>
+
+      <div className="hidden truncate font-mono text-xs text-foreground-muted md:block">
+        {file.isFolder ? 'folder' : file.mimeType || '-'}
+      </div>
+      <div className="hidden font-mono text-xs text-foreground-muted md:block">
+        {file.isFolder ? '-' : formatBytes(file.size)}
+      </div>
+      <div className="flex items-center justify-between gap-3 md:justify-end">
+        <span className="text-xs text-foreground-muted md:hidden">
+          {file.isFolder ? 'folder' : formatBytes(file.size)}
+        </span>
+        <span className="hidden text-xs text-foreground-muted md:inline">{formatDate(file.lastModified)}</span>
+        {!file.isFolder && (
+          <span className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => copyUrl(file.url)}
+              className="grid size-8 place-items-center rounded-lg border border-surface-300 bg-surface-100 text-foreground-muted transition hover:border-surface-400 hover:text-foreground"
+              title="คัดลอก URL"
+            >
+              <Copy className="size-3.5" />
+            </button>
+            <a
+              href={file.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="grid size-8 place-items-center rounded-lg border border-surface-300 bg-surface-100 text-foreground-muted transition hover:border-surface-400 hover:text-foreground"
+              title="เปิดไฟล์"
+            >
+              <ExternalLink className="size-3.5" />
+            </a>
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function FilePanel({
+  bucket,
+  files,
+  loading,
+  onUpload,
+}: {
+  bucket: BucketInfo | null
+  files: FileItem[]
+  loading: boolean
+  onUpload: () => void
+}) {
+  if (!bucket) {
+    return (
+      <AdminEmpty
+        title="เลือก bucket เพื่อดูไฟล์"
+        description="เลือกพื้นที่จัดเก็บจากรายการด้านซ้าย"
+      />
+    )
+  }
+
+  return (
+    <AdminPageSection
+      className="overflow-hidden"
+      title={bucket.name}
+      description={`${bucket.fileCount} ไฟล์ · ${bucket.folderCount} โฟลเดอร์ · ${formatBytes(bucket.totalBytes)}`}
+    >
+      <div className="-mx-3 -my-3 sm:-mx-5 sm:-my-4">
+        <div className="flex flex-col gap-3 border-b border-surface-300 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-lg border border-surface-300 bg-dash-canvas text-[var(--admin-accent)]">
+              <HardDrive className="size-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="truncate font-mono text-sm font-black text-foreground">{bucket.name}</p>
+              <p className="truncate text-xs text-foreground-muted">
+                {bucket.fileSizeLimit ? `จำกัด ${formatBytes(bucket.fileSizeLimit)} / ไฟล์` : 'ไม่จำกัดขนาดต่อไฟล์'}
+              </p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            onClick={onUpload}
+            className="h-9 w-full gap-2 rounded-lg bg-[var(--admin-accent)] text-xs font-bold text-white hover:bg-[var(--admin-accent)]/90 sm:w-auto"
+          >
+            <Upload className="size-3.5" />
+            อัปโหลดไฟล์
+          </Button>
+        </div>
+
+        {loading ? (
+          <div className="grid min-h-64 place-items-center text-xs text-foreground-muted">
+            <span className="inline-flex items-center gap-2">
+              <Loader2 className="size-4 animate-spin" />
+              กำลังโหลดไฟล์...
+            </span>
+          </div>
+        ) : files.length === 0 ? (
+          <AdminEmpty title="Bucket นี้ยังว่าง" description="อัปโหลดไฟล์แรกเพื่อเริ่มใช้งาน" />
+        ) : (
+          <div>
+            <div className="hidden grid-cols-[minmax(0,1fr)_180px_120px_120px] border-b border-surface-300 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-foreground-faint md:grid">
+              <span>Path</span>
+              <span>ประเภท</span>
+              <span>ขนาด</span>
+              <span className="text-right">การทำงาน</span>
+            </div>
+            {files.map((file) => (
+              <FileRow key={file.path} file={file} />
+            ))}
+          </div>
+        )}
+      </div>
+    </AdminPageSection>
+  )
+}
+
 export default function StoragePage() {
   usePageTitle('พื้นที่จัดเก็บ')
   const { getAdminHeaders } = useAdminAuth()
+  const [selectedBucket, setSelectedBucket] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
-  const [uploadTarget, setUploadTarget] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const { data, loading, error, refetch } = useAdminApi<BucketsData>('/api/admin/storage')
+  const { data, loading, error, refetch } = useAdminApi<StorageData>('/api/admin/storage')
   const buckets = data?.buckets ?? []
-  const totalBytes = buckets.reduce((s, b) => s + b.totalBytes, 0)
-  const totalFiles = buckets.reduce((s, b) => s + b.fileCount, 0)
+  const activeBucketName = selectedBucket ?? buckets[0]?.name ?? null
+  const activeBucket = buckets.find((bucket) => bucket.name === activeBucketName) ?? null
+  const fileQuery = activeBucketName ? `/api/admin/storage?bucket=${encodeURIComponent(activeBucketName)}` : '/api/admin/storage?bucket='
+  const {
+    data: fileData,
+    loading: filesLoading,
+    refetch: refetchFiles,
+  } = useAdminApi<StorageData>(fileQuery)
+  const files = fileData?.files ?? []
 
-  function handleUploadClick(bucketName: string) {
-    setUploadTarget(bucketName)
+  const totals = useMemo(() => {
+    const totalBytes = buckets.reduce((sum, bucket) => sum + bucket.totalBytes, 0)
+    const totalFiles = buckets.reduce((sum, bucket) => sum + bucket.fileCount, 0)
+    const totalFolders = buckets.reduce((sum, bucket) => sum + bucket.folderCount, 0)
+    const publicBuckets = buckets.filter((bucket) => bucket.public).length
+    return { totalBytes, totalFiles, totalFolders, publicBuckets }
+  }, [buckets])
+
+  useEffect(() => {
+    if (!selectedBucket && buckets[0]?.name) setSelectedBucket(buckets[0].name)
+  }, [buckets, selectedBucket])
+
+  async function refreshAll() {
+    await refetch()
+    await refetchFiles()
+  }
+
+  function openUploadDialog() {
+    if (!activeBucketName) return
     fileInputRef.current?.click()
   }
 
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file || !uploadTarget) return
+  async function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file || !activeBucketName) return
     setUploading(true)
     try {
       const form = new FormData()
       form.append('file', file)
-      form.append('bucket', uploadTarget)
-      const res = await fetch('/api/admin/assets/upload', {
+      form.append('bucket', activeBucketName)
+      const response = await fetch('/api/admin/assets/upload', {
         method: 'POST',
         headers: getAdminHeaders(),
         body: form,
       })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error || 'อัปโหลดไม่สำเร็จ')
-      toast.success(`อัปโหลด "${file.name}" ไปยัง ${uploadTarget} แล้ว`)
-      refetch()
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'อัปโหลดไม่สำเร็จ')
+      toast.success(`อัปโหลด "${file.name}" แล้ว`)
+      await refreshAll()
     } catch (err) {
-      toast.error((err as Error).message)
+      toast.error(err instanceof Error ? err.message : 'อัปโหลดไม่สำเร็จ')
     } finally {
       setUploading(false)
-      setUploadTarget(null)
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
@@ -280,37 +389,57 @@ export default function StoragePage() {
   return (
     <AdminPageContainer>
       <input ref={fileInputRef} type="file" className="hidden" onChange={handleUpload} />
+
       <AdminPageHeader
         title="พื้นที่จัดเก็บ"
-        description={`${buckets.length} bucket · ${totalFiles} ไฟล์ · ใช้พื้นที่ ${formatBytes(totalBytes)}`}
+        description={`${buckets.length} bucket · ${totals.totalFiles} ไฟล์ · ใช้พื้นที่ ${formatBytes(totals.totalBytes)}`}
       >
         <Button
+          type="button"
           variant="outline"
           size="sm"
-          onClick={refetch}
+          onClick={refreshAll}
           disabled={uploading}
-          className={cn(
-            'h-8 border-[#27272A] bg-[#18181B] text-xs text-[#A1A1AA] hover:bg-[#27272A] hover:text-[#FAFAFA]',
-            uploading && 'opacity-60'
-          )}
+          className="h-9 border-surface-300 bg-surface-100 text-xs text-foreground-light hover:bg-surface-200 hover:text-foreground"
         >
-          {uploading
-            ? <><Loader2 className="size-3.5 animate-spin" /> กำลังอัปโหลด...</>
-            : <RefreshCw className="size-3.5" />}
+          {uploading ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+          {uploading ? 'กำลังอัปโหลด...' : 'รีเฟรช'}
         </Button>
       </AdminPageHeader>
 
-      {/* Buckets */}
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <SummaryCard label="Bucket ทั้งหมด" value={buckets.length} detail={`${totals.publicBuckets} public bucket`} />
+        <SummaryCard label="ไฟล์ทั้งหมด" value={totals.totalFiles} detail={`${totals.totalFolders} โฟลเดอร์`} />
+        <SummaryCard label="พื้นที่ใช้" value={formatBytes(totals.totalBytes)} detail="รวมจาก bucket root" />
+        <SummaryCard label="Bucket ที่เลือก" value={activeBucket?.name ?? '-'} detail={activeBucket?.public ? 'public access' : 'private access'} />
+      </section>
+
       {buckets.length === 0 ? (
         <AdminEmpty
           title="ยังไม่มี bucket พื้นที่จัดเก็บ"
           description="สร้าง bucket ได้ใน Supabase Dashboard > Storage"
         />
       ) : (
-        <div className="space-y-3">
-          {buckets.map((b) => (
-            <BucketSection key={b.id} bucket={b} onUpload={handleUploadClick} />
-          ))}
+        <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
+          <AdminPageSection title="Buckets" description="เลือกพื้นที่จัดเก็บที่ต้องการจัดการ">
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+              {buckets.map((bucket) => (
+                <BucketButton
+                  key={bucket.id}
+                  bucket={bucket}
+                  active={bucket.name === activeBucketName}
+                  onClick={() => setSelectedBucket(bucket.name)}
+                />
+              ))}
+            </div>
+          </AdminPageSection>
+
+          <FilePanel
+            bucket={activeBucket}
+            files={files}
+            loading={filesLoading}
+            onUpload={openUploadDialog}
+          />
         </div>
       )}
     </AdminPageContainer>

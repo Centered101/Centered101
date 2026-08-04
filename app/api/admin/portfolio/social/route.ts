@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { requireAnyAdminPermission } from '@/lib/admin-auth'
+import { requireAdminOwner, requireAnyAdminPermission } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function GET(request: Request) {
@@ -16,8 +16,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireAnyAdminPermission(request, ['manage_portfolio', 'edit_portfolio'])
-  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireAdminOwner(request)
+  if (!auth) return NextResponse.json({ error: 'Owner role required' }, { status: 403 })
   const supabase = createAdminClient()
   if (!supabase) return NextResponse.json({ error: 'DB not configured' }, { status: 503 })
   const { id, name, label, href, icon, is_active, sort_order } = await request.json()
@@ -41,8 +41,8 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const auth = await requireAnyAdminPermission(request, ['manage_portfolio', 'edit_portfolio'])
-  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireAdminOwner(request)
+  if (!auth) return NextResponse.json({ error: 'Owner role required' }, { status: 403 })
   const supabase = createAdminClient()
   if (!supabase) return NextResponse.json({ error: 'DB not configured' }, { status: 503 })
   const { id, is_active, move, order } = await request.json()
@@ -157,8 +157,8 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const auth = await requireAnyAdminPermission(request, ['manage_portfolio', 'delete_portfolio'])
-  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireAdminOwner(request)
+  if (!auth) return NextResponse.json({ error: 'Owner role required' }, { status: 403 })
   const supabase = createAdminClient()
   if (!supabase) return NextResponse.json({ error: 'DB not configured' }, { status: 503 })
   const id = new URL(request.url).searchParams.get('id')

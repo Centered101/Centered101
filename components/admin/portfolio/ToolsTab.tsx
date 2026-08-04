@@ -25,7 +25,6 @@ import {
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { AdminLoading, AdminError, AdminEmpty } from '@/components/admin/AdminStates'
-import { AdminPageSection } from '@/components/admin/AdminPage'
 import { useAdminApi } from '@/lib/hooks/useAdminApi'
 import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 import { useAdminRealtime } from '@/lib/hooks/useAdminRealtime'
@@ -228,8 +227,8 @@ function ToolForm({
     : v.icon
 
   return (
-    <div className="flex min-h-[calc(90vh-6.5rem)] flex-col justify-between gap-4 py-1">
-      <div className="space-y-4">
+    <div className="space-y-4 bg-white">
+      <div className="space-y-4 px-6 py-1">
         <div className="flex items-center gap-3 rounded-xl border border-[#dfe3e8] bg-[#fbfdff] p-3">
           <ToolIcon tool={{ name: v.name || 'Preview', icon: previewIcon }} className="size-12 rounded-xl" />
           <div className="min-w-0 flex-1">
@@ -357,13 +356,13 @@ function ToolForm({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#e5e7eb] pt-4">
+      <div className="sticky bottom-0 z-10 mt-2 flex w-full flex-wrap items-center justify-between gap-2 border-t border-[#e5e7eb] bg-white px-6 py-3">
         <div>
           {onDelete ? (
             <button
               type="button"
               onClick={onDelete}
-              className="flex h-9 items-center gap-1.5 rounded-lg border border-[#fecaca] bg-white px-3 text-xs font-bold text-[#ef4444] transition hover:bg-[#fef2f2]"
+              className="flex h-9 items-center gap-1.5 rounded-md border border-[#fecaca] bg-[#fff7f7] px-3 text-xs font-bold text-[#ef4444] transition hover:border-[#ef4444]/40 hover:bg-[#fee2e2]"
             >
               <Trash2 className="size-3.5" /> ลบเครื่องมือ
             </button>
@@ -373,7 +372,7 @@ function ToolForm({
           <button
             type="button"
             onClick={onCancel}
-            className="flex h-9 items-center gap-1.5 rounded-lg border border-[#dfe3e8] bg-white px-3 text-xs font-bold text-[#647084] transition hover:border-[#94a3b8] hover:text-[#09090b]"
+            className="flex h-9 items-center gap-1.5 rounded-md border border-[#dfe3e8] bg-white px-3 text-xs font-bold text-[#647084] transition hover:border-[#409EFE]/40 hover:text-[#409EFE]"
           >
             <X className="size-3.5" /> ยกเลิก
           </button>
@@ -381,7 +380,7 @@ function ToolForm({
             type="button"
             onClick={() => onSave(v)}
             disabled={saving || !v.name.trim()}
-            className="flex h-9 items-center gap-1.5 rounded-lg bg-[#409EFE] px-3 text-xs font-bold text-white transition hover:bg-[#60aeff] disabled:opacity-50"
+            className="flex h-9 items-center gap-1.5 rounded-md border border-[#409EFE] bg-[#409EFE] px-4 text-xs font-bold text-white transition hover:bg-[#60aeff] disabled:opacity-50"
           >
             <Save className="size-3.5" /> บันทึก
           </button>
@@ -410,7 +409,12 @@ function CategoryCard({
   const Icon = meta.icon
 
   return (
-    <div className="flex min-h-[16.5rem] flex-col rounded-xl border border-[#dfe3e8] bg-white">
+    <div
+      className={cn(
+        'flex flex-col rounded-xl border border-[#dfe3e8] bg-white',
+        items.length > 1 && 'sm:min-h-[16.5rem]'
+      )}
+    >
       <div className="flex items-start gap-3 border-b border-[#eef1f4] px-4 py-3">
         <span
           className="grid size-10 shrink-0 place-items-center rounded-xl border"
@@ -439,11 +443,11 @@ function CategoryCard({
             )}
           >
             <ToolIcon tool={tool} />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-black text-[#09090b]">{tool.name}</p>
               <p className="text-[10px] font-semibold text-[#94a3b8]">ลำดับ {tool.sort_order}</p>
             </div>
-            <div className="ml-1 flex items-center gap-1 opacity-100 sm:opacity-0 sm:transition group-hover:opacity-100">
+            <div className="ml-auto flex shrink-0 items-center gap-1 opacity-100 sm:opacity-0 sm:transition group-hover:opacity-100">
               <button
                 type="button"
                 onClick={() => onMove(tool.id, -1)}
@@ -605,12 +609,8 @@ export function ToolsTab() {
   if (error) return <AdminError error={error} onRetry={refetch} />
 
   return (
-    <div className="space-y-6 p-6">
-      <AdminPageSection
-        title="สกิลและเครื่องมือ"
-        description={`${tools.length} รายการ · ${grouped.length} หมวดหมู่ · แสดงผลบนหน้า portfolio`}
-      >
-        <div className="space-y-5">
+    <div className="space-y-3 sm:space-y-6 sm:p-6">
+      <div className="space-y-3 sm:space-y-5">
           <div className="grid gap-3 md:grid-cols-3">
             <div className="rounded-xl border border-[#dfe3e8] bg-white p-4">
               <p className="text-xs font-bold text-[#647084]">เครื่องมือทั้งหมด</p>
@@ -626,12 +626,12 @@ export function ToolsTab() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dfe3e8] bg-[#fbfdff] px-4 py-3">
-            <div>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-[#dfe3e8] bg-[#fbfdff] px-3 py-3 sm:px-4">
+            <div className="min-w-0">
               <p className="text-sm font-black text-[#09090b]">จัดการรายการที่แสดงบนหน้าเว็บ</p>
-              <p className="mt-0.5 text-xs text-[#647084]">จัดลำดับจากปุ่มขึ้น/ลง แล้วค่อยกดบันทึกลำดับ</p>
+              <p className="mt-0.5 truncate text-xs text-[#647084]">จัดลำดับจากปุ่มขึ้น/ลง แล้วค่อยกดบันทึกลำดับ</p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               {orderDirty ? (
                 <>
                   <button
@@ -689,8 +689,7 @@ export function ToolsTab() {
               ))}
             </div>
           )}
-        </div>
-      </AdminPageSection>
+      </div>
 
       <Dialog
         open={modalOpen}
@@ -704,10 +703,10 @@ export function ToolsTab() {
       >
         <DialogContent
           aria-describedby={undefined}
-          className="h-[90vh] max-h-[90vh] overflow-y-auto !border-[#dfe3e8] !bg-white !text-[#090c13] shadow-[0_24px_80px_-48px_rgba(64,158,254,0.65)] sm:max-w-3xl [&_label]:!text-[#647084] [&_input]:!border-[#dfe3e8] [&_input]:!bg-white [&_input]:!text-[#090c13] [&_input::placeholder]:!text-[#9aa2ad]"
+          className="max-h-[90vh] overflow-y-auto !border-[#dfe3e8] !bg-white !p-0 !text-[#090c13] shadow-[0_24px_80px_-48px_rgba(64,158,254,0.65)] sm:max-w-3xl [&_label]:!text-[#647084] [&_input]:!border-[#dfe3e8] [&_input]:!bg-white [&_input]:!text-[#090c13] [&_input::placeholder]:!text-[#9aa2ad]"
         >
-          <DialogHeader>
-            <DialogTitle className="!text-[#090c13]">
+          <DialogHeader className="sticky top-0 z-10 border-b border-[#e5e7eb] bg-white px-6 py-4">
+            <DialogTitle className="text-center !text-[#090c13]">
               {editingTool ? 'แก้ไขเครื่องมือ' : 'เพิ่มเครื่องมือใหม่'}
             </DialogTitle>
           </DialogHeader>

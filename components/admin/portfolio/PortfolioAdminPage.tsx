@@ -168,16 +168,16 @@ function PortfolioInboxOverview() {
         })}
       </div>
 
-      <div className="rounded-lg border border-border bg-card shadow-sm">
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <div>
+      <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+        <div className="flex items-center justify-between border-b border-border px-3 py-3 sm:px-5 sm:py-4">
+          <div className="min-w-0">
             <h2 className="text-sm font-black text-foreground">อ่านข้อความติดต่อ</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">อ่าน ทำเครื่องหมาย และลบข้อความได้จากหน้านี้</p>
           </div>
         </div>
 
         {messages.length === 0 ? (
-          <div className="grid min-h-48 place-items-center px-5 py-10 text-center">
+          <div className="grid min-h-48 place-items-center px-4 py-10 text-center sm:px-5">
             <div>
               <MessageCircle className="mx-auto mb-3 size-8 text-muted-foreground" />
               <p className="text-sm font-semibold text-foreground">ยังไม่มีใครติดต่อมา</p>
@@ -186,7 +186,7 @@ function PortfolioInboxOverview() {
           </div>
         ) : (
           <div className="grid min-h-[420px] lg:grid-cols-[360px_1fr]">
-            <div className="divide-y divide-border border-b border-border lg:border-b-0 lg:border-r">
+            <div className="max-h-[44vh] divide-y divide-border overflow-y-auto border-b border-border lg:max-h-none lg:border-b-0 lg:border-r">
               {messages.map((msg) => {
                 const active = selected?.id === msg.id
                 return (
@@ -194,7 +194,7 @@ function PortfolioInboxOverview() {
                     key={msg.id}
                     type="button"
                     onClick={() => selectMessage(msg)}
-                    className={`flex w-full items-start gap-3 px-5 py-4 text-left transition hover:bg-secondary/70 ${active ? 'bg-secondary' : ''}`}
+                    className={`flex w-full items-start gap-3 px-3 py-3 text-left transition hover:bg-secondary/70 sm:px-5 sm:py-4 ${active ? 'bg-secondary' : ''}`}
                   >
                     <span className={`mt-2 size-2 shrink-0 rounded-full ${msg.is_read ? 'bg-border' : 'bg-accent'}`} />
                     <span className="min-w-0 flex-1">
@@ -217,21 +217,21 @@ function PortfolioInboxOverview() {
             <div className="min-w-0">
               {selected ? (
                 <>
-                  <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-5 py-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-3 py-3 sm:px-5 sm:py-4">
                     <div className="min-w-0">
                       <p className="truncate text-base font-black text-foreground">{selected.name}</p>
-                      <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                      <p className="mt-1 flex min-w-0 items-center gap-1.5 break-all text-xs font-semibold text-muted-foreground">
                         <Mail className="size-3.5 text-accent" />
                         {selected.email}
                       </p>
                       <p className="mt-1 text-[11px] text-muted-foreground">{timeAgo(selected.created_at)}</p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex w-full items-center gap-2 sm:w-auto">
                       {!selected.is_read && (
                         <button
                           type="button"
                           onClick={() => selectMessage(selected)}
-                          className="flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-xs font-semibold text-muted-foreground transition hover:border-accent/40 hover:text-accent"
+                          className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-md border border-border bg-background px-3 text-xs font-semibold text-muted-foreground transition hover:border-accent/40 hover:text-accent sm:flex-none"
                         >
                           <CheckCircle2 className="size-3.5" />
                           อ่านแล้ว
@@ -247,7 +247,7 @@ function PortfolioInboxOverview() {
                       </button>
                     </div>
                   </div>
-                  <div className="px-5 py-5">
+                  <div className="px-3 py-4 sm:px-5 sm:py-5">
                     {selected.subject && (
                       <p className="mb-4 text-sm font-black text-foreground">{selected.subject}</p>
                     )}

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 const DEFAULTS = {
-  hero_image_url: '/porfilio/images/bg-avatar-hero.png',
+  hero_image_url: '/portfolio/images/bg-avatar-hero.png',
   hero_image_x: 160,
   hero_image_y: -12,
   hero_image_width: 50,

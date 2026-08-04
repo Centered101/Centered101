@@ -14,7 +14,7 @@ export const translations = {
       portfolioLabel: 'Portfolio',
     },
     hero: {
-      profileName: 'CENTEREDIOI PHONGPHON PHOMPHA',
+      profileName: 'PHONGPHON PHOMPHA',
       roles: ['Website Builder', 'App Maker', 'Problem Solver', 'Always Learning'],
       viewProjects: 'View Work',
       message: 'Message',

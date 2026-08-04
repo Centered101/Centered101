@@ -13,7 +13,6 @@ import {
   Newspaper,
   Puzzle,
   Server,
-  ShieldCheck,
   Sparkles,
   Terminal,
   User,
@@ -121,6 +120,7 @@ export const ecosystemPages = [
 ]
 
 export const ecosystemSubdomains = [
+  'portfolio.centered101.com',
   'projects.centered101.com',
   'docs.centered101.com',
   'blog.centered101.com',
@@ -131,7 +131,6 @@ export const ecosystemSubdomains = [
   'games.centered101.com',
   'newtab.centered101.com',
   'auth.centered101.com',
-  'admin.centered101.com',
   'cloud.centered101.com',
 ]
 
@@ -139,7 +138,6 @@ export const ecosystemServices = [
   { name: 'Portfolio', icon: LayoutDashboard, state: 'Live', tone: 'success' },
   { name: 'GitHub API', icon: Code2, state: 'Connected', tone: 'success' },
   { name: 'Supabase', icon: Server, state: 'Active', tone: 'success' },
-  { name: 'Admin', icon: ShieldCheck, state: 'Private', tone: 'accent' },
   { name: 'Personal Cloud', icon: Cloud, state: 'Planned', tone: 'muted' },
   { name: 'Labs', icon: Sparkles, state: 'Building', tone: 'accent' },
 ]

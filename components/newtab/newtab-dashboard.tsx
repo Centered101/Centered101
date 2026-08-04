@@ -77,7 +77,7 @@ const QUICK_LINKS = [
 const DOMAIN_NAV = [
   { group: 'Projects', icon: faGlobe, items: [
     { name: 'centered101.com',        desc: 'Portfolio', href: 'https://centered101.com' },
-    { name: 'admin.centered101.com',  desc: 'Admin panel', href: 'https://admin.centered101.com' },
+    { name: 'portfolio.centered101.com', desc: 'Portfolio website', href: 'https://portfolio.centered101.com' },
     { name: 'mycert.centered101.com', desc: 'Certificates', href: 'https://mycert.centered101.com' },
   ]},
   { group: 'Dev Tools', icon: faCode, items: [

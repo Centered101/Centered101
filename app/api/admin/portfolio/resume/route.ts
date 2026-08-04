@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { requireAnyAdminPermission, writeAdminAuditLog } from '@/lib/admin-auth'
+import { requireAdminOwner, writeAdminAuditLog } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 const BUCKET = 'portfolio'
@@ -8,9 +8,9 @@ const DOWNLOAD_NAME = 'Centered101-resume.pdf'
 const MAX_SIZE = 10 * 1024 * 1024
 
 export async function POST(request: Request) {
-  const auth = await requireAnyAdminPermission(request, ['manage_portfolio', 'manage_media', 'upload_media'])
+  const auth = await requireAdminOwner(request)
   if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: 'Owner role required' }, { status: 403 })
   }
 
   const supabase = createAdminClient()

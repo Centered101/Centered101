@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { requireAnyAdminPermission, writeAdminAuditLog } from '@/lib/admin-auth'
+import { requireAdminOwner, requireAnyAdminPermission, writeAdminAuditLog } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 const STORAGE_PUBLIC_PATH = '/storage/v1/object/public/'
@@ -82,6 +82,10 @@ export async function DELETE(request: Request) {
     if (!parsed) return NextResponse.json({ error: 'Invalid public storage URL' }, { status: 400 })
     if (!['public', 'portfolio'].includes(parsed.bucket)) {
       return NextResponse.json({ error: 'Only public or portfolio bucket files can be deleted from this action' }, { status: 400 })
+    }
+    if (parsed.bucket === 'portfolio') {
+      const ownerAuth = await requireAdminOwner(request)
+      if (!ownerAuth) return NextResponse.json({ error: 'Owner role required' }, { status: 403 })
     }
 
     const { error: storageError } = await supabase.storage.from(parsed.bucket).remove([parsed.filePath])

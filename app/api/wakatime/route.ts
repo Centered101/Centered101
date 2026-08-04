@@ -195,10 +195,7 @@ export async function GET(request: Request) {
     })
 
     if (!response.ok) {
-      return NextResponse.json(
-        { ...emptyStats(true, range), error: `WakaTime responded with ${response.status}` },
-        { status: response.status }
-      )
+      return NextResponse.json({ ...emptyStats(true, range), error: `WakaTime responded with ${response.status}` })
     }
 
     const payload = (await response.json()) as WakaTimeStatsResponse
@@ -218,9 +215,6 @@ export async function GET(request: Request) {
     } satisfies WakaTimeStats)
   } catch (error) {
     console.error('WakaTime API error:', error)
-    return NextResponse.json(
-      { ...emptyStats(Boolean(apiKey), range), error: 'Failed to fetch WakaTime stats' },
-      { status: 500 }
-    )
+    return NextResponse.json({ ...emptyStats(Boolean(apiKey), range), error: 'Failed to fetch WakaTime stats' })
   }
 }

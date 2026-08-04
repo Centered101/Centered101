@@ -236,6 +236,18 @@ export const subdomains = [
   },
   {
     id: 'sd_002',
+    name: 'portfolio.centered101.com',
+    type: 'subdomain',
+    status: 'active' as DomainStatus,
+    ssl: true,
+    sslExpiry: 'Dec 15, 2026',
+    latency: '40ms',
+    visits: '18,240/mo',
+    description: 'Portfolio website',
+    provider: 'Vercel',
+  },
+  {
+    id: 'sd_003',
     name: 'docs.centered101.com',
     type: 'subdomain',
     status: 'active' as DomainStatus,
@@ -247,7 +259,7 @@ export const subdomains = [
     provider: 'Vercel',
   },
   {
-    id: 'sd_003',
+    id: 'sd_004',
     name: 'api.centered101.com',
     type: 'subdomain',
     status: 'active' as DomainStatus,
@@ -259,7 +271,7 @@ export const subdomains = [
     provider: 'Vercel',
   },
   {
-    id: 'sd_004',
+    id: 'sd_005',
     name: 'status.centered101.com',
     type: 'subdomain',
     status: 'active' as DomainStatus,
@@ -271,7 +283,7 @@ export const subdomains = [
     provider: 'Vercel',
   },
   {
-    id: 'sd_005',
+    id: 'sd_006',
     name: 'projects.centered101.com',
     type: 'subdomain',
     status: 'active' as DomainStatus,
@@ -283,7 +295,7 @@ export const subdomains = [
     provider: 'Vercel',
   },
   {
-    id: 'sd_006',
+    id: 'sd_007',
     name: 'lab.centered101.com',
     type: 'subdomain',
     status: 'maintenance' as DomainStatus,

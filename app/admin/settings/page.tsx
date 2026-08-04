@@ -373,21 +373,22 @@ export default function SettingsPage() {
                     className="h-9 w-56 border-[#27272A] bg-[#09090B] text-sm text-[#FAFAFA] focus-visible:ring-[#409EFE]/30"
                   />
                 </SectionRow>
-                <SectionRow label="หน้าแรกของเว็บ" description="กำหนดว่า centered101.com/ จะพาไปส่วนไหน">
+                <SectionRow label="หน้าแรกของเว็บ" description="กำหนดว่า centered101.com/ จะ redirect ไปส่วนไหน">
                   <select
                     value={general.homepage_target}
                     onChange={(e) => setGeneral((p) => ({ ...p, homepage_target: e.target.value }))}
                     className="h-9 w-56 rounded-md border border-[#27272A] bg-[#09090B] px-3 text-sm text-[#FAFAFA] focus:outline-none focus:ring-2 focus:ring-[#409EFE]/30"
                   >
-                    <option value="portfolio">พอร์ตโฟลิโอ</option>
-                    <option value="shop">ร้านค้า</option>
-                    <option value="dashboard">แดชบอร์ด</option>
-                    <option value="newtab">NewTab</option>
+                    <option value="hub">Hub / รายการ public subdomain</option>
+                    <option value="portfolio">Portfolio - portfolio.centered101.com</option>
+                    <option value="shop">Shop - shop.centered101.com</option>
+                    <option value="dashboard">System Dashboard</option>
+                    <option value="newtab">NewTab - newtab.centered101.com</option>
                     <option value="custom">Path กำหนดเอง</option>
                   </select>
                 </SectionRow>
                 {general.homepage_target === 'custom' && (
-                  <SectionRow label="Path หน้าแรกแบบกำหนดเอง" description="ต้องขึ้นต้นด้วย / เช่น /business หรือ /projects">
+                  <SectionRow label="Path หน้าแรกแบบกำหนดเอง" description="ต้องขึ้นต้นด้วย / และไม่สามารถชี้ไปหน้า admin">
                     <Input
                       value={general.homepage_custom_path}
                       onChange={(e) => setGeneral((p) => ({ ...p, homepage_custom_path: e.target.value }))}

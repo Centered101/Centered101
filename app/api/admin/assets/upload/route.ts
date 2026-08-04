@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { requireAnyAdminPermission, writeAdminAuditLog } from '@/lib/admin-auth'
+import { requireAdminOwner, writeAdminAuditLog } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
@@ -34,8 +34,8 @@ function errorMessage(error: unknown, fallback: string) {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireAnyAdminPermission(request, ['manage_portfolio', 'manage_media', 'upload_media'])
-  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireAdminOwner(request)
+  if (!auth) return NextResponse.json({ error: 'Owner role required' }, { status: 403 })
 
   const supabase = createAdminClient()
   if (!supabase) return NextResponse.json({ error: 'Database not configured' }, { status: 503 })

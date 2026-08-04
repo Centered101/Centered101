@@ -21,19 +21,19 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Centered101 | Portfolio',
-  description: 'Portfolio website for Centered101: selected projects, GitHub work, skills, coding time, learning story, and contact.',
-  keywords: ['Centered101', 'portfolio', 'projects', 'developer', 'GitHub', 'Supabase', 'Next.js'],
+  title: 'Centered101 | Digital Ecosystem',
+  description: 'Centered101 hub for portfolio, admin, shop, projects, services, and connected subdomains.',
+  keywords: ['Centered101', 'portfolio', 'subdomains', 'projects', 'developer', 'GitHub', 'Supabase', 'Next.js'],
   authors: [{ name: 'Centered101' }],
   openGraph: {
-    title: 'Centered101 | Portfolio',
-    description: 'Selected projects, GitHub work, skills, coding time, learning story, and contact.',
+    title: 'Centered101 | Digital Ecosystem',
+    description: 'Hub for portfolio, admin, shop, projects, services, and connected subdomains.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Centered101 | Portfolio',
-    description: 'Selected projects, GitHub work, skills, coding time, learning story, and contact.',
+    title: 'Centered101 | Digital Ecosystem',
+    description: 'Hub for portfolio, admin, shop, projects, services, and connected subdomains.',
   },
 }
 
@@ -64,8 +64,8 @@ export default function RootLayout({
           <TouchHoverProvider />
           <AosProvider>{children}</AosProvider>
         </LanguageProvider>
-        <Toaster richColors closeButton position="top-right" />
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        <Toaster richColors={false} closeButton={false} position="top-right" />
+        {process.env.NEXT_PUBLIC_VERCEL_ANALYTICS_ENABLED === 'true' && <Analytics />}
       </body>
     </html>
   )

@@ -3,7 +3,6 @@
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { CheckCircle2, ExternalLink, FileText, Loader2, UploadCloud } from 'lucide-react'
-import { AdminPageSection } from '@/components/admin/AdminPage'
 import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 
 const RESUME_PREVIEW_URL =
@@ -49,14 +48,9 @@ export function ResumeTab() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <AdminPageSection
-        title="เรซูเม่ / CV"
-        description="ไฟล์ PDF ที่ใช้กับปุ่มดาวน์โหลดบนหน้า portfolio"
-      >
-        <div className="overflow-hidden rounded-xl border border-[#dfe3e8] bg-white">
-          <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_420px]">
-            <div className="min-h-80 border-b border-[#eef1f4] p-5 xl:border-b-0 xl:border-r">
+    <div className="space-y-3 sm:space-y-6 sm:p-6">
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_420px]">
+            <div className="min-h-80 rounded-xl border border-[#dfe3e8] bg-white p-3 sm:p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="grid size-12 shrink-0 place-items-center rounded-xl border border-[#dfe3e8] bg-[#f6fbff] text-[#409EFE]">
@@ -114,7 +108,7 @@ export function ResumeTab() {
               </div>
             </div>
 
-            <div className="flex min-h-80 flex-col justify-between p-5">
+            <div className="flex min-h-80 flex-col justify-between rounded-xl border border-[#dfe3e8] bg-white p-3 sm:p-5">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -143,8 +137,6 @@ export function ResumeTab() {
               />
             </div>
           </div>
-        </div>
-      </AdminPageSection>
     </div>
   )
 }

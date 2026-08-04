@@ -35,7 +35,7 @@ type PortfolioVisualSettings = {
 }
 
 const DEFAULT_VISUAL_SETTINGS: PortfolioVisualSettings = {
-  hero_image_url: '/porfilio/images/bg-avatar-hero.png',
+  hero_image_url: '/portfolio/images/bg-avatar-hero.png',
   hero_image_x: 160,
   hero_image_y: -12,
   hero_image_width: 50,
@@ -140,7 +140,7 @@ export function Hero({ user, totalStars = 0, organizations = [], isLoading, onRe
     return <HeroSkeleton />
   }
 
-  const profileName = 'Centered101 Phongphon Phompha'
+  const profileName = 'PHONGPHON PHOMPHA'
   // const profileName = user?.name || user?.login || 'Centered101'
   const username = user?.login || 'Centered101'
   const joinedDate = user?.created_at
@@ -234,7 +234,7 @@ export function Hero({ user, totalStars = 0, organizations = [], isLoading, onRe
         />
       ) : null}
       <div className="absolute inset-0 z-0 grid-pattern" />
-      <div className="pointer-events-none absolute inset-0 z-0 bg-[url('/porfilio/images/bg-portfolio.png')] bg-cover bg-center opacity-75" />
+      <div className="pointer-events-none absolute inset-0 z-0 bg-[url('/portfolio/images/bg-portfolio.png')] bg-cover bg-center opacity-75" />
       <div className="pointer-events-none absolute inset-0 z-0 bg-background/62" />
       {/* Desktop + Tablet: avatar on the right side */}
       <div
@@ -508,7 +508,7 @@ function HeroSkeleton() {
   return (
     <section className="relative flex min-h-screen min-h-[100svh] items-end overflow-hidden px-4 pb-8 pt-28 sm:px-6 sm:pb-24 md:pb-28 lg:px-8">
       <div className="absolute inset-0 z-0 grid-pattern" />
-      <div className="pointer-events-none absolute inset-0 z-0 bg-[url('/porfilio/images/bg-portfolio.png')] bg-cover bg-center opacity-75" />
+      <div className="pointer-events-none absolute inset-0 z-0 bg-[url('/portfolio/images/bg-portfolio.png')] bg-cover bg-center opacity-75" />
       <div className="pointer-events-none absolute inset-0 z-0 bg-background/62" />
       <div
         aria-hidden="true"
@@ -520,7 +520,7 @@ function HeroSkeleton() {
         }}
       >
         <Image
-          src="/porfilio/images/bg-avatar-hero.png"
+          src="/portfolio/images/bg-avatar-hero.png"
           alt=""
           fill
           sizes="50vw"
@@ -534,7 +534,7 @@ function HeroSkeleton() {
         className="pointer-events-none absolute left-1/2 top-14 z-0 h-[48vh] w-[92vw] -translate-x-1/2 opacity-95 md:hidden"
       >
         <Image
-          src="/porfilio/images/bg-avatar-hero.png"
+          src="/portfolio/images/bg-avatar-hero.png"
           alt=""
           fill
           sizes="92vw"

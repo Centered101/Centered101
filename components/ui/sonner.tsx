@@ -11,51 +11,48 @@ import {
 } from 'lucide-react'
 
 // ─── PORTFOLIO TOASTER ────────────────────────────────────────────────────────
-// ออกแบบ: creative / personal — rounded, soft glow, navy bg
+// Soft card style that blends with portfolio/admin surfaces.
 
 const portfolioToastOptions = {
   unstyled: true,
   classNames: {
     toast: [
-      'relative flex items-start gap-3',
-      'rounded-2xl border bg-[#0b1018]/95 backdrop-blur-md',
-      'border-[rgba(132,212,250,0.12)]',
-      'px-4 py-3.5 shadow-2xl shadow-black/60',
-      'w-[340px] cursor-grab active:cursor-grabbing',
+      'relative flex items-start gap-3 overflow-hidden',
+      'rounded-xl border border-[#dfe3e8] bg-white/96 backdrop-blur-xl',
+      '!text-[#090c13]',
+      'px-3.5 py-3 shadow-[0_18px_48px_-30px_rgba(15,23,42,0.38)]',
+      'w-[min(340px,calc(100vw-2rem))] cursor-grab active:cursor-grabbing',
       "font-['Kanit']",
+      'before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-[#409EFE]',
     ].join(' '),
     content: 'flex-1 min-w-0 pt-px',
-    title:       "font-['Kanit'] font-semibold text-[13px] text-[#f8fbff] leading-snug",
-    description: "font-['Kanit'] text-[11px] text-[#6b7a8d] mt-0.5 leading-relaxed",
-    icon: 'shrink-0 mt-0.5',
-    closeButton: [
-      'absolute top-2.5 right-2.5',
-      '!size-5 !rounded-lg !border !border-[rgba(132,212,250,0.1)]',
-      '!bg-transparent !text-[#4a5568]',
-      'hover:!bg-[rgba(132,212,250,0.07)] hover:!text-[#f8fbff] !transition-colors',
-    ].join(' '),
+    title:       "font-['Kanit'] font-bold text-[13px] !text-[#090c13] leading-snug",
+    description: "font-['Kanit'] text-[11px] !text-[#647084] mt-0.5 leading-relaxed",
+    icon: 'shrink-0 mt-0.5 !text-[#409EFE]',
+    closeButton: '!hidden',
     actionButton: [
-      '!text-[11px] !font-semibold !rounded-xl !px-3 !py-1.5',
+      '!text-[11px] !font-bold !rounded-md !px-3 !py-1.5',
       '!bg-[#409EFE] !text-white hover:!bg-[#60aeff] !transition-colors',
     ].join(' '),
     cancelButton: [
-      '!text-[11px] !rounded-xl !px-3 !py-1.5',
-      '!bg-[rgba(132,212,250,0.06)] !text-[#6b7a8d]',
-      'hover:!bg-[rgba(132,212,250,0.1)] hover:!text-[#f8fbff] !transition-colors',
+      '!text-[11px] !font-bold !rounded-md !px-3 !py-1.5',
+      '!border !border-[#dfe3e8] !bg-white !text-[#647084]',
+      'hover:!border-[#409EFE]/40 hover:!text-[#409EFE] !transition-colors',
     ].join(' '),
-    success: '!border-[#1ED760]/20 !bg-[#061210]/95 [box-shadow:0_0_20px_rgba(30,215,96,0.06),0_8px_32px_rgba(0,0,0,0.6)]',
-    error:   '!border-[#FE4040]/20 !bg-[#0f0707]/95 [box-shadow:0_0_20px_rgba(254,64,64,0.06),0_8px_32px_rgba(0,0,0,0.6)]',
-    warning: '!border-[#FFB84D]/20 !bg-[#0f0c06]/95 [box-shadow:0_0_20px_rgba(255,184,77,0.06),0_8px_32px_rgba(0,0,0,0.6)]',
-    info:    '!border-[#409EFE]/20 !bg-[#060c18]/95 [box-shadow:0_0_20px_rgba(64,158,254,0.06),0_8px_32px_rgba(0,0,0,0.6)]',
+    success: '!border-[#bbf7d0] before:!bg-[#22c55e]',
+    error:   '!border-[#fecaca] before:!bg-[#ef4444]',
+    warning: '!border-[#fde68a] before:!bg-[#f59e0b]',
+    info:    '!border-[#bae0ff] before:!bg-[#409EFE]',
+    loading: 'before:!bg-[#647084]',
   },
 } as const
 
 const portfolioIcons = {
-  success: <CheckCircle2 className="size-[15px] text-[#1ED760]" />,
-  error: <AlertCircle className="size-[15px] text-[#FE4040]" />,
+  success: <CheckCircle2 className="size-[15px] text-[#22c55e]" />,
+  error: <AlertCircle className="size-[15px] text-[#ef4444]" />,
   info: <Info className="size-[15px] text-[#409EFE]" />,
-  warning: <AlertTriangle className="size-[15px] text-[#FFB84D]" />,
-  loading: <Loader2 className="size-[15px] animate-spin text-[#6b7a8d]" />,
+  warning: <AlertTriangle className="size-[15px] text-[#f59e0b]" />,
+  loading: <Loader2 className="size-[15px] animate-spin text-[#647084]" />,
 } as const
 
 export function Toaster({ ...props }: ToasterProps) {

@@ -25,7 +25,6 @@ import {
   Zap,
 } from 'lucide-react'
 import { AdminLoading, AdminError, AdminEmpty } from '@/components/admin/AdminStates'
-import { AdminPageSection } from '@/components/admin/AdminPage'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useAdminApi } from '@/lib/hooks/useAdminApi'
 import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
@@ -102,8 +101,8 @@ function EntryForm({
   const typeOptions = Object.keys(TYPE_COLORS)
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-white">
-      <div className="flex items-center gap-3 rounded-lg border border-[#dfe3e8] bg-[#fbfdff] p-3">
+    <div className="space-y-4 bg-white">
+      <div className="mx-6 flex items-center gap-3 rounded-lg border border-[#dfe3e8] bg-[#fbfdff] p-3">
         <span
           className="grid size-11 shrink-0 place-items-center rounded-xl border"
           style={{ borderColor: `${TYPE_COLORS[v.type] ?? TYPE_COLORS.achievement}33`, backgroundColor: `${TYPE_COLORS[v.type] ?? TYPE_COLORS.achievement}12`, color: TYPE_COLORS[v.type] ?? TYPE_COLORS.achievement }}
@@ -116,7 +115,7 @@ function EntryForm({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto pt-4">
+      <div className="px-6">
         <div className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1">
@@ -231,23 +230,23 @@ function EntryForm({
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[#e5e7eb] pt-3">
+      <div className="sticky bottom-0 z-10 mt-2 flex w-full flex-wrap items-center justify-between gap-2 border-t border-[#e5e7eb] bg-white px-6 py-3">
         <div>
           {onDelete ? (
             <button onClick={onDelete}
-              className="flex h-8 items-center gap-1.5 rounded-md border border-[#fecaca] bg-[#fff7f7] px-3 text-xs font-bold text-[#ef4444] transition hover:border-[#ef4444]/40 hover:bg-[#fee2e2]">
-              <Trash2 className="size-3" /> ลบหมุดหมาย
+              className="flex h-9 items-center gap-1.5 rounded-md border border-[#fecaca] bg-[#fff7f7] px-3 text-xs font-bold text-[#ef4444] transition hover:border-[#ef4444]/40 hover:bg-[#fee2e2]">
+              <Trash2 className="size-3.5" /> ลบหมุดหมาย
             </button>
           ) : null}
         </div>
         <div className="flex items-center gap-2">
           <button onClick={onCancel}
-            className="flex h-8 items-center gap-1.5 rounded-md border border-[#dfe3e8] bg-white px-3 text-xs font-bold text-[#647084] transition hover:border-[#409EFE]/40 hover:text-[#409EFE]">
-            <X className="size-3" /> ยกเลิก
+            className="flex h-9 items-center gap-1.5 rounded-md border border-[#dfe3e8] bg-white px-3 text-xs font-bold text-[#647084] transition hover:border-[#409EFE]/40 hover:text-[#409EFE]">
+            <X className="size-3.5" /> ยกเลิก
           </button>
           <button onClick={() => onSave(v)} disabled={saving || !v.title.trim()}
-            className="flex h-8 items-center gap-1.5 rounded-md bg-[#409EFE] px-3 text-xs font-bold text-white transition hover:bg-[#60aeff] disabled:opacity-40">
-            <Check className="size-3" /> บันทึก
+            className="flex h-9 items-center gap-1.5 rounded-md border border-[#409EFE] bg-[#409EFE] px-4 text-xs font-bold text-white transition hover:bg-[#60aeff] disabled:opacity-40">
+            <Check className="size-3.5" /> บันทึก
           </button>
         </div>
       </div>
@@ -363,12 +362,8 @@ export function StoryTab() {
   if (error) return <AdminError error={error} onRetry={refetch} />
 
   return (
-    <div className="space-y-6 p-6">
-      <AdminPageSection
-        title="เส้นทางการเรียนรู้"
-        description={`${story.length} หมุดหมายใน timeline`}
-      >
-        <div className="space-y-5">
+    <div className="space-y-3 sm:space-y-6 sm:p-6">
+      <div className="space-y-3 sm:space-y-5">
           <div className="grid gap-3 md:grid-cols-3">
             <div className="rounded-xl border border-[#dfe3e8] bg-white p-4">
               <p className="text-xs font-bold text-[#647084]">หมุดหมายทั้งหมด</p>
@@ -384,12 +379,12 @@ export function StoryTab() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dfe3e8] bg-[#fbfdff] px-4 py-3">
-            <div>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-[#dfe3e8] bg-[#fbfdff] px-3 py-3 sm:px-4">
+            <div className="min-w-0">
               <p className="text-sm font-black text-[#09090b]">จัดการ timeline หน้า portfolio</p>
-              <p className="mt-0.5 text-xs text-[#647084]">เพิ่ม แก้ไข และจัดรายละเอียดของหมุดหมายแต่ละปี</p>
+              <p className="mt-0.5 truncate text-xs text-[#647084]">เพิ่ม แก้ไข และจัดรายละเอียดของหมุดหมายแต่ละปี</p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               {orderDirty && (
                 <>
                   <button
@@ -425,22 +420,22 @@ export function StoryTab() {
 
           {sortedStory.length > 0 && (
             <div className="relative overflow-hidden rounded-xl border border-[#dfe3e8] bg-white">
-              <div className="border-b border-[#eef1f4] px-5 py-4">
+              <div className="border-b border-[#eef1f4] px-3 py-3 sm:px-5 sm:py-4">
                 <h3 className="text-sm font-black text-[#09090b]">Timeline Preview</h3>
                 <p className="mt-0.5 text-xs text-[#647084]">เรียงตามปีล่าสุดก่อน เหมือนมุมมองสำหรับจัดการ</p>
               </div>
-              <div className="relative p-5">
-                <div className="absolute bottom-5 left-[2.05rem] top-5 w-px bg-gradient-to-b from-[#409EFE]/10 via-[#409EFE]/35 to-[#409EFE]/10" />
-                <div className="space-y-4">
+              <div className="relative p-3 sm:p-5">
+                <div className="absolute bottom-3 left-[1.65rem] top-3 w-px bg-gradient-to-b from-[#409EFE]/10 via-[#409EFE]/35 to-[#409EFE]/10 sm:bottom-5 sm:left-[2.05rem] sm:top-5" />
+                <div className="space-y-3 sm:space-y-4">
           {sortedStory.map((e, index) => (
-              <div key={e.id} className="group relative pl-10">
+              <div key={e.id} className="group relative pl-8 sm:pl-10">
                 <div
-                  className="absolute left-0 top-4 z-10 flex size-8 shrink-0 items-center justify-center rounded-xl border bg-white text-sm"
+                  className="absolute left-0 top-4 z-10 flex size-7 shrink-0 items-center justify-center rounded-lg border bg-white text-xs sm:size-8 sm:rounded-xl sm:text-sm"
                   style={{ borderColor: `${TYPE_COLORS[e.type] ?? '#52525b'}33`, backgroundColor: `${TYPE_COLORS[e.type] ?? '#52525b'}12`, color: TYPE_COLORS[e.type] ?? '#52525b' }}
                 >
                   <StoryIconPreview icon={e.icon} type={e.type} />
                 </div>
-                <div className="min-w-0 rounded-xl border border-[#dfe3e8] bg-[#fbfdff] p-4 transition-colors hover:border-[#409EFE]/35">
+                <div className="min-w-0 rounded-xl border border-[#dfe3e8] bg-[#fbfdff] p-3 transition-colors hover:border-[#409EFE]/35 sm:p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
@@ -452,7 +447,7 @@ export function StoryTab() {
                       </div>
                       {e.title_th && <p className="mt-1 text-xs font-semibold text-[#647084]">{e.title_th}</p>}
                     </div>
-                    <div className="flex shrink-0 flex-wrap items-center gap-1">
+                    <div className="ml-auto flex w-full shrink-0 flex-wrap items-center justify-end gap-1 sm:w-auto">
                       <button
                         onClick={() => moveStory(index, -1)}
                         disabled={index === 0}
@@ -479,8 +474,7 @@ export function StoryTab() {
               </div>
             </div>
           )}
-        </div>
-      </AdminPageSection>
+      </div>
 
       <Dialog
         open={modalOpen}
@@ -494,10 +488,10 @@ export function StoryTab() {
       >
         <DialogContent
           aria-describedby={undefined}
-          className="flex h-[90vh] max-h-[90vh] flex-col overflow-hidden !border-[#dfe3e8] !bg-white !p-6 !text-[#090c13] shadow-[0_24px_80px_-48px_rgba(64,158,254,0.65)] sm:max-w-3xl [&_label]:!text-[#647084] [&_input]:!border-[#dfe3e8] [&_input]:!bg-white [&_input]:!text-[#090c13] [&_input::placeholder]:!text-[#9aa2ad] [&_select]:!border-[#dfe3e8] [&_select]:!bg-white [&_select]:!text-[#090c13] [&_textarea]:!border-[#dfe3e8] [&_textarea]:!bg-white [&_textarea]:!text-[#090c13] [&_textarea::placeholder]:!text-[#9aa2ad]"
+          className="max-h-[90vh] overflow-y-auto !border-[#dfe3e8] !bg-white !p-0 !text-[#090c13] shadow-[0_24px_80px_-48px_rgba(64,158,254,0.65)] sm:max-w-3xl [&_label]:!text-[#647084] [&_input]:!border-[#dfe3e8] [&_input]:!bg-white [&_input]:!text-[#090c13] [&_input::placeholder]:!text-[#9aa2ad] [&_select]:!border-[#dfe3e8] [&_select]:!bg-white [&_select]:!text-[#090c13] [&_textarea]:!border-[#dfe3e8] [&_textarea]:!bg-white [&_textarea]:!text-[#090c13] [&_textarea::placeholder]:!text-[#9aa2ad]"
         >
-          <DialogHeader>
-            <DialogTitle className="!text-[#090c13]">
+          <DialogHeader className="sticky top-0 z-10 border-b border-[#e5e7eb] bg-white px-6 py-4">
+            <DialogTitle className="text-center !text-[#090c13]">
               {editingEntry ? 'แก้ไขหมุดหมาย' : 'เพิ่มหมุดหมายใหม่'}
             </DialogTitle>
           </DialogHeader>

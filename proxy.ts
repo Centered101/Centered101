@@ -24,15 +24,15 @@ function getSubdomain(hostname: string): string | null {
 }
 
 export function proxy(request: NextRequest) {
-  const hostname = request.headers.get('host') || ''
+  const hostname = (request.headers.get('host') || '').split(':')[0].toLowerCase()
   const subdomain = getSubdomain(hostname)
+  const { pathname } = request.nextUrl
 
   if (!subdomain || !(subdomain in SUBDOMAIN_MAP)) {
     return NextResponse.next()
   }
 
   const basePath = SUBDOMAIN_MAP[subdomain]
-  const { pathname } = request.nextUrl
 
   // Let auth callback and API routes pass through without rewriting
   if (
