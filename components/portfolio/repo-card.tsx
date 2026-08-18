@@ -7,15 +7,27 @@ import { Button } from '@/components/ui/button'
 import { Star, GitFork, ExternalLink, Calendar } from 'lucide-react'
 import { getLanguageColor, getRelativeTime } from '@/lib/github/api'
 import { useLanguage } from '@/components/language-provider'
+import { TheSvgIcon } from '@/components/the-svg-icon'
 import type { GitHubRepo } from '@/lib/github/types'
 
 interface RepoCardProps {
   repo: GitHubRepo
   index: number
+  compact?: boolean
   onRepoClick?: (repoName: string, repoUrl: string) => void
 }
 
-export function RepoCard({ repo, index, onRepoClick }: RepoCardProps) {
+const languageIcons: Record<string, string> = {
+  TypeScript: 'typescript',
+  JavaScript: 'javascript',
+  Python: 'python',
+  HTML: 'html5',
+  CSS: 'css',
+  'C++': 'cplusplus',
+  C: 'c',
+}
+
+export function RepoCard({ repo, index, compact = false, onRepoClick }: RepoCardProps) {
   const { copy } = useLanguage()
   const [active, setActive] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
@@ -23,6 +35,7 @@ export function RepoCard({ repo, index, onRepoClick }: RepoCardProps) {
   const topics = Array.isArray(repo.topics) ? repo.topics : []
   const topicsShouldLoop = topics.length > 3
   const homepage = repo.homepage || undefined
+  const compactFallback = repo.description || repo.language || copy.projects.noDescription
 
   const openRepo = () => {
     onRepoClick?.(repo.name, repo.html_url)
@@ -51,6 +64,66 @@ export function RepoCard({ repo, index, onRepoClick }: RepoCardProps) {
     return () => document.removeEventListener('pointerdown', handlePointerDown)
   }, [active])
 
+  if (compact) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.38, delay: index * 0.04 }}
+        data-aos="fade-up"
+        data-aos-delay={String(Math.min(index * 80, 320))}
+        className="group"
+      >
+        <div
+          ref={cardRef}
+          onClick={handleClick}
+          className={`repo-card-shadow glass-card relative isolate flex min-h-[70px] cursor-pointer items-center gap-3 overflow-hidden rounded-xl border px-3 py-2 text-left transition-[transform,border-color,box-shadow,background-color] duration-[700ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 ${
+            active ? 'border-accent/35 bg-accent/10' : ''
+          }`}
+        >
+          <span className="absolute inset-0 grid-pattern opacity-25" />
+          <span className="absolute inset-0 bg-card/95" />
+          <div className={`absolute inset-0 transition-opacity duration-[700ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-100 ${active ? 'opacity-100' : 'opacity-0'}`}>
+            <div className="absolute -inset-2 rounded-2xl bg-gradient-to-r from-accent/24 via-white/8 to-accent/22 blur-xl" />
+          </div>
+          <TheSvgIcon
+            label={repo.language || repo.name}
+            slug={repo.language ? languageIcons[repo.language] || repo.language : null}
+            className="relative z-10 size-11 bg-background/80 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.75)] backdrop-blur-xl"
+            style={{ borderColor: repo.language ? `${langColor}66` : undefined }}
+          />
+          <span className="relative z-10 min-w-0 flex-1">
+            <span className={`block truncate text-sm font-semibold text-foreground transition-colors group-hover:text-accent ${active ? 'text-accent' : ''}`}>
+              {repo.name}
+            </span>
+            {topics.length > 0 ? (
+              <span className="mt-1 flex min-w-0 gap-1.5 overflow-hidden">
+                {topics.slice(0, 5).map((topic) => (
+                  <Badge
+                    key={topic}
+                    variant="secondary"
+                    className="shrink-0 rounded-md bg-secondary/80 px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors group-hover:bg-accent/15 group-hover:text-foreground"
+                  >
+                    {topic}
+                  </Badge>
+                ))}
+              </span>
+            ) : (
+              <span className="mt-1 flex min-w-0 items-center">
+                <span className="truncate text-xs text-muted-foreground">{compactFallback}</span>
+              </span>
+            )}
+          </span>
+          <span className="relative z-10 ml-auto flex shrink-0 items-center gap-1 text-sm">
+            <Star className="size-4 text-accent" />
+            <span className="font-medium">{repo.stargazers_count}</span>
+          </span>
+        </div>
+      </motion.div>
+    )
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -64,13 +137,13 @@ export function RepoCard({ repo, index, onRepoClick }: RepoCardProps) {
       <div
         ref={cardRef}
         onClick={handleClick}
-        className={`glass-card rounded-2xl p-4 sm:p-6 h-full flex flex-col cursor-pointer hover-lift relative overflow-hidden transition-colors ${
+        className={`repo-card-shadow glass-card relative flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl p-4 transition-[transform,border-color,box-shadow,background-color] duration-[700ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 sm:p-6 ${
           active ? 'border-accent/35 bg-accent/10' : ''
         }`}
       >
         {/* Glow effect on hover */}
-        <div className={`absolute inset-0 transition-opacity duration-500 group-hover:opacity-100 ${active ? 'opacity-100' : 'opacity-0'}`}>
-          <div className="absolute -inset-1 bg-gradient-to-r from-accent/20 via-white/5 to-accent/20 rounded-2xl blur-xl" />
+        <div className={`absolute inset-0 transition-opacity duration-[700ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-100 ${active ? 'opacity-100' : 'opacity-0'}`}>
+          <div className="absolute -inset-2 rounded-2xl bg-gradient-to-r from-accent/24 via-white/8 to-accent/22 blur-xl" />
         </div>
 
         <div className="relative z-10 flex flex-col h-full">
@@ -99,10 +172,10 @@ export function RepoCard({ repo, index, onRepoClick }: RepoCardProps) {
           {/* Topics */}
           {topics.length > 0 && (
             <div
-              className={`repo-topics-marquee mb-4 overflow-hidden ${topicsShouldLoop ? '[mask-image:linear-gradient(to_right,black_0%,black_84%,transparent)]' : ''}`}
+              className={`repo-topics-marquee -mx-1 mb-4 overflow-hidden px-1 ${topicsShouldLoop ? '[mask-image:linear-gradient(to_right,transparent_0%,black_8%,black_88%,transparent_100%)]' : ''}`}
               data-loop={topicsShouldLoop ? 'true' : undefined}
             >
-              <div className="repo-topics-track flex w-max gap-1.5">
+              <div className="repo-topics-track flex w-max gap-1.5 py-px">
                 {[topics, topicsShouldLoop ? topics : []].flat().map((topic, topicIndex) => (
                   <Badge
                     key={`${topic}-${topicIndex}`}
@@ -122,9 +195,11 @@ export function RepoCard({ repo, index, onRepoClick }: RepoCardProps) {
             <div className="flex items-center gap-4">
               {repo.language && (
                 <div className="flex items-center gap-1.5">
-                  <span
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: langColor, boxShadow: `0 0 8px ${langColor}60` }}
+                  <TheSvgIcon
+                    label={repo.language}
+                    slug={languageIcons[repo.language] || repo.language}
+                    className="size-8 rounded-lg bg-background/80 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.65)]"
+                    style={{ borderColor: `${langColor}66` }}
                   />
                   <span className="text-sm text-muted-foreground">{repo.language}</span>
                 </div>

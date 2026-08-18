@@ -1,15 +1,30 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Github, Loader2, LockKeyhole, ShieldCheck, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { AdminSidebar } from '@/components/admin/AdminSidebar'
-import { AdminTopbar } from '@/components/admin/AdminTopbar'
-import { AIChatSidebar } from '@/components/admin/AIChatSidebar'
-import { CommandPalette } from '@/components/admin/CommandPalette'
 import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
+
+const AdminSidebar = dynamic(() => import('@/components/admin/AdminSidebar').then((module) => module.AdminSidebar), {
+  loading: () => <div className="h-full w-[264px] border-r border-[#27272A] bg-[#09090B]" />,
+  ssr: false,
+})
+
+const AdminTopbar = dynamic(() => import('@/components/admin/AdminTopbar').then((module) => module.AdminTopbar), {
+  loading: () => <div className="h-14 border-b border-[#27272A] bg-[#09090B]" />,
+  ssr: false,
+})
+
+const AIChatSidebar = dynamic(() => import('@/components/admin/AIChatSidebar').then((module) => module.AIChatSidebar), {
+  ssr: false,
+})
+
+const CommandPalette = dynamic(() => import('@/components/admin/CommandPalette').then((module) => module.CommandPalette), {
+  ssr: false,
+})
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -32,6 +47,20 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     const saved = localStorage.getItem('admin_accent_color')
     if (saved) document.documentElement.style.setProperty('--admin-accent', saved)
   }, [])
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+
+    const openCommand = (event: KeyboardEvent) => {
+      if (event.key === 'k' && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault()
+        setCommandOpen((open) => !open)
+      }
+    }
+
+    document.addEventListener('keydown', openCommand)
+    return () => document.removeEventListener('keydown', openCommand)
+  }, [isAuthenticated])
 
   if (isBooting) {
     return (
@@ -159,7 +188,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
+      {commandOpen ? <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} /> : null}
     </div>
   )
 }

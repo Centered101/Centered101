@@ -193,25 +193,66 @@ export function Timeline({ isLoading }: TimelineProps) {
 }
 
 function TimelineSkeleton() {
+  const { copy } = useLanguage()
+
   return (
-    <section className="px-4 py-16 sm:px-6 sm:py-24">
-      <div className="mx-auto w-full max-w-[1400px]">
+    <section id="timeline" className="relative overflow-hidden px-4 py-16 sm:px-6 sm:py-24">
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-accent/[0.01] to-transparent" />
+      <div className="relative mx-auto w-full max-w-[1400px]">
         <div className="text-center mb-10 sm:mb-16">
-          <Skeleton className="h-12 w-80 mx-auto mb-4" />
-          <Skeleton className="h-6 w-64 mx-auto" />
+          <h2 className="text-3xl md:text-5xl font-bold mb-4">
+            <span className="gradient-text">{copy.timeline.title}</span>
+          </h2>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            {copy.timeline.description}
+          </p>
         </div>
-        <div className="space-y-8 sm:space-y-12">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="flex items-center">
-              <div className="w-1/2 pr-12">
-                <Skeleton className="h-40 rounded-2xl" />
+        <div className="relative">
+          <div className="absolute bottom-0 left-0 top-0 w-px bg-gradient-to-b from-transparent via-border to-transparent md:left-1/2 md:-translate-x-1/2" />
+
+          <div className="space-y-8 sm:space-y-12">
+            <div className="relative flex items-center md:flex-col md:items-center">
+              <Skeleton className="absolute left-0 z-10 size-10 rounded-full md:static md:order-1 md:mb-5" />
+              <div className="w-full pl-12 md:order-2 md:max-w-xl md:pl-0">
+                <TimelineCardSkeleton />
               </div>
-              <Skeleton className="w-10 h-10 rounded-full flex-shrink-0" />
-              <div className="w-1/2" />
             </div>
-          ))}
+            {Array.from({ length: 3 }).map((_, i) => {
+              const isLeft = i % 2 === 0
+              return (
+                <div
+                  key={i}
+                  className={`relative flex items-center ${
+                    isLeft ? 'md:flex-row' : 'md:flex-row-reverse'
+                  }`}
+                >
+                  <div className={`w-full pl-12 md:w-1/2 md:pl-0 ${isLeft ? 'md:pr-12' : 'md:pl-12'}`}>
+                    <TimelineCardSkeleton />
+                  </div>
+                  <Skeleton className="absolute left-0 size-10 rounded-full md:left-1/2 md:-translate-x-1/2" />
+                  <div className="hidden w-1/2 md:block" />
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
     </section>
+  )
+}
+
+function TimelineCardSkeleton() {
+  return (
+    <div className="glass-card rounded-2xl border border-border p-4 sm:p-6">
+      <div className="mb-3 flex items-center gap-3">
+        <Skeleton className="h-4 w-12" />
+        <Skeleton className="h-6 w-20 rounded" />
+      </div>
+      <Skeleton className="mb-3 h-7 w-3/5" />
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-4/5" />
+      </div>
+    </div>
   )
 }

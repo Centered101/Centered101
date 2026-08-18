@@ -11,6 +11,11 @@ const DEFAULTS = {
 }
 
 const KEYS = Object.keys(DEFAULTS)
+const RESPONSE_OPTIONS = {
+  headers: {
+    'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=86400',
+  },
+}
 
 function readNumber(value: unknown, fallback: number) {
   const parsed = Number(value)
@@ -19,25 +24,28 @@ function readNumber(value: unknown, fallback: number) {
 
 export async function GET() {
   const supabase = createAdminClient()
-  if (!supabase) return NextResponse.json(DEFAULTS)
+  if (!supabase) return NextResponse.json(DEFAULTS, RESPONSE_OPTIONS)
 
   const { data, error } = await supabase
     .from('system_settings')
     .select('key, value')
     .in('key', KEYS)
 
-  if (error) return NextResponse.json(DEFAULTS)
+  if (error) return NextResponse.json(DEFAULTS, RESPONSE_OPTIONS)
 
   const settings = Object.fromEntries((data ?? []).map((row) => [row.key, row.value])) as Record<string, unknown>
 
-  return NextResponse.json({
-    hero_image_url: typeof settings.hero_image_url === 'string' && settings.hero_image_url.trim()
-      ? settings.hero_image_url
-      : DEFAULTS.hero_image_url,
-    hero_image_x: readNumber(settings.hero_image_x, DEFAULTS.hero_image_x),
-    hero_image_y: readNumber(settings.hero_image_y, DEFAULTS.hero_image_y),
-    hero_image_width: readNumber(settings.hero_image_width, DEFAULTS.hero_image_width),
-    hero_image_max_width: readNumber(settings.hero_image_max_width, DEFAULTS.hero_image_max_width),
-    hero_image_opacity: readNumber(settings.hero_image_opacity, DEFAULTS.hero_image_opacity),
-  })
+  return NextResponse.json(
+    {
+      hero_image_url: typeof settings.hero_image_url === 'string' && settings.hero_image_url.trim()
+        ? settings.hero_image_url
+        : DEFAULTS.hero_image_url,
+      hero_image_x: readNumber(settings.hero_image_x, DEFAULTS.hero_image_x),
+      hero_image_y: readNumber(settings.hero_image_y, DEFAULTS.hero_image_y),
+      hero_image_width: readNumber(settings.hero_image_width, DEFAULTS.hero_image_width),
+      hero_image_max_width: readNumber(settings.hero_image_max_width, DEFAULTS.hero_image_max_width),
+      hero_image_opacity: readNumber(settings.hero_image_opacity, DEFAULTS.hero_image_opacity),
+    },
+    RESPONSE_OPTIONS,
+  )
 }

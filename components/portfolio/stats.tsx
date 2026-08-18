@@ -245,25 +245,66 @@ export function Stats({
 }
 
 function StatsSkeleton() {
+  const { copy } = useLanguage()
+
   return (
-    <section className="px-4 py-16 sm:px-6 sm:py-24">
-      <div className="mx-auto w-full max-w-[1400px]">
+    <section id="stats" className="relative overflow-hidden px-4 py-16 sm:px-6 sm:py-24">
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-accent/[0.02] to-transparent" />
+      <div className="relative mx-auto w-full max-w-[1400px]">
         <div className="text-center mb-10 sm:mb-16">
-          <Skeleton className="h-12 w-64 mx-auto mb-4" />
-          <Skeleton className="h-6 w-96 mx-auto" />
+          <h2 className="text-3xl md:text-5xl font-bold mb-4">
+            <span className="gradient-text">{copy.stats.title}</span>
+          </h2>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            {copy.stats.description}
+          </p>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
-          <div className="col-span-2 row-span-2">
-            <Skeleton className="h-full min-h-[280px] rounded-2xl" />
+          <div className="glass-card relative col-span-2 row-span-2 min-h-[280px] overflow-hidden rounded-2xl p-5 sm:p-8">
+            <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-accent/10 blur-3xl" />
+            <Skeleton className="mb-4 size-10 rounded-lg" />
+            <Skeleton className="mb-2 h-16 w-32 md:h-20" />
+            <Skeleton className="h-7 w-36" />
+            <div className="mt-4 flex items-center gap-2">
+              <Skeleton className="size-4 rounded" />
+              <Skeleton className="h-4 w-48 max-w-full" />
+            </div>
           </div>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-32 rounded-2xl" />
+          {Array.from({ length: 4 }).map((_, i) => (
+            <StatMetricSkeleton key={i} />
           ))}
-          <div className="col-span-2">
-            <Skeleton className="h-32 rounded-2xl" />
+          <div className="glass-card relative col-span-2 overflow-hidden rounded-2xl p-4 sm:p-6">
+            <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-accent/5 blur-3xl" />
+            <div className="mb-4 flex items-center gap-2">
+              <Skeleton className="size-6 rounded" />
+              <Skeleton className="h-6 w-32" />
+            </div>
+            <Skeleton className="mb-4 h-3 w-full rounded-full" />
+            <div className="flex flex-wrap gap-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <Skeleton className="size-2.5 rounded-full" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              ))}
+            </div>
           </div>
+          {Array.from({ length: 2 }).map((_, i) => (
+            <StatMetricSkeleton key={`bottom-${i}`} />
+          ))}
         </div>
       </div>
     </section>
+  )
+}
+
+function StatMetricSkeleton() {
+  return (
+    <div className="glass-card relative h-32 overflow-hidden rounded-2xl p-4 sm:p-6">
+      <div className="absolute right-0 top-0 h-20 w-20 rounded-full bg-accent/10 blur-2xl" />
+      <Skeleton className="mb-3 size-8 rounded-lg" />
+      <Skeleton className="mb-2 h-10 w-20" />
+      <Skeleton className="h-4 w-24" />
+    </div>
   )
 }

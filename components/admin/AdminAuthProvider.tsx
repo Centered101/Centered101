@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { createClient as createBrowserClient } from '@/lib/supabase/client'
 
 export type AdminAuthInfo = {
   source: string
@@ -60,6 +59,11 @@ async function readAuthJson(response: Response) {
   } catch {
     return { error: response.statusText || `HTTP ${response.status}` }
   }
+}
+
+async function createBrowserSupabaseClient() {
+  const { createClient } = await import('@/lib/supabase/client')
+  return createClient()
 }
 
 export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
@@ -219,7 +223,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   async function loginWithGitHub(next?: string) {
     setIsLoading(true)
     try {
-      const supabase = createBrowserClient()
+      const supabase = await createBrowserSupabaseClient()
       const origin = window.location.origin
       const redirectNext = next ?? window.location.pathname
       const { error } = await supabase.auth.signInWithOAuth({
@@ -236,7 +240,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function logout() {
-    const supabase = createBrowserClient()
+    const supabase = await createBrowserSupabaseClient()
     await supabase.auth.signOut()
     window.localStorage.removeItem(USERNAME_KEY)
     window.localStorage.removeItem(TOKEN_KEY)

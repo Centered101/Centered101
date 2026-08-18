@@ -486,7 +486,7 @@ export function AdminSidebar({ authInfo, authMode, adminUsername, onNavClick }: 
                 {authInfo?.displayName || authInfo?.githubUsername || adminUsername}
               </p>
               <div className="mt-0.5 flex flex-wrap gap-1">
-                {(authInfo?.roles || ['owner']).slice(0, 1).map((role) => (
+                {authInfo?.roles?.slice(0, 1).map((role) => (
                   <span
                     key={role}
                     className="rounded px-1.5 py-px text-[9px] font-semibold"

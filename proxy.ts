@@ -10,6 +10,19 @@ const SUBDOMAIN_MAP: Record<string, string> = {
   shop: '/shop',
 }
 
+const PUBLIC_ASSET_PREFIXES = [
+  '/admin/',
+  '/branding/',
+  '/cursors/',
+  '/newtab/',
+  '/placeholders/',
+  '/portfolio/images/',
+  '/portfolio/project-posters/',
+  '/portfolio/resume/',
+  '/porfilio/',
+  '/shop/',
+]
+
 function getSubdomain(hostname: string): string | null {
   const devMatch = hostname.match(/^([a-z0-9-]+)\.localhost(?::\d+)?$/i)
   if (devMatch) return devMatch[1].toLowerCase()
@@ -23,10 +36,23 @@ function getSubdomain(hostname: string): string | null {
   return null
 }
 
+function isPublicAssetPath(pathname: string) {
+  return PUBLIC_ASSET_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+}
+
 export function proxy(request: NextRequest) {
   const hostname = (request.headers.get('host') || '').split(':')[0].toLowerCase()
   const subdomain = getSubdomain(hostname)
   const { pathname } = request.nextUrl
+  const hasOAuthCode = request.nextUrl.searchParams.has('code')
+
+  if (hasOAuthCode && (pathname === '/' || pathname === '/shop')) {
+    const url = request.nextUrl.clone()
+    url.pathname = pathname === '/shop' || subdomain === 'shop'
+      ? '/shop/auth/callback'
+      : '/auth/callback'
+    return NextResponse.redirect(url)
+  }
 
   if (!subdomain || !(subdomain in SUBDOMAIN_MAP)) {
     return NextResponse.next()
@@ -38,6 +64,7 @@ export function proxy(request: NextRequest) {
   if (
     pathname.startsWith('/auth/') ||
     pathname.startsWith('/api/') ||
+    isPublicAssetPath(pathname) ||
     pathname.startsWith(basePath + '/') ||
     pathname === basePath
   ) {

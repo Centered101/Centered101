@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Languages, Menu, X } from 'lucide-react'
@@ -86,15 +85,13 @@ export function Navigation({ user }: NavigationProps) {
               <span className="transition-opacity duration-300 group-hover/logo:opacity-100">
                 {(user?.login || '').slice(0, 2).toUpperCase()}
               </span>
-              <Image
+              <img
                 src="/api/portfolio/logo"
                 alt=""
                 aria-hidden="true"
-                fill
-                sizes="44px"
                 draggable={false}
                 onContextMenu={(event) => event.preventDefault()}
-                className="select-none object-contain opacity-100 transition-opacity duration-300 group-hover/logo:opacity-0 group-active/logo:opacity-0 group-focus/logo:opacity-0"
+                className="absolute inset-0 size-full select-none object-contain opacity-100 transition-opacity duration-300 group-hover/logo:opacity-0 group-active/logo:opacity-0 group-focus/logo:opacity-0"
               />
             </span>
             <span className="hidden sm:block">

@@ -432,7 +432,7 @@ export function Contact({ user, onSubmit }: ContactProps) {
                         {copy.contact.send}
                       </>
                     )}
-                  </Button> Pass it pass a carco number sixteen.
+                  </Button>
                 </form>
               )}
             </div>

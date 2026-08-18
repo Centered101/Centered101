@@ -275,14 +275,19 @@ export function Skills({ topLanguages = [], isLoading }: SkillsProps) {
 }
 
 function LanguageCardSkeleton() {
+  const { copy } = useLanguage()
+
   return (
-    <div className="rounded-2xl border border-border p-5 sm:p-8">
-      <Skeleton className="h-6 w-48 mb-8" />
+    <div className="glass-card h-full rounded-2xl p-5 sm:p-8">
+      <h3 className="text-xl font-semibold mb-8">{copy.skills.language}</h3>
       <div className="space-y-6">
         {Array.from({ length: 9 }).map((_, i) => (
           <div key={i}>
-            <div className="flex justify-between mb-2">
-              <Skeleton className="h-4 w-24" />
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <Skeleton className="size-9 shrink-0 rounded-lg" />
+                <Skeleton className="h-4 w-24" />
+              </div>
               <Skeleton className="h-4 w-12" />
             </div>
             <Skeleton className="h-2 w-full rounded-full" />
@@ -294,25 +299,49 @@ function LanguageCardSkeleton() {
 }
 
 function ToolsCardSkeleton() {
+  const { copy } = useLanguage()
+
   return (
-    <div className="rounded-2xl border border-border p-5 sm:p-8">
-      <Skeleton className="h-6 w-32 mb-8" />
-      <div className="flex flex-wrap gap-3">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <Skeleton key={i} className="h-10 w-24 rounded-full" />
-        ))}
+    <div className="glass-card h-full rounded-2xl p-5 sm:p-8">
+      <h3 className="text-xl font-semibold mb-8">{copy.skills.stack}</h3>
+      <div className="relative h-[420px] overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_10%,black_90%,transparent)]">
+        <div className="space-y-6">
+          {Array.from({ length: 4 }).map((_, groupIndex) => (
+            <div key={groupIndex}>
+              <div className="mb-3 flex items-center gap-2">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-3 w-7" />
+              </div>
+              <div className="flex flex-wrap gap-2 sm:gap-3">
+                {Array.from({ length: groupIndex === 0 ? 6 : 5 }).map((_, i) => (
+                  <div key={i}>
+                    <Skeleton className="size-10 rounded-xl md:hidden" />
+                    <Skeleton className="hidden h-[54px] w-32 rounded-xl md:block" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )
 }
 
 function SkillsSkeleton() {
+  const { copy } = useLanguage()
+
   return (
-    <section className="px-4 py-16 sm:px-6 sm:py-24">
-      <div className="mx-auto w-full max-w-[1400px]">
+    <section id="skills" className="relative px-4 py-16 sm:px-6 sm:py-24">
+      <div className="absolute inset-0 bg-gradient-to-t from-accent/[0.02] to-transparent" />
+      <div className="relative mx-auto w-full max-w-[1400px]">
         <div className="text-center mb-10 sm:mb-16">
-          <Skeleton className="h-12 w-80 mx-auto mb-4" />
-          <Skeleton className="h-6 w-96 mx-auto" />
+          <h2 className="text-3xl md:text-5xl font-bold mb-4">
+            <span className="gradient-text">{copy.skills.title}</span>
+          </h2>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            {copy.skills.description}
+          </p>
         </div>
         <div className="grid gap-6 sm:gap-12 lg:grid-cols-2">
           <LanguageCardSkeleton />

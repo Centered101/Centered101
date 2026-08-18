@@ -165,7 +165,7 @@ export const translations = {
       portfolioLabel: 'พอร์ตโฟลิโอ',
     },
     hero: {
-      profileName: 'เซ็นเตอร์ไอโอไอ พงศ์พล พรมผา',
+      profileName: 'พงศ์พล พรมผา',
       roles: ['ทำเว็บไซต์', 'ทำแอปเล็ก ๆ', 'แก้ปัญหาด้วยเทคโนโลยี', 'เรียนรู้อยู่เสมอ'],
       viewProjects: 'ดูผลงาน',
       message: 'ส่งข้อความ',

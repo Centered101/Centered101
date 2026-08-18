@@ -43,6 +43,7 @@ type WakaTimeSummariesResponse = {
 
 const DEFAULT_RANGE = 'last_7_days'
 const CUSTOM_RANGE_DAYS: Record<string, number> = {
+  last_30_days: 30,
   last_60_days: 60,
 }
 

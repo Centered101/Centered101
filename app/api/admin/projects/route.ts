@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server'
-import { requireAdminOwner, requireAnyAdminPermission, writeAdminAuditLog } from '@/lib/admin-auth'
+import { requireAnyAdminPermission, writeAdminAuditLog } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { writeNotification } from '@/lib/admin-notifications'
+
+const READ_PROJECT_PERMISSIONS = ['manage_portfolio', 'view_portfolio'] as const
+const SAVE_PROJECT_PERMISSIONS = ['manage_portfolio', 'create_portfolio', 'edit_portfolio'] as const
+const DELETE_PROJECT_PERMISSIONS = ['manage_portfolio', 'delete_portfolio'] as const
+const EDIT_PROJECT_PERMISSIONS = ['manage_portfolio', 'edit_portfolio'] as const
 
 type PortfolioProjectPayload = {
   id?: string
@@ -45,7 +50,7 @@ function normalizeList(value: unknown) {
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireAnyAdminPermission(request, ['manage_portfolio', 'view_portfolio'])
+    const auth = await requireAnyAdminPermission(request, READ_PROJECT_PERMISSIONS)
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -73,9 +78,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireAdminOwner(request)
+  const auth = await requireAnyAdminPermission(request, SAVE_PROJECT_PERMISSIONS)
   if (!auth) {
-    return NextResponse.json({ error: 'Owner role required' }, { status: 403 })
+    return NextResponse.json({ error: 'Portfolio permission required' }, { status: 403 })
   }
 
   const payload = (await request.json()) as PortfolioProjectPayload
@@ -169,9 +174,9 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const auth = await requireAdminOwner(request)
+  const auth = await requireAnyAdminPermission(request, DELETE_PROJECT_PERMISSIONS)
   if (!auth) {
-    return NextResponse.json({ error: 'Owner role required' }, { status: 403 })
+    return NextResponse.json({ error: 'Portfolio delete permission required' }, { status: 403 })
   }
 
   const url = new URL(request.url)
@@ -223,8 +228,8 @@ export async function DELETE(request: Request) {
 
 // Quick toggle: featured / enabled / sort_order
 export async function PATCH(request: Request) {
-  const auth = await requireAdminOwner(request)
-  if (!auth) return NextResponse.json({ error: 'Owner role required' }, { status: 403 })
+  const auth = await requireAnyAdminPermission(request, EDIT_PROJECT_PERMISSIONS)
+  if (!auth) return NextResponse.json({ error: 'Portfolio edit permission required' }, { status: 403 })
   const supabase = createAdminClient()
   if (!supabase) return NextResponse.json({ error: 'DB not configured' }, { status: 503 })
   const body = await request.json() as { id?: string; featured?: boolean; enabled?: boolean; sort_order?: number; order?: { id: string; sort_order?: number }[] }

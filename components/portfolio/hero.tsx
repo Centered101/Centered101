@@ -256,13 +256,13 @@ export function Hero({ user, totalStars = 0, organizations = [], isLoading, onRe
           decoding="async"
           draggable={false}
           onContextMenu={(event) => event.preventDefault()}
-          className="size-full object-contain object-right-bottom"
+          className="size-full object-contain object-center"
         />
       </div>
       {/* Mobile only: avatar centered at top */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-14 z-0 h-[48vh] w-[92vw] -translate-x-1/2 opacity-95 md:hidden"
+        className="pointer-events-none absolute left-1/2 top-24 z-0 h-[48vh] w-[92vw] -translate-x-1/2 opacity-95 md:hidden"
       >
         <img
           src={visualSettings.hero_image_url}
@@ -526,12 +526,12 @@ function HeroSkeleton() {
           sizes="50vw"
           draggable={false}
           onContextMenu={(event) => event.preventDefault()}
-          className="object-contain object-right-bottom"
+          className="object-contain object-center"
         />
       </div>
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-14 z-0 h-[48vh] w-[92vw] -translate-x-1/2 opacity-95 md:hidden"
+        className="pointer-events-none absolute left-1/2 top-24 z-0 h-[48vh] w-[92vw] -translate-x-1/2 opacity-95 md:hidden"
       >
         <Image
           src="/portfolio/images/bg-avatar-hero.png"

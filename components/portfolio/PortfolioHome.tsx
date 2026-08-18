@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import { useEffect, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import { useGitHub } from '@/hooks/use-github'
 import { useAnalytics } from '@/hooks/use-analytics'
 import { Navigation } from '@/components/portfolio/navigation'
@@ -38,104 +38,94 @@ const Footer = dynamic(() => import('@/components/portfolio/footer').then((modul
 export function PortfolioHome() {
   const { data, isLoading } = useGitHub()
   const { trackRepoClick, trackContactSubmit, trackResumeDownload } = useAnalytics()
-  const [isSupabaseReady, setIsSupabaseReady] = useState(false)
-  const [showPortfolio, setShowPortfolio] = useState(false)
+  const [showBootOverlay, setShowBootOverlay] = useState(true)
 
   useEffect(() => {
-    let isMounted = true
+    const controller = new AbortController()
+    const bootTimeoutId = globalThis.setTimeout(() => setShowBootOverlay(false), 520)
+    let preloadTimeoutId: ReturnType<typeof window.setTimeout> | undefined
+    let idleId: number | undefined
 
-    const preload = async () => {
-      const minimumDelay = new Promise((resolve) => window.setTimeout(resolve, 650))
+    const preload = () => {
+      const options = { signal: controller.signal }
 
-      await Promise.allSettled([
-        fetch('/api/projects'),
-        fetch('/api/portfolio/tools'),
-        fetch('/api/portfolio/learning-story?locale=en'),
-        fetch('/api/social-links'),
-        fetch('/api/wakatime?range=last_60_days'),
-        minimumDelay,
+      void Promise.allSettled([
+        fetch('/api/projects', options),
+        fetch('/api/portfolio/tools', options),
+        fetch('/api/portfolio/learning-story?locale=en', options),
+        fetch('/api/social-links', options),
+        fetch('/api/wakatime?range=last_30_days', options),
       ])
-
-      if (isMounted) {
-        setIsSupabaseReady(true)
-      }
     }
 
-    preload()
+    if ('requestIdleCallback' in window) {
+      idleId = window.requestIdleCallback(preload, { timeout: 1600 })
+    } else {
+      preloadTimeoutId = globalThis.setTimeout(preload, 500)
+    }
 
     return () => {
-      isMounted = false
+      globalThis.clearTimeout(bootTimeoutId)
+      controller.abort()
+      if (idleId !== undefined) {
+        window.cancelIdleCallback(idleId)
+      }
+      if (preloadTimeoutId !== undefined) {
+        globalThis.clearTimeout(preloadTimeoutId)
+      }
     }
   }, [])
 
-  useEffect(() => {
-    if (!isLoading && isSupabaseReady) {
-      setShowPortfolio(true)
-    }
-  }, [isLoading, isSupabaseReady])
-
   return (
-    <>
+    <div className="portfolio-classic-theme min-h-screen bg-background text-foreground">
       <AnimatePresence>
-        {!showPortfolio ? <PortfolioBootScreen /> : null}
+        {showBootOverlay ? <PortfolioBootScreen /> : null}
       </AnimatePresence>
 
-      <div className="portfolio-classic-theme min-h-screen bg-background text-foreground">
-        <motion.div
-          initial={false}
-          animate={{
-            opacity: showPortfolio ? 1 : 0,
-            y: showPortfolio ? 0 : 24,
-          }}
-          transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1] }}
-          className={showPortfolio ? 'pointer-events-auto' : 'pointer-events-none'}
-        >
-          <Navigation user={data?.user} />
+      <Navigation user={data?.user} />
 
-          <main>
-            <Hero
-              user={data?.user}
-              totalStars={data?.totalStars}
-              topLanguages={data?.topLanguages}
-              organizations={data?.organizations}
-              isLoading={isLoading}
-            />
+      <main>
+        <Hero
+          user={data?.user}
+          totalStars={data?.totalStars}
+          topLanguages={data?.topLanguages}
+          organizations={data?.organizations}
+          isLoading={isLoading}
+        />
 
-            <Projects
-              repositories={data?.repositories}
-              isLoading={isLoading}
-              onRepoClick={trackRepoClick}
-            />
+        <Projects
+          repositories={data?.repositories}
+          isLoading={isLoading}
+          onRepoClick={trackRepoClick}
+        />
 
-            <Stats
-              user={data?.user}
-              repositories={data?.repositories}
-              totalStars={data?.totalStars}
-              topLanguages={data?.topLanguages}
-              isLoading={isLoading}
-            />
+        <Stats
+          user={data?.user}
+          repositories={data?.repositories}
+          totalStars={data?.totalStars}
+          topLanguages={data?.topLanguages}
+          isLoading={isLoading}
+        />
 
-            <WakaTimeStats />
+        <WakaTimeStats />
 
-            <Skills
-              topLanguages={data?.topLanguages}
-              isLoading={isLoading}
-            />
+        <Skills
+          topLanguages={data?.topLanguages}
+          isLoading={isLoading}
+        />
 
-            <Timeline isLoading={isLoading} />
+        <Timeline isLoading={isLoading} />
 
-            <Contact
-              user={data?.user}
-              onSubmit={trackContactSubmit}
-            />
-          </main>
+        <Contact
+          user={data?.user}
+          onSubmit={trackContactSubmit}
+        />
+      </main>
 
-          <Footer
-            user={data?.user}
-            onResumeDownload={trackResumeDownload}
-          />
-        </motion.div>
-      </div>
-    </>
+      <Footer
+        user={data?.user}
+        onResumeDownload={trackResumeDownload}
+      />
+    </div>
   )
 }

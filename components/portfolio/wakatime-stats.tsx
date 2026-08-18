@@ -10,7 +10,7 @@ import { useLanguage } from '@/components/language-provider'
 
 export function WakaTimeStats() {
   const { copy } = useLanguage()
-  const { data, isLoading, error } = useWakaTime('last_60_days')
+  const { data, isLoading, error } = useWakaTime('last_30_days')
 
   if (isLoading) {
     return <WakaTimeSkeleton />
@@ -156,17 +156,85 @@ export function WakaTimeStats() {
 }
 
 function WakaTimeSkeleton() {
+  const { copy } = useLanguage()
+
   return (
-    <section className="px-4 py-16 sm:px-6 sm:py-24">
-      <div className="mx-auto w-full max-w-[1400px]">
+    <section id="wakatime" className="relative overflow-hidden px-4 py-16 sm:px-6 sm:py-24">
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-accent/[0.025] to-transparent" />
+      <div className="relative mx-auto w-full max-w-[1400px]">
         <div className="mb-10 text-center sm:mb-16">
-          <Skeleton className="mx-auto mb-6 h-8 w-40 rounded-full" />
-          <Skeleton className="mx-auto mb-4 h-12 w-72" />
-          <Skeleton className="mx-auto h-6 w-96" />
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full glass-card px-4 py-1.5 text-sm">
+            <Sparkles className="size-4 text-accent" />
+            <span className="text-muted-foreground">{copy.wakatime.eyebrow}</span>
+          </div>
+          <h2 className="mb-4 text-3xl font-bold md:text-5xl">
+            <span className="gradient-text">{copy.wakatime.title}</span>
+          </h2>
+          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+            {copy.wakatime.description}
+          </p>
         </div>
         <div className="grid gap-4 sm:gap-6 lg:grid-cols-5">
-          <Skeleton className="h-80 rounded-2xl lg:col-span-2" />
-          <Skeleton className="h-80 rounded-2xl lg:col-span-3" />
+          <div className="glass-card flex min-h-[360px] flex-col rounded-2xl p-4 sm:p-6 lg:col-span-2">
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <Skeleton className="mb-2 h-4 w-24" />
+                <h3 className="text-xl font-semibold">{copy.wakatime.summary}</h3>
+              </div>
+              <Skeleton className="size-6 rounded" />
+            </div>
+            <div className="flex flex-1 flex-col gap-4">
+              <div className="flex flex-1 flex-col justify-center rounded-xl border border-border bg-background/45 p-4 sm:p-5">
+                <Skeleton className="mb-3 h-4 w-24" />
+                <Skeleton className="h-10 w-40" />
+              </div>
+              <div className="grid flex-1 gap-4 sm:grid-cols-2">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div key={i} className="flex flex-col justify-center rounded-xl border border-border bg-background/45 p-4">
+                    <Skeleton className="mb-3 h-4 w-20" />
+                    <Skeleton className="h-8 w-28" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="glass-card rounded-2xl p-4 sm:p-6 lg:col-span-3">
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <Skeleton className="mb-2 h-4 w-24" />
+                <h3 className="text-xl font-semibold">{copy.wakatime.languages}</h3>
+              </div>
+              <Skeleton className="size-6 rounded" />
+            </div>
+            <div className="space-y-4">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i}>
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Skeleton className="size-2.5 shrink-0 rounded-full" />
+                      <Skeleton className="h-4 w-28" />
+                    </div>
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                  <Skeleton className="h-2 w-full rounded-full" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="glass-card rounded-2xl p-4 sm:p-6 lg:col-span-5">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <Skeleton className="mb-2 h-4 w-24" />
+                <h3 className="text-xl font-semibold">{copy.wakatime.projects}</h3>
+              </div>
+              <Skeleton className="size-6 rounded" />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="h-8 w-32 rounded-md" />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>

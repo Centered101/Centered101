@@ -45,6 +45,24 @@ interface ProjectsProps {
   onRepoClick?: (repoName: string, repoUrl: string) => void
 }
 
+function normalizeGitHubUrl(value: string | null | undefined) {
+  const raw = (value || '').trim()
+  if (!raw) return ''
+  try {
+    const withProtocol = raw.startsWith('http') ? raw : `https://${raw}`
+    const url = new URL(withProtocol)
+    const host = url.hostname.replace(/^www\./, '').toLowerCase()
+    const parts = url.pathname
+      .replace(/\.git$/i, '')
+      .split('/')
+      .filter(Boolean)
+      .slice(0, 2)
+    return host === 'github.com' && parts.length === 2 ? `github.com/${parts.join('/').toLowerCase()}` : raw.toLowerCase()
+  } catch {
+    return raw.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\.git$/i, '').replace(/\/+$/g, '').toLowerCase()
+  }
+}
+
 function ProjectImageLoader({ compact = false }: { compact?: boolean }) {
   return (
     <span
@@ -57,11 +75,11 @@ function ProjectImageLoader({ compact = false }: { compact?: boolean }) {
       <span className="project-image-loader-orb project-image-loader-orb-one" />
       <span className="project-image-loader-orb project-image-loader-orb-two" />
       <span className="project-image-loader-shine" />
-      <span className="project-image-loader-ping">
-        <span className="project-image-loader-ping-ring" />
-        <span className="project-image-loader-ping-ring project-image-loader-ping-ring-delay" />
-        <span className="project-image-loader-ping-core" />
-      </span>
+      <span
+        className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/12 blur-2xl ${
+          compact ? 'size-16' : 'size-40'
+        }`}
+      />
     </span>
   )
 }
@@ -139,7 +157,7 @@ function ProjectCard({
         <div
           ref={cardRef}
           onClick={handleCardClick}
-          className={`glass-card relative isolate aspect-[4/5] transform-gpu overflow-hidden rounded-2xl p-0 hover-lift ${
+          className={`project-card-shadow glass-card relative isolate aspect-[4/5] transform-gpu overflow-hidden rounded-2xl p-0 transition-[transform,border-color,box-shadow] duration-[700ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 ${
             primaryUrl ? 'cursor-pointer' : ''
           }`}
         >
@@ -147,7 +165,7 @@ function ProjectCard({
             <div className="absolute inset-0 grid-pattern opacity-70" />
             <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-background/70 to-secondary" />
             <div
-              className={`absolute inset-x-6 bottom-6 z-20 flex items-end gap-3 transition-[opacity,transform] duration-500 ease-out ${
+              className={`absolute inset-x-6 bottom-6 z-20 flex items-end gap-3 transition-[opacity,transform] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-2 group-hover:opacity-0 ${
                 posterReady ? 'translate-y-3 opacity-0' : 'translate-y-0 opacity-100'
               }`}
             >
@@ -184,15 +202,15 @@ function ProjectCard({
               onLoad={() => setPosterReady(true)}
               onError={() => setPosterReady(true)}
               onContextMenu={(event) => event.preventDefault()}
-              className={`select-none object-cover transition-[opacity,transform] duration-700 ease-out group-hover:scale-[1.035] ${
-                active ? 'scale-105' : ''
+              className={`select-none object-cover transition-[opacity,transform,filter] duration-[1100ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform group-hover:scale-[1.045] group-hover:brightness-[0.68] ${
+                active ? 'scale-[1.045] brightness-[0.68]' : ''
               } ${posterReady ? 'opacity-100' : 'opacity-0'}`}
             />
           ) : null}
 
-          <div className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/52 to-black/10 transition-opacity duration-500 ease-out group-hover:opacity-100 ${active ? 'opacity-100' : 'opacity-0'}`} />
+          <div className={`absolute inset-0 bg-gradient-to-t from-black/88 via-black/44 to-black/6 transition-opacity duration-[850ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-100 ${active ? 'opacity-100' : 'opacity-0'}`} />
 
-          <div className={`absolute inset-x-0 bottom-0 p-4 text-white transition-[opacity,transform] duration-500 ease-out group-hover:translate-y-0 group-hover:opacity-100 sm:p-6 ${active ? 'translate-y-0 opacity-100' : 'translate-y-5 opacity-0'}`}>
+          <div className={`absolute inset-x-0 bottom-0 p-4 text-white transition-[opacity,transform] duration-[850ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-0 group-hover:opacity-100 sm:p-6 ${active ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'}`}>
             <div className="mb-3 flex items-center gap-3">
               {project.logo_url ? (
                 <span className="relative isolate grid size-12 shrink-0 place-items-center overflow-hidden rounded-xl border border-white/30 bg-white/25 text-sm font-black text-white shadow-[0_12px_34px_-18px_rgba(0,0,0,0.85)] backdrop-blur-xl">
@@ -285,7 +303,7 @@ function ProjectCard({
       <div
         ref={cardRef}
         onClick={handleCardClick}
-        className={`glass-card relative flex h-full flex-col overflow-hidden rounded-2xl p-4 hover-lift sm:p-6 ${
+        className={`project-card-shadow glass-card relative flex h-full flex-col overflow-hidden rounded-2xl p-4 hover-lift sm:p-6 ${
           primaryUrl ? 'cursor-pointer' : ''
         }`}
       >
@@ -481,7 +499,7 @@ function ProjectLogoLink({
       disabled={!primaryUrl}
       title={project.title}
       aria-label={`Open ${project.title}`}
-      className={`group relative isolate flex min-w-0 items-center gap-3 overflow-hidden rounded-xl border p-2.5 text-left transition-all hover:border-accent/35 hover:bg-accent/10 disabled:pointer-events-none disabled:opacity-50 ${active ? 'border-accent/35 bg-accent/10' : 'border-border bg-secondary/35'}`}
+      className={`project-card-shadow group relative isolate flex min-w-0 items-center gap-3 overflow-hidden rounded-xl border p-2.5 text-left transition-all hover:-translate-y-1 hover:border-accent/35 hover:bg-accent/10 disabled:pointer-events-none disabled:opacity-50 ${active ? 'border-accent/35 bg-accent/10' : 'border-border bg-secondary/35'}`}
       data-gsap-item
     >
       {project.poster_url ? (
@@ -593,7 +611,16 @@ export function Projects({ repositories = [], isLoading, onRepoClick }: Projects
   const featuredProjects = projects.slice(0, 6)
   const selectedProjectCards = featuredProjects.slice(0, 3)
   const compactProjects = featuredProjects.slice(3).filter((project) => project.logo_url)
-  const githubRepos = useMemo(() => getTopRepositories(repositories, 6), [repositories])
+  const linkedProjectRepos = useMemo(
+    () => new Set(projects.map((project) => normalizeGitHubUrl(project.github_url)).filter(Boolean)),
+    [projects],
+  )
+  const githubRepos = useMemo(
+    () => getTopRepositories(repositories, 30)
+      .filter((repo) => !linkedProjectRepos.has(normalizeGitHubUrl(repo.html_url)))
+      .slice(0, 9),
+    [repositories, linkedProjectRepos],
+  )
 
   if (isLoading || isProjectsLoading) {
     return <ProjectsSkeleton />
@@ -701,6 +728,7 @@ export function Projects({ repositories = [], isLoading, onRepoClick }: Projects
                   key={repo.id}
                   repo={repo}
                   index={index}
+                  compact={index >= 6}
                   onRepoClick={onRepoClick}
                 />
               ))}
@@ -713,33 +741,83 @@ export function Projects({ repositories = [], isLoading, onRepoClick }: Projects
 }
 
 function ProjectsSkeleton() {
+  const { copy } = useLanguage()
+
   return (
     <section id="projects" className="relative px-4 py-16 sm:px-6 sm:py-24">
       <div className="absolute inset-0 bg-gradient-to-b from-accent/[0.02] via-transparent to-transparent" />
       <div className="relative mx-auto w-full max-w-[1400px]">
+        <div className="mb-16 text-center">
+          <div className="glass-card mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm">
+            <Sparkles className="size-4 text-accent" />
+            <span className="text-muted-foreground">{copy.projects.eyebrow}</span>
+          </div>
+          <h2 className="mb-4 text-3xl font-bold md:text-5xl">
+            <span className="gradient-text">{copy.projects.title}</span>
+          </h2>
+          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+            {copy.projects.description}
+          </p>
+        </div>
+
         <div className="mb-8 flex items-center justify-between gap-4">
           <div>
-            <Skeleton className="mb-3 h-4 w-24 rounded-sm" />
-            <Skeleton className="h-8 w-44 rounded-md" />
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">
+              {copy.projects.portfolioLabel}
+            </p>
+            <h3 className="mt-2 text-2xl font-bold">{copy.projects.selectedWork}</h3>
           </div>
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="aspect-[4/5] rounded-lg" />
+            <FeaturedProjectSkeletonCard key={i} />
           ))}
         </div>
-        <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-6 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 rounded-lg border border-border bg-card/80 p-3">
-              <Skeleton className="size-11 rounded-lg" />
-              <div className="min-w-0 flex-1 space-y-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-3 w-20" />
-              </div>
-            </div>
+            <CompactProjectSkeletonCard key={i} />
           ))}
         </div>
       </div>
     </section>
+  )
+}
+
+function FeaturedProjectSkeletonCard() {
+  return (
+    <div className="group">
+      <div className="glass-card relative isolate aspect-[4/5] transform-gpu overflow-hidden rounded-2xl p-0">
+        <div className="absolute inset-0 bg-secondary">
+          <div className="absolute inset-0 grid-pattern opacity-70" />
+          <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-background/70 to-secondary" />
+          <div className="absolute inset-x-6 bottom-6 z-20 flex items-end gap-3">
+            <Skeleton className="size-12 shrink-0 rounded-xl border border-border bg-background/80" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-5 w-3/5 max-w-[220px]" />
+              <Skeleton className="h-4 w-28" />
+            </div>
+          </div>
+        </div>
+        <ProjectImageLoader />
+      </div>
+    </div>
+  )
+}
+
+function CompactProjectSkeletonCard() {
+  return (
+    <div className="relative isolate flex min-w-0 items-center gap-3 overflow-hidden rounded-xl border border-border bg-secondary/35 p-2.5 text-left">
+      <span className="absolute inset-0 grid-pattern opacity-60" />
+      <span className="absolute inset-0 bg-gradient-to-r from-accent/10 via-background/70 to-secondary/80" />
+      <ProjectImageLoader compact />
+      <Skeleton className="relative z-10 size-12 shrink-0 rounded-xl border border-white/45 bg-white/35" />
+      <span className="relative z-10 min-w-0 flex-[9] space-y-2">
+        <Skeleton className="h-4 w-3/5 max-w-[220px]" />
+        <Skeleton className="h-5 w-24 rounded-md" />
+      </span>
+      <span className="relative z-10 ml-auto flex flex-[1] shrink-0 items-center justify-end">
+        <Skeleton className="size-9 rounded-lg" />
+      </span>
+    </div>
   )
 }

@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import { motion } from 'framer-motion'
 
 type PortfolioBootScreenProps = {
@@ -11,7 +10,6 @@ type PortfolioBootScreenProps = {
 
 export function PortfolioBootScreen({
   status = 'Loading portfolio data',
-  logoSrc = '/api/portfolio/logo',
   animatedExit = true,
 }: PortfolioBootScreenProps) {
   const content = (
@@ -36,37 +34,16 @@ export function PortfolioBootScreen({
         <motion.div
           variants={{ hidden: { opacity: 0, scale: 0.82 }, show: { opacity: 1, scale: 1 } }}
           transition={{ type: 'spring', stiffness: 220, damping: 19 }}
-          className="relative grid size-30 place-items-center"
+          className="relative grid size-20 place-items-center overflow-hidden rounded-2xl border border-[rgba(132,212,250,0.26)] bg-[rgba(64,158,254,0.08)] shadow-[0_18px_70px_-46px_rgba(64,158,254,0.9)]"
         >
-          <span className="absolute size-30 rounded-[2rem] border border-[#409EFE]/15 bg-[#409EFE]/5 blur-[1px]" />
-          <span className="absolute size-22 rounded-[1.45rem] border border-[#409EFE]/25 bg-[#409EFE]/10 shadow-[0_0_110px_10px_rgba(64,158,254,0.34)]" />
-          <span className="absolute size-22 rounded-[1.45rem] border border-[#9bd7ff]/20 animate-ping" />
-          <div className="relative size-17 overflow-hidden rounded-[1.1rem] border border-[#9bd7ff]/40 bg-white/10 p-1 shadow-[0_24px_90px_-38px_rgba(64,158,254,0.95)]">
-            <Image
-              src={logoSrc}
-              alt="Centered101"
-              fill
-              sizes="64px"
-              priority
-              draggable={false}
-              onContextMenu={(event) => event.preventDefault()}
-              className="select-none object-cover"
-            />
-          </div>
+          <img
+            src="/api/portfolio/logo"
+            alt=""
+            draggable={false}
+            className="size-14 rounded-xl object-cover"
+          />
         </motion.div>
 
-        <motion.p
-          variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}
-          className="mt-7 text-[1.45rem] font-black uppercase leading-none text-[#f8fafc] drop-shadow-[0_12px_34px_rgba(0,0,0,0.32)]"
-        >
-          CENTERED101
-        </motion.p>
-        <motion.p
-          variants={{ hidden: { opacity: 0 }, show: { opacity: 1 } }}
-          className="mt-4 text-[0.72rem] font-bold uppercase tracking-[0.18em] text-[#9aa7b8]"
-        >
-          {status}
-        </motion.p>
       </motion.div>
     </>
   )

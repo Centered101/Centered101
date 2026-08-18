@@ -45,6 +45,13 @@ const contentSecurityPolicy =
     .map(([key, values]) => `${key} ${values.join(' ')}`)
     .join('; ') + (isDev ? '' : '; upgrade-insecure-requests')
 
+const longLivedAssetHeaders = [
+  {
+    key: 'Cache-Control',
+    value: 'public, max-age=31536000, immutable',
+  },
+]
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
@@ -73,6 +80,10 @@ const nextConfig = {
             value: 'max-age=63072000; includeSubDomains; preload',
           },
         ],
+      },
+      {
+        source: '/:path*.(png|jpg|jpeg|webp|avif|gif|svg|ico|woff|woff2)',
+        headers: longLivedAssetHeaders,
       },
     ]
   },

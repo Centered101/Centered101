@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { ArrowDown, ArrowUp, Check, ExternalLink, Github, ImagePlus, Loader2, Pencil, Plus, Star, Trash2, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, Check, ExternalLink, Github, ImagePlus, Loader2, Pencil, Plus, Search, Star, Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -53,6 +53,24 @@ function autoCommaList(value: string) {
   return value.replace(/\s{2,}/g, ', ')
 }
 
+function normalizeGitHubUrl(value: string | null | undefined) {
+  const raw = (value || '').trim()
+  if (!raw) return ''
+  try {
+    const withProtocol = raw.startsWith('http') ? raw : `https://${raw}`
+    const url = new URL(withProtocol)
+    const host = url.hostname.replace(/^www\./, '').toLowerCase()
+    const parts = url.pathname
+      .replace(/\.git$/i, '')
+      .split('/')
+      .filter(Boolean)
+      .slice(0, 2)
+    return host === 'github.com' && parts.length === 2 ? `github.com/${parts.join('/').toLowerCase()}` : raw.toLowerCase()
+  } catch {
+    return raw.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\.git$/i, '').replace(/\/+$/g, '').toLowerCase()
+  }
+}
+
 const PAGE_SIZE = 10
 
 export function FeaturedTab() {
@@ -74,13 +92,34 @@ export function FeaturedTab() {
   const [page, setPage] = useState(1)
   const [draggingPoster, setDraggingPoster] = useState(false)
   const [draggingLogo, setDraggingLogo] = useState(false)
+  const [repoQuery, setRepoQuery] = useState('')
+  const [repoFilter, setRepoFilter] = useState<'all' | 'new' | 'added' | 'forks'>('all')
   const posterInputRef = useRef<HTMLInputElement>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
 
   const projects = projData?.projects ?? []
   const repos = ghData?.repos ?? []
+  const projectGitHubUrls = new Set(projects.map((project) => normalizeGitHubUrl(project.github_url)).filter(Boolean))
+  const normalizedRepoQuery = repoQuery.trim().toLowerCase()
+  const filteredRepos = repos.filter((repo) => {
+    const alreadyAdded = projectGitHubUrls.has(normalizeGitHubUrl(repo.html_url))
+    const matchesFilter =
+      repoFilter === 'all' ||
+      (repoFilter === 'new' && !alreadyAdded) ||
+      (repoFilter === 'added' && alreadyAdded) ||
+      (repoFilter === 'forks' && repo.is_fork)
+    const matchesQuery =
+      !normalizedRepoQuery ||
+      repo.name.toLowerCase().includes(normalizedRepoQuery) ||
+      repo.full_name.toLowerCase().includes(normalizedRepoQuery) ||
+      (repo.description ?? '').toLowerCase().includes(normalizedRepoQuery) ||
+      (repo.language ?? '').toLowerCase().includes(normalizedRepoQuery)
+
+    return matchesFilter && matchesQuery
+  })
   const paged = orderedProjects.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
   const editingProject = form.id ? projects.find((project) => project.id === form.id) ?? null : null
+  const linkedRepo = repos.find((repo) => normalizeGitHubUrl(repo.html_url) === normalizeGitHubUrl(form.github_url)) ?? null
 
   useEffect(() => {
     if (!orderDirty) setOrderedProjects(projects)
@@ -95,6 +134,33 @@ export function FeaturedTab() {
       github_url: p.github_url ?? '', live_url: p.live_url ?? '',
       tech_stack: p.tech_stack.join(', '),
       featured: p.featured, enabled: p.enabled, sort_order: p.sort_order,
+    })
+    setModalOpen(true)
+  }
+
+  function applyRepoToForm(repo: GhRepo, replaceTitle = false) {
+    setForm({
+      ...(replaceTitle ? BLANK : form),
+      slug: replaceTitle || !form.slug ? slugify(repo.name) : form.slug,
+      title: replaceTitle || !form.title ? repo.name : form.title,
+      short_description: form.short_description || repo.description || '',
+      category: form.category === 'project' || !form.category ? (repo.is_fork ? 'Fork' : 'GitHub repository') : form.category,
+      github_url: repo.html_url,
+      tech_stack: form.tech_stack || repo.language || '',
+      enabled: form.enabled,
+    })
+  }
+
+  function openFromRepo(repo: GhRepo) {
+    setForm({
+      ...BLANK,
+      slug: slugify(repo.name),
+      title: repo.name,
+      short_description: repo.description ?? '',
+      category: repo.is_fork ? 'Fork' : 'GitHub repository',
+      github_url: repo.html_url,
+      tech_stack: repo.language ?? '',
+      enabled: true,
     })
     setModalOpen(true)
   }
@@ -370,19 +436,49 @@ export function FeaturedTab() {
       {/* GitHub repos */}
       <section className="rounded-lg border border-border bg-card shadow-sm">
         <div className="border-b border-border px-3 py-3 sm:px-5 sm:py-4">
-          <h2 className="text-sm font-black text-foreground">GitHub Repositories</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">Repo สาธารณะที่ cache จาก GitHub API</p>
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+            <div className="min-w-0">
+              <h2 className="text-sm font-black text-foreground">GitHub Repositories</h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">Repo สาธารณะที่ cache จาก GitHub API</p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="relative min-w-0 sm:w-72">
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={repoQuery}
+                  onChange={(event) => setRepoQuery(event.target.value)}
+                  placeholder="ค้นหา repo, ภาษา..."
+                  className="h-9 rounded-lg border-border bg-background pl-9 text-xs"
+                />
+              </div>
+              <select
+                value={repoFilter}
+                onChange={(event) => setRepoFilter(event.target.value as typeof repoFilter)}
+                className="h-9 rounded-lg border border-border bg-background px-3 text-xs font-semibold text-foreground outline-none transition focus:border-[#409EFE]/50"
+              >
+                <option value="all">ทั้งหมด</option>
+                <option value="new">ยังไม่เพิ่ม</option>
+                <option value="added">เพิ่มแล้ว</option>
+                <option value="forks">Fork</option>
+              </select>
+            </div>
+          </div>
         </div>
         <div className="p-3 sm:p-5">
         {ghLoading ? (
           <div className="py-8 text-center text-sm text-muted-foreground">กำลังโหลด repo...</div>
         ) : repos.length === 0 ? (
           <AdminEmpty title="ยังไม่มี repo" description="ยังไม่ได้ตั้งค่าการซิงก์ GitHub" />
+        ) : filteredRepos.length === 0 ? (
+          <AdminEmpty title="ไม่พบ repo" description="ลองเปลี่ยนคำค้นหาหรือตัวกรอง" />
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
-            {repos.map((r) => (
-              <a key={r.github_id} href={r.html_url} target="_blank" rel="noopener noreferrer"
-                className="group flex flex-col gap-1.5 rounded-xl border border-[#27272A] bg-[#09090B] p-4 transition-colors hover:border-[#3f3f46]">
+            {filteredRepos.map((r) => {
+              const alreadyAdded = projectGitHubUrls.has(normalizeGitHubUrl(r.html_url))
+
+              return (
+              <div key={r.github_id}
+                className="group flex flex-col gap-2 rounded-xl border border-[#27272A] bg-[#09090B] p-4 transition-colors hover:border-[#3f3f46]">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-1.5">
                     <Github className="size-3.5 shrink-0 text-[#52525b]" />
@@ -394,14 +490,38 @@ export function FeaturedTab() {
                   </div>
                 </div>
                 {r.description && <p className="text-[11px] text-[#52525b] line-clamp-2">{r.description}</p>}
-                {r.language && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="size-2.5 rounded-full" style={{ backgroundColor: LANG_COLOR[r.language] || '#52525b' }} />
-                    <span className="text-[10px] text-[#52525b]">{r.language}</span>
+                <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-1">
+                  <div className="min-w-0">
+                    {r.language && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="size-2.5 rounded-full" style={{ backgroundColor: LANG_COLOR[r.language] || '#52525b' }} />
+                        <span className="text-[10px] text-[#52525b]">{r.language}</span>
+                      </div>
+                    )}
                   </div>
-                )}
-              </a>
-            ))}
+                  <div className="flex items-center gap-1.5">
+                    <a
+                      href={r.html_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="grid size-8 place-items-center rounded-md border border-[#27272A] text-[#52525b] transition hover:border-[#409EFE]/40 hover:text-[#409EFE]"
+                      aria-label={`เปิด ${r.name} บน GitHub`}
+                    >
+                      <ExternalLink className="size-3.5" />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => openFromRepo(r)}
+                      disabled={alreadyAdded}
+                      className="flex h-8 items-center gap-1.5 rounded-md border border-[#27272A] px-2.5 text-[11px] font-bold text-[#A1A1AA] transition hover:border-[#409EFE]/40 hover:text-[#409EFE] disabled:cursor-not-allowed disabled:border-[#27272A] disabled:text-[#3f3f46]"
+                    >
+                      {alreadyAdded ? <Check className="size-3.5" /> : <Plus className="size-3.5" />}
+                      {alreadyAdded ? 'เพิ่มแล้ว' : 'เพิ่มเข้า portfolio'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )})}
           </div>
         )}
         </div>
@@ -597,6 +717,42 @@ export function FeaturedTab() {
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">ลิงก์ GitHub</Label>
+              <div className="mt-1 rounded-lg border border-[#dfe3e8] bg-[#fbfdff] p-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <select
+                    value={linkedRepo?.html_url ?? ''}
+                    onChange={(event) => {
+                      const repo = repos.find((item) => item.html_url === event.target.value)
+                      if (repo) applyRepoToForm(repo)
+                      else setForm((p) => ({ ...p, github_url: '' }))
+                    }}
+                    className="h-9 min-w-0 flex-1 rounded-md border border-[#dfe3e8] bg-white px-2 text-xs font-semibold text-[#090c13] outline-none transition focus:border-[#409EFE]/50"
+                  >
+                    <option value="">ไม่เชื่อม GitHub repo</option>
+                    {repos.map((repo) => (
+                      <option key={repo.github_id} value={repo.html_url}>
+                        {repo.full_name}{repo.is_fork ? ' (fork)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {linkedRepo ? (
+                    <button
+                      type="button"
+                      onClick={() => applyRepoToForm(linkedRepo, true)}
+                      className="h-9 rounded-md border border-[#dfe3e8] bg-white px-3 text-xs font-bold text-[#647084] transition hover:border-[#409EFE]/40 hover:text-[#409EFE]"
+                    >
+                      ใช้ข้อมูล repo
+                    </button>
+                  ) : null}
+                </div>
+                <p className="mt-1.5 text-[11px] text-[#647084]">
+                  {linkedRepo
+                    ? `เชื่อมกับ ${linkedRepo.full_name} แล้ว`
+                    : form.github_url
+                      ? 'ยังไม่พบ repo ที่ตรงกับ URL นี้ใน cache'
+                      : 'เลือกจาก cache เพื่อกันพิมพ์ URL ผิด'}
+                </p>
+              </div>
               <Input value={form.github_url} onChange={(e) => setForm((p) => ({ ...p, github_url: e.target.value }))}
                 className="mt-1 h-9 !border-[#dfe3e8] !bg-white text-sm !text-[#090c13] focus-visible:ring-[#409EFE]/30" placeholder="https://github.com/..." />
             </div>

@@ -12,6 +12,7 @@ interface TheSvgIconProps {
   slug?: string | null
   variant?: IconVariant
   className?: string
+  style?: React.CSSProperties
 }
 
 // Some stored slugs don't match thesvg.org's naming, which makes the icon 404
@@ -65,7 +66,7 @@ export function iconUrl(slug: string, variant: IconVariant = 'default'): string 
   return `https://thesvg.org/icons/${resolveSlug(slug)}/${variant}.svg`
 }
 
-export function TheSvgIcon({ label, slug, variant, className }: TheSvgIconProps) {
+export function TheSvgIcon({ label, slug, variant, className, style }: TheSvgIconProps) {
   const parsed = parseIconValue(slug)
   const resolvedSlug = parsed.slug
   const wantVariant = variant ?? parsed.variant
@@ -85,6 +86,7 @@ export function TheSvgIcon({ label, slug, variant, className }: TheSvgIconProps)
         'grid size-10 shrink-0 place-items-center rounded-xl border border-border bg-background/60',
         className,
       )}
+      style={style}
       aria-hidden="true"
     >
       {showFallback ? (
