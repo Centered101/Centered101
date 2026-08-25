@@ -1,0 +1,1847 @@
+/* =========================================================================
+   flowstate (/work) — scoped stylesheet
+   =========================================================================
+   Imported ONLY by app/work/layout.tsx, so it never loads on the rest of
+   centered101.com.
+
+   Three deliberate differences from the standalone project:
+     1. No @import 'tailwindcss' — the host app already loads it once.
+     2. No @theme block — @theme is global in Tailwind v4 and cannot be
+        scoped, and the host already defines --color-* tokens.
+     3. Tokens are declared on .app instead of :root. All 44 of flowstate’s
+        CSS variables collide with the host’s (--primary, --background,
+        --radius, ...), so scoping them is what keeps the two themes apart.
+   ========================================================================= */
+
+/* =========================================================================
+   DESIGN TOKENS
+   Brand color: #409EFE (blue). Decided 2026-08-25 — see docs/PROJECT_AUDIT.md
+   §15. The pink palette in the original brief is superseded; do not reinstate
+   it without changing that record first.
+   ========================================================================= */
+
+.app {
+  color-scheme: light;
+  --background: #f7fbff;
+  --foreground: #1f2937;
+  --card: #ffffff;
+  --card-foreground: #1f2937;
+  --border: #dbeeff;
+  --muted: #eef7ff;
+  --muted-foreground: #718096;
+  --primary: #409efe;
+  --primary-foreground: #ffffff;
+  --radius: 18px;
+
+  /* Added 2026-08-25. These were referenced by components/ui/button.tsx but
+     never defined, so every shadcn primitive rendered unstyled. Values are
+     derived from the existing blue palette above — nothing new is invented. */
+  --secondary: #eef7ff;
+  --secondary-foreground: #1f2937;
+  --accent: #e8f3ff;
+  --accent-foreground: #1f2937;
+  --destructive: #db6767;
+  --destructive-foreground: #ffffff;
+  --popover: #ffffff;
+  --popover-foreground: #1f2937;
+  --input: #dbeeff;
+  --ring: #409efe;
+}
+
+/* Tailwind v4 reads utilities from /* Brand color: #409EFE */
+.bar.paid,
+.key-paid,
+.progress span {
+  background: #409efe !important;
+}
+.status,
+.text-btn,
+.panel-symbol,
+.orange-text {
+  color: #409efe !important;
+}
+.status-dot {
+  background: #409efe !important;
+}
+.icon-blue,
+.icon-violet,
+.icon-orange,
+.icon-green,
+.icon-red,
+.activity-icon.blue,
+.activity-icon.violet,
+.activity-icon.orange,
+.activity-icon.green {
+  color: #409efe !important;
+  background: #e8f3ff !important;
+}
+.range-tabs button.selected,
+.role-switch button.selected {
+  color: #409efe !important;
+}
+.nav-count {
+  background: #e8f3ff !important;
+  color: #409efe !important;
+}
+* {
+  box-sizing: border-box;
+  border-color: var(--border);
+}
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-thai), Arial, Helvetica, sans-serif;
+}
+button {
+  font: inherit;
+  cursor: pointer;
+}
+.app {
+  min-height: 100vh;
+  display: flex;
+  background: var(--background);
+  color: var(--foreground);
+}
+/* NOTE: dark mode is scoped to `.app.dark` on a <div>, not `html.dark`, so
+   Tailwind's `dark:` variants do not apply and the theme flashes on load.
+   Migrating it to <html> is deferred to Phase 1, where the app shell is
+   extracted into components anyway. See docs/PROJECT_AUDIT.md D10. */
+.app.dark {
+  background: #0d1420;
+  color: #e8eef7;
+  --card: #121c2b;
+  --card-foreground: #e8eef7;
+  --border: #243247;
+  --muted: #182536;
+  --muted-foreground: #8b9bb0;
+
+  /* Dark counterparts of the tokens added above. */
+  --secondary: #182536;
+  --secondary-foreground: #e8eef7;
+  --accent: #172f4a;
+  --accent-foreground: #e8eef7;
+  --popover: #121c2b;
+  --popover-foreground: #e8eef7;
+  --input: #243247;
+}
+.sidebar {
+  width: 248px;
+  flex: none;
+  min-height: 100vh;
+  align-self: stretch;
+  margin: 0;
+  border-radius: 0;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  padding: 23px 14px 15px;
+  display: flex;
+  flex-direction: column;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 11px 25px;
+  font-size: 18px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+}
+.brand-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--primary);
+  color: #fff;
+  display: grid;
+  place-items: center;
+}
+.mobile-close {
+  display: none;
+  margin-left: auto;
+  background: none;
+  border: 0;
+  color: var(--muted-foreground);
+}
+.workspace {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px;
+  background: var(--muted);
+  border-radius: 10px;
+  margin-bottom: 22px;
+}
+.workspace strong,
+.workspace small,
+.profile strong,
+.profile small {
+  display: block;
+}
+.workspace strong,
+.profile strong {
+  font-size: 12px;
+}
+.workspace small,
+.profile small {
+  font-size: 10px;
+  color: var(--muted-foreground);
+  margin-top: 3px;
+}
+.workspace > svg {
+  margin-left: auto;
+  color: var(--muted-foreground);
+}
+.avatar,
+.top-avatar {
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  border-radius: 8px;
+  background: #e8f3ff;
+  color: #409efe;
+  font-size: 11px;
+  font-weight: bold;
+}
+.avatar.small {
+  width: 29px;
+  height: 29px;
+}
+.sidebar nav {
+  display: grid;
+  gap: 3px;
+}
+.sidebar nav button,
+.sidebar-bottom button {
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  border-radius: 8px;
+  text-align: left;
+  padding: 10px 11px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 12px;
+}
+.sidebar nav button:hover,
+.sidebar-bottom button:hover,
+.sidebar nav button.active {
+  color: var(--primary);
+  background: #eef7ff;
+}
+.dark .sidebar nav button.active {
+  background: #172f4a;
+}
+.nav-count {
+  margin-left: auto;
+  background: #ffe5c9;
+  color: #c56a12;
+  border-radius: 10px;
+  padding: 2px 6px;
+  font-size: 10px;
+}
+.sidebar-bottom {
+  margin-top: auto;
+  display: grid;
+  gap: 3px;
+}
+.profile {
+  margin-top: 13px;
+  border-top: 1px solid var(--border);
+  padding: 16px 9px 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.profile svg {
+  margin-left: auto;
+  color: var(--muted-foreground);
+}
+.main {
+  min-width: 0;
+  flex: 1;
+}
+.topbar {
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 38px;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+.breadcrumbs {
+  display: flex;
+  gap: 10px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.breadcrumbs strong {
+  color: var(--foreground);
+}
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted-foreground);
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+.menu-btn {
+  display: none;
+}
+.notification i {
+  position: absolute;
+  right: 7px;
+  top: 7px;
+  width: 5px;
+  height: 5px;
+  background: #ef8e45;
+  border-radius: 50%;
+}
+.role-switch {
+  display: flex;
+  background: var(--muted);
+  padding: 3px;
+  border-radius: 8px;
+}
+.role-switch button {
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+.role-switch button.selected {
+  background: var(--card);
+  color: var(--primary);
+  box-shadow: 0 1px 3px #00000012;
+}
+.content {
+  padding: 34px 38px 48px;
+  max-width: 1500px;
+  margin: auto;
+}
+.page-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 27px;
+}
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--primary);
+  font-weight: 700;
+  margin: 0 0 9px;
+}
+.page-heading h1 {
+  font-size: 25px;
+  letter-spacing: -0.04em;
+  margin: 0 0 7px;
+}
+.muted {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+.primary,
+.outline,
+.text-btn {
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  padding: 10px 14px;
+}
+.primary {
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: #fff;
+  font-weight: 650;
+}
+.outline {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
+}
+.text-btn {
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  padding: 0;
+}
+.full {
+  width: 100%;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 13px;
+  margin-bottom: 18px;
+}
+.stat-card,
+.panel {
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 12px;
+}
+.stat-card {
+  min-height: 120px;
+  padding: 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  position: relative;
+}
+.stat-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+}
+.icon-blue {
+  color: #218ce8;
+  background: #e5f2ff;
+}
+.icon-orange {
+  color: #df8627;
+  background: #fff1dc;
+}
+.icon-violet {
+  color: #8065d8;
+  background: #eeeaff;
+}
+.icon-green {
+  color: #249b6a;
+  background: #def8ed;
+}
+.icon-red {
+  color: #db6767;
+  background: #ffe9e9;
+}
+.stat-copy p {
+  color: var(--muted-foreground);
+  font-size: 11px;
+  margin: 1px 0 7px;
+}
+.stat-copy strong {
+  display: block;
+  font-size: 20px;
+  letter-spacing: -0.04em;
+}
+.stat-change {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #27a26f;
+  font-size: 10px;
+  margin-top: 5px;
+}
+.more {
+  margin-left: auto;
+  color: var(--muted-foreground);
+}
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1.65fr 1fr;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.panel {
+  padding: 20px;
+}
+.panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+}
+.panel h2 {
+  font-size: 14px;
+  margin: 0 0 5px;
+  letter-spacing: -0.02em;
+}
+.range-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--muted);
+  padding: 3px;
+  border-radius: 7px;
+}
+.range-tabs button {
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  padding: 6px 8px;
+  border-radius: 5px;
+}
+.range-tabs button.selected {
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: 0 1px 2px #00000010;
+}
+.chart-key {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 10px;
+  color: var(--muted-foreground);
+  margin: 27px 0 7px;
+}
+.chart-key span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.chart-key i {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  display: block;
+}
+.key-paid {
+  background: #ed82ad;
+}
+.key-pending {
+  background: #b7d8f8;
+}
+.chart-key strong {
+  margin-left: auto;
+  color: var(--foreground);
+  font-size: 14px;
+}
+.chart-key small {
+  font-weight: normal;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  margin-left: 4px;
+}
+.chart-wrap {
+  padding-top: 6px;
+}
+.chart-grid {
+  height: 185px;
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 45px,
+    var(--border) 46px
+  );
+}
+.y-labels {
+  width: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: var(--muted-foreground);
+  font-size: 9px;
+  padding: 0 0 5px;
+}
+.bars {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 7px;
+  padding: 0 8px;
+}
+.bar-col {
+  height: 100%;
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+}
+.bar {
+  width: calc(50% - 1px);
+  border-radius: 4px 4px 0 0;
+  min-height: 4px;
+}
+.bar.paid {
+  background: #ed82ad;
+}
+.bar.pending {
+  background: #b7d8f8;
+}
+.x-labels {
+  display: flex;
+  justify-content: space-around;
+  color: var(--muted-foreground);
+  font-size: 9px;
+  padding: 9px 0 0 38px;
+}
+.activity-list {
+  display: grid;
+  gap: 18px;
+  margin-top: 23px;
+}
+.activity-list > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.activity-icon {
+  width: 29px;
+  height: 29px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.activity-icon.blue {
+  background: #e5f2ff;
+  color: #258de6;
+}
+.activity-icon.green {
+  background: #def8ed;
+  color: #249b6a;
+}
+.activity-icon.violet {
+  background: #eeeaff;
+  color: #8065d8;
+}
+.activity-icon.orange {
+  background: #fff1dc;
+  color: #df8627;
+}
+.activity-list p {
+  margin: 0;
+  flex: 1;
+}
+.activity-list p strong,
+.activity-list p small {
+  display: block;
+}
+.activity-list p strong {
+  font-size: 11px;
+}
+.activity-list p small {
+  color: var(--muted-foreground);
+  font-size: 10px;
+  margin-top: 4px;
+}
+.activity-list time {
+  color: var(--muted-foreground);
+  font-size: 10px;
+}
+.projects-panel {
+  padding-bottom: 8px;
+}
+.table-wrap {
+  overflow-x: auto;
+  margin-top: 20px;
+}
+table {
+  width: 100%;
+  min-width: 820px;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+th {
+  text-align: left;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  font-weight: 500;
+  padding: 0 10px 11px;
+}
+td {
+  border-top: 1px solid var(--border);
+  padding: 13px 10px;
+  white-space: nowrap;
+}
+.project-name {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.project-name strong,
+.project-name small {
+  display: block;
+}
+.project-name strong {
+  font-size: 11px;
+}
+.project-name small {
+  color: var(--muted-foreground);
+  font-size: 9px;
+  margin-top: 3px;
+}
+.project-icon {
+  width: 29px;
+  height: 29px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+}
+.project-icon.blue {
+  background: #e5f2ff;
+  color: #258de6;
+}
+.project-icon.violet {
+  background: #eeeaff;
+  color: #8065d8;
+}
+.project-icon.green {
+  background: #def8ed;
+  color: #249b6a;
+}
+.project-icon.orange {
+  background: #fff1dc;
+  color: #df8627;
+}
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border-radius: 20px;
+  background: #e5f2ff;
+  color: #218ce8;
+  font-size: 10px;
+}
+.status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.status-green {
+  background: #def8ed;
+  color: #249b6a;
+}
+.status-orange {
+  background: #fff1dc;
+  color: #df8627;
+}
+.status-red {
+  background: #ffe9e9;
+  color: #db6767;
+}
+.progress-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.progress {
+  width: 68px;
+  height: 5px;
+  border-radius: 5px;
+  background: var(--muted);
+  overflow: hidden;
+}
+.progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+}
+.progress-cell small {
+  color: var(--muted-foreground);
+  font-size: 10px;
+}
+.payment-paid,
+.green-text {
+  color: #269b6c;
+}
+.orange-text {
+  color: #df8627;
+}
+.client-main {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.hero-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+}
+.project-icon.large {
+  width: 45px;
+  height: 45px;
+}
+.hero-top h2 {
+  font-size: 19px;
+  margin: 0 0 5px;
+}
+.hero-top .status {
+  margin-left: auto;
+}
+.big-progress {
+  margin: 32px 0 26px;
+}
+.big-progress > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.big-progress strong {
+  color: var(--foreground);
+  font-size: 17px;
+}
+.big-progress .progress {
+  width: 100%;
+  height: 8px;
+}
+.big-progress small {
+  color: var(--muted-foreground);
+  display: block;
+  font-size: 10px;
+  margin-top: 9px;
+}
+.hero-details {
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+.hero-details div span,
+.hero-details div strong {
+  display: block;
+}
+.hero-details div span {
+  color: var(--muted-foreground);
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.hero-details div strong {
+  font-size: 14px;
+}
+.hero-details .primary {
+  margin-left: auto;
+}
+.timeline {
+  margin-top: 24px;
+  display: grid;
+  gap: 0;
+}
+.timeline-item {
+  display: flex;
+  gap: 12px;
+  position: relative;
+  min-height: 42px;
+}
+.timeline-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 24px;
+  width: 1px;
+  height: 30px;
+  background: var(--border);
+}
+.timeline-marker {
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  color: var(--muted-foreground);
+  background: var(--card);
+  z-index: 1;
+}
+.timeline-item.done .timeline-marker {
+  background: #def8ed;
+  border-color: #bcebd6;
+  color: #249b6a;
+}
+.timeline-item.active .timeline-marker {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.timeline-item.locked .timeline-marker {
+  background: var(--muted);
+}
+.timeline-item strong,
+.timeline-item span {
+  display: block;
+}
+.timeline-item strong {
+  font-size: 11px;
+}
+.timeline-item span {
+  color: var(--muted-foreground);
+  font-size: 10px;
+  margin-top: 4px;
+}
+.timeline-item.done span {
+  color: #269b6c;
+}
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr;
+  gap: 18px;
+}
+.panel-symbol {
+  color: #269b6c;
+}
+.ownership-rows {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 28px;
+  margin-top: 23px;
+}
+.ownership-rows span,
+.ownership-rows strong {
+  display: block;
+}
+.ownership-rows span {
+  color: var(--muted-foreground);
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.ownership-rows strong {
+  font-size: 11px;
+}
+.repo {
+  display: flex !important;
+  align-items: center;
+  gap: 5px;
+  color: var(--primary) !important;
+}
+.maintenance-price {
+  margin: 25px 0 16px;
+}
+.maintenance-price strong {
+  font-size: 25px;
+  letter-spacing: -0.04em;
+}
+.maintenance-price span {
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+.next-billing {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  margin-bottom: 18px;
+}
+.next-billing strong {
+  color: var(--foreground);
+  margin-left: 5px;
+}
+.service-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 20px;
+}
+.service-tags span {
+  font-size: 10px;
+  padding: 6px 8px;
+  background: var(--muted);
+  border-radius: 6px;
+  color: var(--muted-foreground);
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #09132199;
+  display: grid;
+  place-items: center;
+  z-index: 10;
+  padding: 20px;
+}
+.payment-modal {
+  width: min(410px, 100%);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  padding: 27px;
+  position: relative;
+  box-shadow: 0 20px 60px #0004;
+}
+.close {
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  border: 0;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+}
+.modal-kicker {
+  color: #269b6c;
+  font-size: 10px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 13px;
+}
+.payment-modal h2 {
+  font-size: 20px;
+  margin: 0 0 6px;
+}
+.checkout-summary {
+  margin: 24px 0 22px;
+  padding: 15px;
+  border-radius: 9px;
+  background: var(--muted);
+  position: relative;
+}
+.checkout-summary span,
+.checkout-summary strong,
+.checkout-summary small {
+  display: block;
+}
+.checkout-summary span {
+  font-size: 11px;
+  font-weight: bold;
+}
+.checkout-summary strong {
+  font-size: 21px;
+  margin: 7px 0;
+}
+.checkout-summary small {
+  font-size: 10px;
+  color: var(--muted-foreground);
+}
+.field-label {
+  display: block;
+  font-size: 10px;
+  color: var(--muted-foreground);
+  margin-bottom: 8px;
+}
+.method {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+.method.selected {
+  border-color: var(--primary);
+  background: #eff8ff;
+}
+.dark .method.selected {
+  background: #152b43;
+}
+.method > span:not(.promptpay) {
+  flex: 1;
+}
+.method strong,
+.method small {
+  display: block;
+}
+.method small {
+  color: var(--muted-foreground);
+  font-size: 9px;
+  margin-top: 3px;
+}
+.method > svg:last-child {
+  color: var(--primary);
+}
+.promptpay {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: #31a884;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: bold;
+}
+.secure-note {
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: 9px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  margin: 14px 0 0;
+}
+.toast {
+  position: fixed;
+  right: 25px;
+  bottom: 25px;
+  z-index: 20;
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 30px #0002;
+  border-radius: 10px;
+  padding: 13px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 270px;
+}
+.toast > span {
+  width: 27px;
+  height: 27px;
+  background: #def8ed;
+  color: #249b6a;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+.toast strong,
+.toast small {
+  display: block;
+}
+.toast strong {
+  font-size: 11px;
+}
+.toast small {
+  color: var(--muted-foreground);
+  font-size: 10px;
+  margin-top: 4px;
+}
+.toast button {
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  margin-left: auto;
+}
+@media (max-width: 1050px) {
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .stats-grid .stat-card:last-child {
+    display: none;
+  }
+  .topbar,
+  .content {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .dashboard-grid,
+  .client-main,
+  .bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 700px) {
+  .sidebar {
+    position: fixed;
+    z-index: 30;
+    left: -270px;
+    transition: left 0.2s;
+    box-shadow: 10px 0 30px #0002;
+  }
+  .sidebar.mobile-open {
+    left: 0;
+  }
+  .mobile-close {
+    display: block;
+  }
+  .topbar {
+    height: 60px;
+    padding: 0 12px;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .menu-btn {
+    display: grid;
+  }
+  .breadcrumbs {
+    min-width: 0;
+    margin-right: auto;
+    margin-left: 10px;
+  }
+  .breadcrumbs span {
+    display: none;
+  }
+  .breadcrumbs strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .role-switch {
+    display: none;
+  }
+  .top-actions {
+    gap: 6px;
+  }
+  .top-actions .icon-btn:first-of-type {
+    display: none;
+  }
+  .top-avatar {
+    width: 30px;
+    height: 30px;
+  }
+  .content {
+    padding: 20px 12px 32px;
+    overflow: hidden;
+  }
+  .page-heading {
+    align-items: stretch;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .page-heading > div {
+    min-width: 0;
+  }
+  .page-heading h1 {
+    font-size: 20px;
+    line-height: 1.35;
+  }
+  .page-heading .muted {
+    font-size: 11px;
+  }
+  .page-heading > .primary {
+    flex: none;
+    align-self: flex-start;
+    padding: 9px 10px;
+    font-size: 0;
+  }
+  .page-heading > .primary svg {
+    margin: 0;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .stats-grid .stat-card:last-child {
+    display: flex;
+  }
+  .stat-card {
+    min-height: 100px;
+    padding: 12px;
+    min-width: 0;
+  }
+  .stat-icon {
+    width: 28px;
+    height: 28px;
+  }
+  .stat-copy {
+    min-width: 0;
+  }
+  .stat-copy p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .stat-copy strong {
+    font-size: 17px;
+  }
+  .stat-change {
+    font-size: 10px;
+  }
+  .dashboard-grid,
+  .client-main,
+  .bottom-grid {
+    gap: 12px;
+  }
+  .panel {
+    padding: 14px;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .panel-head {
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .panel-head h2 {
+    font-size: 14px;
+  }
+  .panel-head .muted {
+    font-size: 10px;
+  }
+  .range-tabs {
+    flex: none;
+  }
+  .range-tabs button {
+    padding: 5px 6px;
+    font-size: 9px;
+  }
+  .range-tabs button:nth-child(-n + 2) {
+    display: none;
+  }
+  .chart-key {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .chart-key strong {
+    font-size: 12px;
+    margin-left: auto;
+  }
+  .chart-wrap {
+    min-width: 480px;
+  }
+  .revenue-panel {
+    overflow-x: auto;
+  }
+  .activity-list p {
+    min-width: 0;
+  }
+  .activity-list small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 180px;
+  }
+  .hero-top {
+    flex-wrap: wrap;
+  }
+  .hero-top > div:nth-child(2) {
+    flex: 1;
+    min-width: 0;
+  }
+  .hero-top h2 {
+    font-size: 16px;
+  }
+  .hero-top .status {
+    margin-left: auto;
+    font-size: 0;
+    padding: 7px;
+  }
+  .hero-top .status .status-dot {
+    margin: 0;
+  }
+  .hero-details {
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+  .hero-details > div {
+    flex: 1;
+    min-width: 90px;
+  }
+  .hero-details .primary {
+    width: 100%;
+    margin-left: 0;
+  }
+  .ownership-rows {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .timeline-item span {
+    line-height: 1.4;
+  }
+  .payment-modal {
+    padding: 22px 18px;
+  }
+  .toast {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    min-width: 0;
+  }
+}
+@media (max-width: 380px) {
+  .content {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .stat-card {
+    padding: 10px;
+  }
+  .stat-copy strong {
+    font-size: 15px;
+  }
+  .page-heading h1 {
+    font-size: 18px;
+  }
+  .top-actions .notification {
+    display: none;
+  }
+}
+
+/* =========================================================================
+   PHASE 1 — ROUTE ARCHITECTURE
+   Additive only. Nothing above this line was modified.
+
+   The sidebar nav, role switch and project tabs became real <a> elements when
+   the prototype's local-state navigation was replaced by routes. The rules
+   below mirror the existing <button> rules so anchors render identically.
+   ========================================================================= */
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.sidebar nav a,
+.sidebar-bottom a {
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  border-radius: 8px;
+  text-align: left;
+  padding: 10px 11px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 12px;
+}
+.sidebar nav a:hover,
+.sidebar-bottom a:hover,
+.sidebar nav a.active {
+  color: var(--primary);
+  background: #eef7ff;
+}
+.dark .sidebar nav a.active {
+  background: #172f4a;
+}
+
+.role-switch a {
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+.role-switch a.selected {
+  background: var(--card);
+  color: var(--primary);
+  box-shadow: 0 1px 3px #00000012;
+}
+
+/* Per-project tab strip in the client portal. Reuses .range-tabs sizing. */
+.project-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  width: fit-content;
+  max-width: 100%;
+  margin-bottom: 22px;
+}
+.project-tabs a {
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  padding: 6px 8px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.project-tabs a.selected {
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: 0 1px 2px #00000010;
+}
+
+/* Buttons styled as links, so <Link className="primary|outline"> matches. */
+a.primary,
+a.outline,
+a.text-btn {
+  text-decoration: none;
+}
+
+/* Payment method rows became <button> for real selection; strip UA styles. */
+.method {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  background: var(--card);
+  color: var(--foreground);
+}
+.payment-error {
+  color: #db6767;
+  font-size: 11px;
+  margin: 10px 0 0;
+}
+
+/* ---- Shared empty / error / locked / loading states ---- */
+.state-panel {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 48px 24px;
+}
+.state-panel h2 {
+  font-size: 15px;
+  margin: 4px 0 0;
+}
+.state-panel .muted {
+  max-width: 420px;
+}
+.standalone-state {
+  padding: 34px 38px 48px;
+  max-width: 1500px;
+  margin: auto;
+}
+
+.skeleton-panel {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+}
+.skeleton-row,
+.skeleton-card {
+  border-radius: 9px;
+  background: linear-gradient(90deg, var(--muted) 25%, var(--border) 37%, var(--muted) 63%);
+  background-size: 400% 100%;
+  animation: flowstate-shimmer 1.4s ease-in-out infinite;
+}
+.skeleton-row {
+  height: 18px;
+}
+.skeleton-card {
+  min-height: 120px;
+}
+@keyframes flowstate-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-row,
+  .skeleton-card {
+    animation: none;
+  }
+}
+
+/* ---- Auth and share screens (outside the app shell) ---- */
+.auth-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--background);
+}
+.auth-card {
+  width: min(400px, 100%);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  padding: 32px 28px;
+}
+.auth-brand {
+  padding: 0 0 20px;
+}
+.auth-card h1 {
+  font-size: 21px;
+  letter-spacing: -0.03em;
+  margin: 0 0 6px;
+}
+.auth-form {
+  display: grid;
+  margin-top: 22px;
+}
+.auth-form .field-label {
+  margin-top: 14px;
+}
+.auth-form input {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
+  border-radius: 9px;
+  padding: 11px 12px;
+  font: inherit;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+.auth-form input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.auth-form .primary {
+  margin-top: 20px;
+}
+.auth-notice {
+  color: #df8627;
+  font-size: 11px;
+  margin: 14px 0 0;
+  line-height: 1.5;
+}
+
+/* =========================================================================
+   PHASE 3 — AUTHENTICATION
+   Additive only. Reuses the existing card, tab and button styles.
+   ========================================================================= */
+
+.auth-tabs {
+  margin: 22px 0 4px;
+  width: 100%;
+}
+.auth-tabs button {
+  flex: 1;
+  font-size: 11px;
+  padding: 7px 6px;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 14px;
+  color: var(--muted-foreground);
+  font-size: 10px;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.auth-error,
+.auth-success,
+.field-error {
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 12px 0 0;
+}
+.auth-error {
+  color: #db6767;
+}
+.auth-success {
+  color: #269b6c;
+}
+.field-error {
+  color: #db6767;
+  margin: 4px 0 0;
+  font-size: 10px;
+}
+.auth-form input[aria-invalid='true'] {
+  border-color: #db6767;
+}
+
+/* Sign-out control in the sidebar profile row. */
+.profile form {
+  margin-left: auto;
+  display: flex;
+}
+.profile-signout {
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  border-radius: 6px;
+}
+.profile-signout:hover {
+  color: var(--primary);
+  background: var(--muted);
+}
+
+/* Unmigrated-schema warning banner. */
+.schema-notice {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+  border-color: #f0d0a8;
+}
+.schema-notice h2 {
+  font-size: 14px;
+  margin: 0 0 5px;
+}
+.schema-notice-code {
+  margin: 12px 0 0;
+  padding: 11px 12px;
+  background: var(--muted);
+  border-radius: 8px;
+  font-size: 10px;
+  line-height: 1.7;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--foreground);
+}
+
+/* =========================================================================
+   SIDEBAR — FLOATING CARD
+   Requested change: the sidebar becomes a rounded card with space around it,
+   rather than a full-bleed column flush against the viewport edge.
+
+   Appended so it overrides the earlier .sidebar rules by source order without
+   editing them. Palette is unchanged — still #409EFE.
+   ========================================================================= */
+
+.sidebar {
+  /* The gap around the card is what makes it read as floating. */
+  margin: 14px 0 14px 14px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 20px 12px 14px;
+
+  /* Stay put while the page scrolls, instead of scrolling away. */
+  position: sticky;
+  top: 14px;
+  align-self: flex-start;
+  height: calc(100vh - 28px);
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.brand {
+  padding: 0 10px 18px;
+}
+
+.workspace {
+  border-radius: 14px;
+  margin-bottom: 18px;
+}
+
+.sidebar nav {
+  gap: 4px;
+}
+
+.sidebar nav a,
+.sidebar nav button,
+.sidebar-bottom a,
+.sidebar-bottom button {
+  border-radius: 12px;
+  padding: 11px 12px;
+}
+
+/* Active item is a solid filled pill rather than a tint, so the current
+   section is unmistakable at a glance. */
+.sidebar nav a.active,
+.sidebar nav a.active:hover {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+.dark .sidebar nav a.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.sidebar nav a:hover:not(.active) {
+  background: var(--muted);
+  color: var(--primary);
+}
+
+/* Circular count badge. */
+.nav-count {
+  min-width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 700;
+}
+/* !important is needed here only to beat the equally-!important brand
+   override block near the top of this file (see audit D20). Once that block
+   is retired this can drop back to a normal declaration. */
+.sidebar nav a.active .nav-count {
+  background: #fff !important;
+  color: var(--primary) !important;
+}
+
+/* Profile becomes a tinted card instead of a bordered row. */
+.profile {
+  margin-top: 12px;
+  border-top: 0;
+  background: var(--muted);
+  border-radius: 14px;
+  padding: 11px 12px;
+  gap: 10px;
+}
+
+/* Full-width sign-out, visually separated from navigation: it is an exit,
+   not another destination. */
+.sidebar-logout {
+  width: 100%;
+  margin-top: 10px;
+  border: 0;
+  border-radius: 14px;
+  padding: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-size: 12px;
+  font-weight: 650;
+  background: #1f2937;
+  color: #fff;
+  transition: background 0.15s;
+}
+.sidebar-logout:hover {
+  background: #111a26;
+}
+.dark .sidebar-logout {
+  background: #e8eef7;
+  color: #0d1420;
+}
+.dark .sidebar-logout:hover {
+  background: #ffffff;
+}
+
+/* The card no longer touches the top-left corner, so the topbar should not
+   sit hard against it either. */
+.main {
+  padding-right: 0;
+}
+
+@media (max-width: 700px) {
+  /* On mobile the sidebar is a slide-in drawer, so the floating margins and
+     sticky positioning are dropped — only the rounded inner edge is kept. */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    margin: 0;
+    height: 100vh;
+    border-radius: 0 22px 22px 0;
+    border-left: 0;
+  }
+}
+
+/* =========================================================================
+   HOST INTEGRATION
+   =========================================================================
+   Rules needed only because flowstate now lives inside centered101.com
+   instead of owning the document.
+   ========================================================================= */
+
+/* The root <body> belongs to the host app and already carries its own
+   background, font and colours. flowstate's own body-level rules cannot apply
+   here, so the wrapper re-establishes them for the /work subtree only. */
+.work-root {
+  font-family: var(--font-thai), Arial, Helvetica, sans-serif;
+  /* Cancel the host body's padding/limits if any are inherited. */
+  color: var(--foreground);
+}
+
+/* .app defines the design tokens, but the host <body> paints its own
+   background behind it. Give the workspace an explicit ground so the page
+   does not show the host's colour around the edges. */
+.work-root .app {
+  background: #f7fbff;
+}
+.work-root .app.dark {
+  background: #0d1420;
+}

@@ -7,7 +7,9 @@
     "dev:safe": "next dev --webpack -p 3001",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "work:db:validate": "node scripts/validate-work-schema.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.82",
@@ -75,6 +77,7 @@
     "react-hook-form": "^7.54.1",
     "react-resizable-panels": "^2.1.7",
     "recharts": "2.15.0",
+    "server-only": "^0.0.1",
     "sonner": "^1.7.4",
     "stripe": "^22.2.0",
     "swr": "^2.4.1",
@@ -84,6 +87,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.7",
     "@tailwindcss/postcss": "^4.2.0",
     "@types/node": "^22",
     "@types/react": "19.2.14",
