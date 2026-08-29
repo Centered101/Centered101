@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 import { createClient } from '@/lib/work/supabase/server'
 import { safeRedirectPath } from '@/lib/work/validation/auth'
-import { resolveHomePath } from '@/lib/work/auth/session'
+import { resolveLandingPath } from '@/lib/work/auth/permissions'
 
 /**
  * OAuth and magic-link landing point.
@@ -44,6 +44,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  const destination = next || (await resolveHomePath())
+  const destination = next || (await resolveLandingPath())
   return NextResponse.redirect(new URL(destination, origin))
 }

@@ -68,6 +68,13 @@ export function ErrorState({
   )
 }
 
+/*
+ * The "go back" links below point at /work, not /. These states render inside
+ * the workspace, and on the apex domain "/" is the marketing site — so the
+ * escape hatch used to throw people out of the app they were trying to use.
+ * /work resolves to the right place on both the apex and the work subdomain,
+ * and routes by role from there.
+ */
 export function UnauthorizedState({
   description = 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้',
 }: {
@@ -80,8 +87,8 @@ export function UnauthorizedState({
       title="ไม่มีสิทธิ์เข้าถึง"
       description={description}
       action={
-        <Link className="outline" href="/">
-          กลับสู่หน้าหลัก
+        <Link className="outline" href="/work">
+          กลับสู่พื้นที่ทำงาน
         </Link>
       }
     />
@@ -100,8 +107,8 @@ export function NotFoundState({
       title="ไม่พบหน้านี้"
       description={description}
       action={
-        <Link className="outline" href="/">
-          กลับสู่หน้าหลัก
+        <Link className="outline" href="/work">
+          กลับสู่พื้นที่ทำงาน
         </Link>
       }
     />

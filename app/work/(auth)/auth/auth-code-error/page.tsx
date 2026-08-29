@@ -1,7 +1,8 @@
+import Image from 'next/image'
 import Link from 'next/link'
-import { AlertCircle, Zap } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 
-export const metadata = { title: 'เข้าสู่ระบบไม่สำเร็จ — flowstate' }
+export const metadata = { title: 'เข้าสู่ระบบไม่สำเร็จ' }
 
 /**
  * Shown when the code exchange in /auth/callback fails — an expired magic
@@ -21,10 +22,17 @@ export default async function AuthCodeErrorPage({
     <div className="auth-screen">
       <div className="auth-card">
         <div className="brand auth-brand">
-          <div className="brand-mark">
-            <Zap size={16} fill="currentColor" />
+          <div className="brand-mark brand-logo">
+            <Image
+              src="/work/favicon.ico"
+              alt=""
+              width={28}
+              height={28}
+              unoptimized
+              style={{ width: 28, height: 28 }}
+            />
           </div>
-          <span>flowstate</span>
+          <span>Centered101&apos;s Work</span>
         </div>
 
         <div className="stat-icon icon-red">

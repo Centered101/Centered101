@@ -1,10 +1,10 @@
 import 'server-only'
 
+import { cache } from 'react'
 import { redirect } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 
 import { createClient } from '@/lib/work/supabase/server'
-import type { OrgRole } from '@/lib/work/types/enums'
 
 /**
  * Server-side session access.
@@ -13,15 +13,33 @@ import type { OrgRole } from '@/lib/work/types/enums'
  * the cookie and trusts it; `getUser()` revalidates the token against the auth
  * server, so a forged or revoked cookie does not pass. On the server that
  * distinction is the whole point.
+ *
+ * WHO the user is, and WHAT they may do, are answered next door in
+ * `./permissions.ts`. This file only establishes that there is a user at all.
+ * The membership lookup that used to live here (`getSessionContext`) was doing
+ * the same query as `getAccessContext()`, so every guarded page ran it twice;
+ * it now lives there once.
  */
 
-export async function getUser(): Promise<User | null> {
+/**
+ * The signed-in user, or null.
+ *
+ * MEMOISED PER REQUEST with React's `cache()`. Without it this is a network
+ * round trip to the auth server, and it is called several times on every page:
+ * once by the layout's guard, again by the page's own guard, again by whatever
+ * the page loads. Next dedupes `fetch()` automatically but not arbitrary async
+ * functions, so the deduping has to be asked for.
+ *
+ * The cache is scoped to a single request — it is not a shared cache and
+ * cannot leak one user's session into another's render.
+ */
+export const getUser = cache(async (): Promise<User | null> => {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   return user
-}
+})
 
 /**
  * Requires a signed-in user, redirecting to /login otherwise.
@@ -37,109 +55,34 @@ export async function requireUser(next?: string): Promise<User> {
   return user
 }
 
-export type OrgMembership = {
-  organizationId: string
-  organizationName: string
-  role: OrgRole
-}
-
-export type SessionContext = {
-  user: User
-  displayName: string
-  email: string
-  initial: string
-  memberships: OrgMembership[]
-  isAgencyStaff: boolean
-  /** True when the schema has not been migrated yet — see the note below. */
-  schemaMissing: boolean
+/**
+ * Whether this account can sign in with a password at all.
+ *
+ * Supabase records one identity per sign-in method. An account created through
+ * Google has only a `google` identity and no password to change — so the UI
+ * must offer to SET one rather than to change one, and the server must decide
+ * which of those it is. Reading it from the session is the only way to keep
+ * that decision out of the browser's hands.
+ */
+export function hasPasswordIdentity(user: User): boolean {
+  return (user.identities ?? []).some((identity) => identity.provider === 'email')
 }
 
 /**
- * Loads the user plus their agency memberships.
+ * Display name for a user, from their auth metadata.
  *
- * The membership query runs under the caller's session, so RLS decides what
- * comes back — this function reports access, it does not grant it.
- *
- * SCHEMA NOT YET MIGRATED: until `supabase db push` has run, `profiles` and
- * `organization_members` do not exist on the remote project. Rather than
- * crashing every page, that specific failure is detected and surfaced as
- * `schemaMissing`, so the UI can say plainly what is wrong. Any other error is
- * rethrown — swallowing real database errors would hide genuine problems
- * behind a misleading "not migrated" message.
+ * Falls back through OAuth's `full_name`, then `name`, then the local part of
+ * the email — a signed-in person always has SOMETHING to be called, and
+ * "ผู้ใช้" is the last resort rather than the common case.
  */
-export async function getSessionContext(next?: string): Promise<SessionContext> {
-  const user = await requireUser(next)
-  const supabase = await createClient()
-
-  let memberships: OrgMembership[] = []
-  let schemaMissing = false
-
-  const { data, error } = await supabase
-    .from('organization_members')
-    .select('organization_id, role, organizations(name)')
-    .eq('profile_id', user.id)
-
-  if (error) {
-    // 42P01 = undefined_table. PostgREST also reports an unknown relation as
-    // PGRST205 when it is missing from the schema cache.
-    if (error.code === '42P01' || error.code === 'PGRST205') {
-      schemaMissing = true
-      console.warn(
-        '[auth] organization_members is missing — run `npx supabase db push` to apply migrations.',
-      )
-    } else {
-      throw new Error(`Failed to load memberships: ${error.message}`)
-    }
-  } else if (data) {
-    memberships = data.map((row) => {
-      const org = row.organizations as unknown as { name: string } | null
-      return {
-        organizationId: row.organization_id as string,
-        organizationName: org?.name ?? 'พื้นที่ทำงาน',
-        role: row.role as OrgRole,
-      }
-    })
-  }
-
-  const email = user.email ?? ''
+export function displayNameFor(user: User): string {
   const metadata = user.user_metadata as { full_name?: string; name?: string } | undefined
-  const displayName = metadata?.full_name || metadata?.name || email.split('@')[0] || 'ผู้ใช้'
-
-  return {
-    user,
-    email,
-    displayName,
-    initial: (displayName.trim()[0] ?? '?').toUpperCase(),
-    memberships,
-    isAgencyStaff: memberships.length > 0,
-    schemaMissing,
-  }
+  return metadata?.full_name || metadata?.name || (user.email ?? '').split('@')[0] || 'ผู้ใช้'
 }
 
 /**
- * Where a user belongs after signing in.
- *
- * Agency staff go to the admin dashboard, everyone else to the client portal.
- * This is a routing convenience, not a permission decision — the portals
- * themselves are guarded server-side, and RLS guards the data underneath.
- * Real role enforcement arrives in Phase 4.
+ * WHERE A USER BELONGS AFTER SIGNING IN lives in `./permissions.ts` as
+ * `resolveLandingPath()`, with the other role decisions. It is deliberately
+ * not re-exported from here: permissions.ts imports this file, and a re-export
+ * would make the two modules circular for no gain.
  */
-export async function resolveHomePath(): Promise<string> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return '/work/login'
-
-  const { data, error } = await supabase
-    .from('organization_members')
-    .select('organization_id')
-    .eq('profile_id', user.id)
-    .limit(1)
-
-  // If the schema is not migrated we cannot tell staff from clients. Send them
-  // to the admin side, which is where a first-time operator expects to land.
-  if (error) return '/work/admin/dashboard'
-
-  return data && data.length > 0 ? '/work/admin/dashboard' : '/work/portal'
-}

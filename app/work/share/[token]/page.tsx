@@ -1,5 +1,5 @@
+import Image from 'next/image'
 import type { Metadata } from 'next'
-import { Zap } from 'lucide-react'
 
 import { isPlausibleShareToken } from '@/lib/work/tokens'
 
@@ -16,7 +16,7 @@ import { isPlausibleShareToken } from '@/lib/work/tokens'
  * with Phase 13. It fails closed in the meantime.
  */
 export const metadata: Metadata = {
-  title: 'ลิงก์แชร์ — flowstate',
+  title: 'ลิงก์แชร์',
   // A share link must never reach a search index.
   robots: { index: false, follow: false },
 }
@@ -29,10 +29,17 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
     <div className="auth-screen">
       <div className="auth-card">
         <div className="brand auth-brand">
-          <div className="brand-mark">
-            <Zap size={16} fill="currentColor" />
+          <div className="brand-mark brand-logo">
+            <Image
+              src="/work/favicon.ico"
+              alt=""
+              width={28}
+              height={28}
+              unoptimized
+              style={{ width: 28, height: 28 }}
+            />
           </div>
-          <span>flowstate</span>
+          <span>Centered101&apos;s Work</span>
         </div>
         <h1>{plausible ? 'ลิงก์นี้ยังไม่พร้อมใช้งาน' : 'ลิงก์ไม่ถูกต้อง'}</h1>
         <p className="muted">

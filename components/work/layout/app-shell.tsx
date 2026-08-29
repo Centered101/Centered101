@@ -4,22 +4,22 @@ import { useState, type ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
 
 import { adminNav, isNavItemActive, portalNav } from '@/lib/work/nav'
+import { Footer } from './footer'
 import { Sidebar } from './sidebar'
 import { Topbar } from './topbar'
-
-const THEME_COOKIE = 'work-theme'
 
 /**
  * The chrome shared by both portals: sidebar, topbar, content area.
  *
- * Client component because the mobile drawer and theme toggle are interactive.
- * Everything it renders inside `children` stays a Server Component — pages
- * pass already-rendered content in, so data fetching remains server-side.
+ * Client component because the mobile drawer is interactive. Everything it
+ * renders inside `children` stays a Server Component — pages pass
+ * already-rendered content in, so data fetching remains server-side.
  *
- * Theme: `initialDark` is read from a cookie on the server, so the first paint
- * already matches the user's choice. The prototype defaulted to light and
- * flipped after hydration, which flashed (audit D10). The `.app.dark` class
- * stays on this div, so no CSS changed.
+ * LIGHT ONLY. A dark theme used to live here as a `useState` + cookie pair
+ * feeding a `.app.dark` class. It has been removed: the palette existed in two
+ * places, so every colour added since had to be chosen twice, and several were
+ * only ever picked for light — which is why parts of the dark UI read as
+ * low-contrast. One palette is the fix, not a second set of overrides.
  */
 export function AppShell({
   activePortal,
@@ -29,7 +29,8 @@ export function AppShell({
   userName,
   userEmail,
   userInitial,
-  initialDark,
+  notifications,
+  latestActivityId,
   children,
 }: {
   activePortal: 'admin' | 'portal'
@@ -39,10 +40,11 @@ export function AppShell({
   userName: string
   userEmail: string
   userInitial: string
-  initialDark: boolean
+  /** The activity feed for the bell, already rendered by the layout above. */
+  notifications: ReactNode
+  latestActivityId: number | null
   children: ReactNode
 }) {
-  const [dark, setDark] = useState(initialDark)
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
 
@@ -56,15 +58,8 @@ export function AppShell({
   // Deriving it from the URL keeps that behaviour while surviving deep links.
   const breadcrumb = nav.find((item) => isNavItemActive(pathname, item.href))?.label ?? 'ภาพรวม'
 
-  const toggleTheme = () => {
-    const next = !dark
-    setDark(next)
-    // Persisted so the server can render the right theme on the next request.
-    document.cookie = `${THEME_COOKIE}=${next ? 'dark' : 'light'}; path=/; max-age=31536000; samesite=lax`
-  }
-
   return (
-    <div className={dark ? 'app dark' : 'app'}>
+    <div className="app">
       <Sidebar
         items={nav}
         workspaceName={workspaceName}
@@ -79,13 +74,16 @@ export function AppShell({
       <main className="main">
         <Topbar
           breadcrumb={breadcrumb}
-          activePortal={activePortal}
-          userInitial={userInitial}
-          dark={dark}
-          onToggleTheme={toggleTheme}
           onOpenMobileNav={() => setMobileOpen(true)}
+          notifications={notifications}
+          latestActivityId={latestActivityId}
         />
+        {/* The footer is a sibling of .content, not a child: .main is a
+            flex column filling the viewport, so `margin-top: auto` on the
+            footer pins it to the bottom on short pages without it floating
+            up under the last panel. */}
         <div className="content">{children}</div>
+        <Footer />
       </main>
     </div>
   )

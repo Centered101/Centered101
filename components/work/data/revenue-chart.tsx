@@ -1,41 +1,46 @@
-import { mockMonthLabels, mockRevenueBars } from '@/lib/work/mock/data'
+import { formatMoneyCompact } from '@/lib/work/format'
+import type { MonthlyRevenue } from '@/lib/work/queries/payments'
 
 /**
- * Revenue bars.
+ * Revenue bars, from `payments` grouped by month.
  *
- * Still the prototype's hand-rolled CSS bars — deliberately. Swapping in
- * Chart.js is a visual change and belongs with real data (Phase 26), not with
- * a routing refactor.
+ * Still the prototype's hand-rolled CSS bars — deliberately. The change here
+ * is the data, not the design.
+ *
+ * Bars are scaled to the largest month in the window rather than to a fixed
+ * ceiling, and the y-axis labels are derived from that same maximum. The
+ * prototype hardcoded ฿0–฿40k, which would have quietly clipped any month
+ * above it once real numbers arrived.
  */
-export function RevenueChart({
-  bars = mockRevenueBars,
-  labels = mockMonthLabels,
-}: {
-  bars?: number[]
-  labels?: string[]
-}) {
+export function RevenueChart({ data }: { data: MonthlyRevenue[] }) {
+  const peak = Math.max(...data.map((month) => month.paid + month.pending), 1)
+
+  // Four gridlines from the top down, so the axis always matches the bars.
+  const ticks = [1, 0.75, 0.5, 0.25, 0].map((fraction) => Math.round(peak * fraction))
+
   return (
     <div className="chart-wrap">
       <div className="chart-grid">
         <div className="y-labels">
-          <span>฿40k</span>
-          <span>฿30k</span>
-          <span>฿20k</span>
-          <span>฿10k</span>
-          <span>฿0</span>
+          {ticks.map((tick, i) => (
+            <span key={i}>{formatMoneyCompact(tick)}</span>
+          ))}
         </div>
         <div className="bars">
-          {bars.map((height, i) => (
-            <div className="bar-col" key={i}>
-              <div className="bar paid" style={{ height: `${height * 0.62}%` }} />
-              <div className="bar pending" style={{ height: `${height * 0.17}%` }} />
+          {data.map((month) => (
+            <div className="bar-col" key={month.month}>
+              <div className="bar paid" style={{ height: `${(month.paid / peak) * 100}%` }} />
+              <div
+                className="bar pending"
+                style={{ height: `${(month.pending / peak) * 100}%` }}
+              />
             </div>
           ))}
         </div>
       </div>
       <div className="x-labels">
-        {labels.map((label) => (
-          <span key={label}>{label}</span>
+        {data.map((month) => (
+          <span key={month.month}>{month.label}</span>
         ))}
       </div>
     </div>

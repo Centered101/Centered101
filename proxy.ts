@@ -59,6 +59,24 @@ function getSubdomain(hostname: string): string | null {
   return null
 }
 
+/**
+ * True when the browser is carrying a PKCE verifier issued by the flowstate
+ * Supabase project.
+ *
+ * Supabase falls back to the project's Site URL when a redirect target is not
+ * on its allow list, which drops a flowstate `code` on the apex host. Handing
+ * that code to the main site's /auth/callback exchanges it against the wrong
+ * project and fails with "code verifier" — so route it by the cookie that
+ * says which project actually started the flow.
+ */
+function hasWorkCodeVerifier(request: NextRequest) {
+  const ref = (process.env.NEXT_PUBLIC_WORK_SUPABASE_URL || '').match(/^https?:\/\/([^.]+)\./)?.[1]
+  if (!ref) return false
+  return request.cookies
+    .getAll()
+    .some((cookie) => cookie.name.startsWith(`sb-${ref}-auth-token-code-verifier`))
+}
+
 function isPublicAssetPath(pathname: string) {
   return PUBLIC_ASSET_PREFIXES.some((prefix) => pathname.startsWith(prefix))
 }
@@ -72,7 +90,7 @@ export async function proxy(request: NextRequest) {
   if (hasOAuthCode && (pathname === '/' || pathname === '/shop')) {
     const url = request.nextUrl.clone()
     url.pathname =
-      subdomain === 'work'
+      subdomain === 'work' || hasWorkCodeVerifier(request)
         ? '/work/auth/callback'
         : pathname === '/shop' || subdomain === 'shop'
           ? '/shop/auth/callback'

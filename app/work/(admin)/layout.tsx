@@ -1,43 +1,46 @@
 import type { ReactNode } from 'react'
 
+import { ActivityList } from '@/components/work/data/activity-list'
 import { AppShell } from '@/components/work/layout/app-shell'
 import { SchemaNotice } from '@/components/work/states/schema-notice'
-import { getSessionContext } from '@/lib/work/auth/session'
-import { getInitialDark } from '@/lib/work/theme'
+import { requireAdmin } from '@/lib/work/auth/permissions'
+import { ORG_ROLE_LABELS } from '@/lib/work/format'
+import { getActivity } from '@/lib/work/queries/activity'
 
 /**
  * Admin / developer portal shell.
  *
- * Server Component: it resolves the session and the user's memberships here,
- * so pages underneath stay server-rendered and the interactive chrome receives
+ * Server Component: it resolves the session and the caller's role here, so
+ * pages underneath stay server-rendered and the interactive chrome receives
  * only plain data.
  *
- * `getSessionContext()` redirects to /login when there is no session, so this
- * layout IS a real authentication boundary — unlike the middleware, which is
- * only a convenience. Role enforcement (who may see WHICH organization's data)
- * arrives in Phase 4; today any signed-in user reaches these routes, and RLS
- * is what stops them seeing another tenant's rows.
+ * `requireAdmin()` refuses anyone without an organization_members row — a
+ * client who types /work/admin/dashboard is sent to their own portal instead.
+ * It is NOT the security boundary: RLS is, and it would still return nothing
+ * to a client if this layout vanished. The guard exists so the answer is a
+ * redirect rather than a convincing but empty admin dashboard.
  */
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  const [session, initialDark] = await Promise.all([
-    getSessionContext('/work/admin/dashboard'),
-    getInitialDark(),
-  ])
+  const staff = await requireAdmin()
 
-  const workspaceName = session.memberships[0]?.organizationName ?? session.displayName
+  // Read here rather than inside the bell: the query is `server-only` and RLS
+  // scopes it to what this caller may see, so the client component receives a
+  // rendered list and an id — never a way to ask for more.
+  const activity = await getActivity({ limit: 8 })
 
   return (
     <AppShell
       activePortal="admin"
-      workspaceName={workspaceName}
-      workspaceRole="แอดมิน"
-      workspaceInitial={(workspaceName.trim()[0] ?? '?').toUpperCase()}
-      userName={session.displayName}
-      userEmail={session.email}
-      userInitial={session.initial}
-      initialDark={initialDark}
+      workspaceName={staff.organizationName}
+      workspaceRole={ORG_ROLE_LABELS[staff.role]}
+      workspaceInitial={(staff.organizationName.trim()[0] ?? '?').toUpperCase()}
+      userName={staff.displayName}
+      userEmail={staff.email}
+      userInitial={staff.initial}
+      notifications={<ActivityList items={activity} />}
+      latestActivityId={activity[0]?.id ?? null}
     >
-      {session.schemaMissing && <SchemaNotice />}
+      {staff.schemaMissing && <SchemaNotice />}
       {children}
     </AppShell>
   )

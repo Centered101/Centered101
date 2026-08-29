@@ -1,34 +1,44 @@
 'use client'
 
-import Link from 'next/link'
-import { Bell, Menu, Moon, Sun } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { Menu } from 'lucide-react'
+
+import { NotificationBell } from './notification-bell'
 
 /**
- * Topbar.
+ * Topbar: the mobile menu trigger and the breadcrumb.
  *
- * The prototype's admin/client toggle flipped a useState value and re-rendered
- * a different body from the same page. The two portals are now separate route
- * trees, so the same control navigates between them instead. The markup and
- * `.role-switch` classes are unchanged, so it looks identical.
+ * THREE CONTROLS WERE REMOVED HERE, all for the same reason — Phase 4 made
+ * each of them a promise the app could not keep:
  *
- * This switch is developer convenience for now. Once Phase 4 lands it is
- * rendered only for users who actually hold both roles — and, as always, the
- * real boundary is server-side, not this control.
+ *   * The theme toggle. The workspace is light-only now.
+ *
+ *   * The admin/client switch. It predates real roles, when both portals were
+ *     rendered from one page and flipping a boolean was enough. Staff and
+ *     clients are now mutually exclusive: requireClient() bounces staff back
+ *     to /work/admin and requireAdmin() bounces clients to /work/portal, so
+ *     the switch could only ever return you to where you already were.
+ *
+ *   * The notification bell, and its unread dot. Nothing wrote notifications
+ *     and nothing read them — a red dot that never clears is worse than no
+ *     bell, because it trains people to ignore the one that eventually works.
+ *     IT IS BACK, on `activity_logs` and with a dot that clears; see
+ *     `notification-bell.tsx`. The objection was to the fake one, not to bells.
+ *
+ * The user avatar moved out too: identity already sits in the sidebar footer,
+ * with the name, the email and the sign-out control next to it.
  */
 export function Topbar({
   breadcrumb,
-  activePortal,
-  userInitial,
-  dark,
-  onToggleTheme,
   onOpenMobileNav,
+  notifications,
+  latestActivityId,
 }: {
   breadcrumb: string
-  activePortal: 'admin' | 'portal'
-  userInitial: string
-  dark: boolean
-  onToggleTheme: () => void
   onOpenMobileNav: () => void
+  /** The activity feed, rendered on the server — see NotificationBell. */
+  notifications: ReactNode
+  latestActivityId: number | null
 }) {
   return (
     <header className="topbar">
@@ -41,22 +51,7 @@ export function Topbar({
         <strong>{breadcrumb}</strong>
       </div>
       <div className="top-actions">
-        <div className="role-switch">
-          <Link href="/work/admin/dashboard" className={activePortal === 'admin' ? 'selected' : ''}>
-            แอดมิน
-          </Link>
-          <Link href="/work/portal" className={activePortal === 'portal' ? 'selected' : ''}>
-            ลูกค้า
-          </Link>
-        </div>
-        <button className="icon-btn" onClick={onToggleTheme} aria-label="สลับธีม">
-          {dark ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-        <button className="icon-btn notification" aria-label="การแจ้งเตือน">
-          <Bell size={18} />
-          <i />
-        </button>
-        <div className="top-avatar">{userInitial}</div>
+        <NotificationBell latestId={latestActivityId}>{notifications}</NotificationBell>
       </div>
     </header>
   )

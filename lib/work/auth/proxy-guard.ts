@@ -10,13 +10,25 @@ import { createServerClient } from '@supabase/ssr'
  *
  * THIS IS A CONVENIENCE, NOT THE SECURITY BOUNDARY. A proxy can be bypassed by
  * matcher gaps or by calling PostgREST directly, never touching Next.js at
- * all. The boundaries that actually hold are getSessionContext() in each /work
- * layout and, underneath everything, RLS. This exists so a signed-out visitor
+ * all. The boundaries that actually hold are requireAdmin()/requireClient() in each
+ * /work layout and, underneath everything, RLS. This exists so a signed-out visitor
  * sees a login page instead of an empty dashboard.
  */
 
-/** Reachable without a session, expressed as /work-relative prefixes. */
-const PUBLIC_PREFIXES = ['/work/login', '/work/auth', '/work/share']
+/**
+ * Reachable without a session, expressed as /work-relative prefixes.
+ *
+ * The legal pages are public because someone has to be able to read what they
+ * are agreeing to BEFORE they have an account — and because the login screen
+ * links to them, gating them behind login would be a loop.
+ */
+const PUBLIC_PREFIXES = [
+  '/work/login',
+  '/work/auth',
+  '/work/share',
+  '/work/privacy-policy',
+  '/work/terms-of-service',
+]
 
 function isPublic(targetPath: string): boolean {
   return PUBLIC_PREFIXES.some((p) => targetPath === p || targetPath.startsWith(p + '/'))

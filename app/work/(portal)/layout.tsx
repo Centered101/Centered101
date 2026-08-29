@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react'
 
+import { ActivityList } from '@/components/work/data/activity-list'
 import { AppShell } from '@/components/work/layout/app-shell'
 import { SchemaNotice } from '@/components/work/states/schema-notice'
-import { getSessionContext } from '@/lib/work/auth/session'
-import { getInitialDark } from '@/lib/work/theme'
+import { requireClient } from '@/lib/work/auth/permissions'
+import { getActivity } from '@/lib/work/queries/activity'
 
 /**
  * Client portal shell.
@@ -12,29 +13,34 @@ import { getInitialDark } from '@/lib/work/theme'
  * is the point of splitting them into separate route trees rather than
  * toggling a boolean in one page component.
  *
- * Authentication is enforced here by `getSessionContext()`. Which PROJECTS a
- * client can then see is decided by `project_members` and RLS, not by this
- * layout — a client typing another client's project UUID reaches the route and
- * gets no data (docs/ARCHITECTURE.md §7).
+ * `requireClient()` keeps agency staff out — not because they are untrusted,
+ * but because "your projects" is not a question the portal can answer for
+ * them; they are redirected to the admin dashboard.
+ *
+ * Which PROJECTS a client sees is decided by `project_members` and RLS, never
+ * by this layout: a client typing another client's project UUID reaches the
+ * route and the database returns nothing (docs/ARCHITECTURE.md §7).
  */
 export default async function PortalLayout({ children }: { children: ReactNode }) {
-  const [session, initialDark] = await Promise.all([
-    getSessionContext('/work/portal'),
-    getInitialDark(),
-  ])
+  const client = await requireClient()
+
+  // Scoped by RLS to the client's own projects, exactly as every other read in
+  // this portal is — the bell cannot become a window into other clients' work.
+  const activity = await getActivity({ limit: 8 })
 
   return (
     <AppShell
       activePortal="portal"
-      workspaceName={session.displayName}
+      workspaceName={client.displayName}
       workspaceRole="ลูกค้า"
-      workspaceInitial={session.initial}
-      userName={session.displayName}
-      userEmail={session.email}
-      userInitial={session.initial}
-      initialDark={initialDark}
+      workspaceInitial={client.initial}
+      userName={client.displayName}
+      userEmail={client.email}
+      userInitial={client.initial}
+      notifications={<ActivityList items={activity} />}
+      latestActivityId={activity[0]?.id ?? null}
     >
-      {session.schemaMissing && <SchemaNotice />}
+      {client.schemaMissing && <SchemaNotice />}
       {children}
     </AppShell>
   )

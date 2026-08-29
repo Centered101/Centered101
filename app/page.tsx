@@ -7,12 +7,30 @@ export const dynamic = 'force-dynamic'
 const ROOT_DOMAIN = process.env.ROOT_DOMAIN || 'centered101.com'
 const DEFAULT_TARGET = 'portfolio'
 
+const IS_PROD = process.env.NODE_ENV === 'production'
+
 const TARGET_URLS: Record<string, string | null> = {
   hub: null,
   portfolio: `https://portfolio.${ROOT_DOMAIN}/`,
   shop: `https://shop.${ROOT_DOMAIN}/`,
   dashboard: `https://system.${ROOT_DOMAIN}/dashboard`,
   newtab: `https://newtab.${ROOT_DOMAIN}/`,
+}
+
+/**
+ * Local equivalents of the production subdomains.
+ *
+ * Sending localhost to https://portfolio.centered101.com/ makes the dev server
+ * useless for the homepage — the very first request leaves the machine. Every
+ * subdomain is also served from an in-app path (see SUBDOMAIN_MAP in proxy.ts),
+ * so outside production we redirect to that path and stay on localhost.
+ */
+const DEV_TARGET_PATHS: Record<string, string | null> = {
+  hub: null,
+  portfolio: '/portfolio',
+  shop: '/shop',
+  dashboard: '/dashboard',
+  newtab: '/newtab',
 }
 
 function isPublicCustomPath(path: string) {
@@ -60,7 +78,7 @@ export default async function Home() {
   }
 
   const safeTarget = target in TARGET_URLS ? target : DEFAULT_TARGET
-  const url = TARGET_URLS[safeTarget]
+  const url = IS_PROD ? TARGET_URLS[safeTarget] : DEV_TARGET_PATHS[safeTarget]
 
   if (!url) return <EcosystemPage slug="/" />
   redirect(url)

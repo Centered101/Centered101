@@ -157,6 +157,40 @@ export type DocumentType = (typeof DOCUMENT_TYPES)[number]
 export const DOCUMENT_STATUSES = ['DRAFT', 'ISSUED', 'SENT', 'VOID'] as const
 export type DocumentStatus = (typeof DOCUMENT_STATUSES)[number]
 
+/** Deploy records (0014). One table covers preview and production. */
+export const DEPLOYMENT_ENVIRONMENTS = ['PREVIEW', 'STAGING', 'PRODUCTION'] as const
+export type DeploymentEnvironment = (typeof DEPLOYMENT_ENVIRONMENTS)[number]
+
+export const DEPLOYMENT_STATUSES = [
+  'QUEUED',
+  'BUILDING',
+  'READY',
+  'FAILED',
+  'CANCELLED',
+] as const
+export type DeploymentStatus = (typeof DEPLOYMENT_STATUSES)[number]
+
+export const MAINTENANCE_STATUSES = ['ACTIVE', 'PAUSED', 'CANCELLED', 'EXPIRED'] as const
+export type MaintenanceStatus = (typeof MAINTENANCE_STATUSES)[number]
+
+export const MAINTENANCE_BILLING_CYCLES = ['MONTHLY', 'QUARTERLY', 'YEARLY'] as const
+export type MaintenanceBillingCycle = (typeof MAINTENANCE_BILLING_CYCLES)[number]
+
+export const CHANGE_REQUEST_STATUSES = [
+  'OPEN',
+  'UNDER_REVIEW',
+  'QUOTED',
+  'APPROVED',
+  'REJECTED',
+  'IN_PROGRESS',
+  'COMPLETED',
+  'CANCELLED',
+] as const
+export type ChangeRequestStatus = (typeof CHANGE_REQUEST_STATUSES)[number]
+
+export const CHANGE_REQUEST_PRIORITIES = ['LOW', 'NORMAL', 'HIGH', 'URGENT'] as const
+export type ChangeRequestPriority = (typeof CHANGE_REQUEST_PRIORITIES)[number]
+
 /**
  * Maps each TS union to its PostgreSQL enum type name, so the validation
  * harness can diff them. Adding an enum above without adding it here is caught
@@ -179,4 +213,10 @@ export const PG_ENUM_MAP = {
   payment_method: PAYMENT_METHODS,
   document_type: DOCUMENT_TYPES,
   document_status: DOCUMENT_STATUSES,
+  deployment_environment: DEPLOYMENT_ENVIRONMENTS,
+  deployment_status: DEPLOYMENT_STATUSES,
+  maintenance_status: MAINTENANCE_STATUSES,
+  maintenance_billing_cycle: MAINTENANCE_BILLING_CYCLES,
+  change_request_status: CHANGE_REQUEST_STATUSES,
+  change_request_priority: CHANGE_REQUEST_PRIORITIES,
 } as const satisfies Record<string, readonly string[]>

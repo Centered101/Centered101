@@ -1,22 +1,42 @@
 import Link from 'next/link'
 import { Code2 } from 'lucide-react'
 
-import { mockProjects, type MockProject } from '@/lib/work/mock/data'
+import {
+  PROJECT_STATUS_LABELS,
+  formatDate,
+  formatMoney,
+  idTone,
+  projectStatusTone,
+} from '@/lib/work/format'
+import type { ProjectListItem } from '@/lib/work/queries/projects'
+import { EmptyState } from '@/components/work/states'
 import { ProgressBar } from './panel'
-import { Status, statusTone } from './status'
+import { Status } from './status'
 
 /**
- * Recent projects table.
+ * Projects table.
  *
- * Project names now link to the detail route. The prototype rendered them as
- * plain text because there was nowhere to go.
+ * Rows are keyed and linked by the project UUID. `project_code` is shown under
+ * the name because humans quote it, but it never appears in a URL — guessing
+ * PRJ-2026-002 must get you nothing (docs/ARCHITECTURE.md §5).
  *
- * NOTE: rows are keyed and linked by `project_code` because that is all the
- * mock data has. From Phase 2 the URL segment becomes the project UUID —
- * `project_code` is display-only and must never address a resource
- * (docs/ARCHITECTURE.md §5).
+ * `projects` is required, with no default. The prototype defaulted to mock
+ * data, which meant a page that forgot to pass real data silently rendered
+ * fiction. An empty array now renders an empty state, which is the truth.
  */
-export function ProjectsTable({ projects = mockProjects }: { projects?: MockProject[] }) {
+export function ProjectsTable({
+  projects,
+  basePath = '/work/admin/projects',
+  emptyDescription = 'เมื่อสร้างโปรเจกต์แล้ว รายการจะแสดงที่นี่',
+}: {
+  projects: ProjectListItem[]
+  basePath?: string
+  emptyDescription?: string
+}) {
+  if (projects.length === 0) {
+    return <EmptyState title="ยังไม่มีโปรเจกต์" description={emptyDescription} />
+  }
+
   return (
     <div className="table-wrap">
       <table>
@@ -32,35 +52,40 @@ export function ProjectsTable({ projects = mockProjects }: { projects?: MockProj
           </tr>
         </thead>
         <tbody>
-          {projects.map((p) => (
-            <tr key={p.id}>
+          {projects.map((project) => (
+            <tr key={project.id}>
               <td>
                 <div className="project-name">
-                  <div className={`project-icon ${p.tone}`}>
+                  <div className={`project-icon ${idTone(project.id)}`}>
                     <Code2 size={16} />
                   </div>
                   <span>
                     <strong>
-                      <Link href={`/work/admin/projects/${p.id}`}>{p.name}</Link>
+                      <Link href={`${basePath}/${project.id}`}>{project.name}</Link>
                     </strong>
-                    <small>{p.id}</small>
+                    <small>{project.projectCode}</small>
                   </span>
                 </div>
               </td>
-              <td>{p.client}</td>
+              <td>{project.clientName}</td>
               <td>
-                <Status tone={statusTone(p.status)}>{p.status}</Status>
+                <Status tone={projectStatusTone(project.status)}>
+                  {PROJECT_STATUS_LABELS[project.status]}
+                </Status>
               </td>
               <td>
-                <ProgressBar value={p.progress} />
+                <ProgressBar value={project.progress} />
               </td>
               <td>
-                <strong>{p.amount}</strong>
+                <strong>{formatMoney(project.totalAmount, project.currency)}</strong>
               </td>
               <td>
-                <span className="payment-paid">{p.paid}</span> ชำระแล้ว
+                <span className="payment-paid">
+                  {formatMoney(project.paidAmount, project.currency)}
+                </span>{' '}
+                ชำระแล้ว
               </td>
-              <td className="muted">วันนี้ 10:42</td>
+              <td className="muted">{formatDate(project.updatedAt)}</td>
             </tr>
           ))}
         </tbody>

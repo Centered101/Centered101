@@ -8,9 +8,12 @@
      1. No @import 'tailwindcss' — the host app already loads it once.
      2. No @theme block — @theme is global in Tailwind v4 and cannot be
         scoped, and the host already defines --color-* tokens.
-     3. Tokens are declared on .app instead of :root. All 44 of flowstate’s
-        CSS variables collide with the host’s (--primary, --background,
-        --radius, ...), so scoping them is what keeps the two themes apart.
+     3. Tokens are declared on .work-root instead of :root. All 44 of this
+        stylesheet's CSS variables collide with the host's (--primary,
+        --background, --radius, ...), so scoping them is what keeps the two
+        themes apart. They sit on .work-root rather than .app because the
+        signed-out screens (login, share, forbidden) render outside the app
+        shell and still need the palette.
    ========================================================================= */
 
 /* =========================================================================
@@ -20,7 +23,8 @@
    it without changing that record first.
    ========================================================================= */
 
-.app {
+/* Every /work route is inside .work-root, shell or not. */
+.work-root {
   color-scheme: light;
   --background: #f7fbff;
   --foreground: #1f2937;
@@ -75,8 +79,7 @@
   color: #409efe !important;
   background: #e8f3ff !important;
 }
-.range-tabs button.selected,
-.role-switch button.selected {
+.range-tabs button.selected {
   color: #409efe !important;
 }
 .nav-count {
@@ -107,28 +110,10 @@ button {
   background: var(--background);
   color: var(--foreground);
 }
-/* NOTE: dark mode is scoped to `.app.dark` on a <div>, not `html.dark`, so
-   Tailwind's `dark:` variants do not apply and the theme flashes on load.
-   Migrating it to <html> is deferred to Phase 1, where the app shell is
-   extracted into components anyway. See docs/PROJECT_AUDIT.md D10. */
-.app.dark {
-  background: #0d1420;
-  color: #e8eef7;
-  --card: #121c2b;
-  --card-foreground: #e8eef7;
-  --border: #243247;
-  --muted: #182536;
-  --muted-foreground: #8b9bb0;
-
-  /* Dark counterparts of the tokens added above. */
-  --secondary: #182536;
-  --secondary-foreground: #e8eef7;
-  --accent: #172f4a;
-  --accent-foreground: #e8eef7;
-  --popover: #121c2b;
-  --popover-foreground: #e8eef7;
-  --input: #243247;
-}
+/* This workspace is light-only. A dark palette lived here as a second set of
+   token overrides on `.app.dark`, which meant every new colour had to be
+   picked twice and several never were — the audit's D10 flash was only the
+   visible half of that cost. One palette, defined once above. */
 .sidebar {
   width: 248px;
   flex: none;
@@ -159,6 +144,17 @@ button {
   color: #fff;
   display: grid;
   place-items: center;
+}
+/* The logo variant carries its own artwork, so it drops the solid tile. */
+.brand-mark.brand-logo {
+  background: none;
+  border-radius: 0;
+  overflow: hidden;
+}
+.brand-mark.brand-logo img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
 }
 .mobile-close {
   display: none;
@@ -196,8 +192,7 @@ button {
   margin-left: auto;
   color: var(--muted-foreground);
 }
-.avatar,
-.top-avatar {
+.avatar {
   display: grid;
   place-items: center;
   width: 27px;
@@ -235,9 +230,6 @@ button {
   color: var(--primary);
   background: #eef7ff;
 }
-.dark .sidebar nav button.active {
-  background: #172f4a;
-}
 .nav-count {
   margin-left: auto;
   background: #ffe5c9;
@@ -266,6 +258,11 @@ button {
 .main {
   min-width: 0;
   flex: 1;
+  /* Column so the footer can be pushed to the bottom of the viewport on
+     pages whose content does not fill it. */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 .topbar {
   height: 70px;
@@ -304,38 +301,14 @@ button {
 .menu-btn {
   display: none;
 }
-.notification i {
-  position: absolute;
-  right: 7px;
-  top: 7px;
-  width: 5px;
-  height: 5px;
-  background: #ef8e45;
-  border-radius: 50%;
-}
-.role-switch {
-  display: flex;
-  background: var(--muted);
-  padding: 3px;
-  border-radius: 8px;
-}
-.role-switch button {
-  border: 0;
-  background: transparent;
-  color: var(--muted-foreground);
-  font-size: 11px;
-  padding: 6px 10px;
-  border-radius: 6px;
-}
-.role-switch button.selected {
-  background: var(--card);
-  color: var(--primary);
-  box-shadow: 0 1px 3px #00000012;
-}
 .content {
   padding: 34px 38px 48px;
   max-width: 1500px;
-  margin: auto;
+  /* margin-inline, not `margin: auto`: as a flex item in a column, `auto` on
+     the block axis would absorb the free space and centre the page content
+     vertically. Only the horizontal centring was ever wanted. */
+  margin-inline: auto;
+  width: 100%;
 }
 .page-heading {
   display: flex;
@@ -469,6 +442,14 @@ button {
 }
 .panel {
   padding: 20px;
+}
+/* Panels the page stacks directly, rather than placing in one of the grids
+   (.bottom-grid, .detail-grid) that carry their own gap. Without this, two
+   sibling panels — the profile page, the payments page — sit edge to edge. */
+.content > .panel + .panel,
+.content > .panel + section,
+.content > section + .panel {
+  margin-top: 18px;
 }
 .panel-head {
   display: flex;
@@ -1053,9 +1034,6 @@ td {
   border-color: var(--primary);
   background: #eff8ff;
 }
-.dark .method.selected {
-  background: #152b43;
-}
 .method > span:not(.promptpay) {
   flex: 1;
 }
@@ -1188,18 +1166,8 @@ td {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .role-switch {
-    display: none;
-  }
   .top-actions {
     gap: 6px;
-  }
-  .top-actions .icon-btn:first-of-type {
-    display: none;
-  }
-  .top-avatar {
-    width: 30px;
-    height: 30px;
   }
   .content {
     padding: 20px 12px 32px;
@@ -1374,9 +1342,6 @@ td {
   .page-heading h1 {
     font-size: 18px;
   }
-  .top-actions .notification {
-    display: none;
-  }
 }
 
 /* =========================================================================
@@ -1412,23 +1377,7 @@ a {
   color: var(--primary);
   background: #eef7ff;
 }
-.dark .sidebar nav a.active {
-  background: #172f4a;
-}
 
-.role-switch a {
-  border: 0;
-  background: transparent;
-  color: var(--muted-foreground);
-  font-size: 11px;
-  padding: 6px 10px;
-  border-radius: 6px;
-}
-.role-switch a.selected {
-  background: var(--card);
-  color: var(--primary);
-  box-shadow: 0 1px 3px #00000012;
-}
 
 /* Per-project tab strip in the client portal. Reuses .range-tabs sizing. */
 .project-tabs {
@@ -1733,10 +1682,6 @@ a.text-btn {
   color: #fff;
   font-weight: 600;
 }
-.dark .sidebar nav a.active {
-  background: var(--primary);
-  color: #fff;
-}
 
 .sidebar nav a:hover:not(.active) {
   background: var(--muted);
@@ -1793,18 +1738,42 @@ a.text-btn {
 .sidebar-logout:hover {
   background: #111a26;
 }
-.dark .sidebar-logout {
-  background: #e8eef7;
-  color: #0d1420;
-}
-.dark .sidebar-logout:hover {
-  background: #ffffff;
+
+/* =========================================================================
+   TOPBAR — FLOATING CARD
+   The topbar now matches the sidebar: a rounded, bordered card with space
+   around it, sticky so it stays put while the page scrolls.
+   ========================================================================= */
+
+/* The gutter lives on .main rather than on the topbar, so the topbar and the
+   content below it keep their own paddings and stay aligned at every
+   breakpoint — the 1050px block already re-pads both together. */
+.main {
+  padding: 0 14px;
 }
 
-/* The card no longer touches the top-left corner, so the topbar should not
-   sit hard against it either. */
-.main {
-  padding-right: 0;
+.topbar {
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+
+  /* Same offset as the sidebar, so the two cards line up along the top. */
+  position: sticky;
+  top: 14px;
+  /* Above the panels that scroll underneath it, below the mobile drawer (30). */
+  z-index: 5;
+}
+
+/* Masks the 14px band above the stuck card. Without it the page's own content
+   is visible through the gap between the viewport edge and the topbar. */
+.topbar::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  bottom: 100%;
+  height: 14px;
+  background: var(--background);
 }
 
 @media (max-width: 700px) {
@@ -1818,6 +1787,98 @@ a.text-btn {
     border-radius: 0 22px 22px 0;
     border-left: 0;
   }
+
+  /* The floating card is kept on mobile — only tightened. A narrow screen
+     cannot spare 28px to a gutter, so the ring drops to 10px and the radius
+     with it; the topbar stays a bordered, sticky card rather than reverting
+     to a full-bleed bar. */
+  .main {
+    padding: 0 10px;
+  }
+  .topbar {
+    margin-top: 10px;
+    border-radius: 18px;
+    top: 10px;
+  }
+  .topbar::before {
+    height: 10px;
+  }
+  /* .content and .topbar already carry the same 12px inner padding at this
+     breakpoint, so the shared gutter keeps them aligned untouched. */
+}
+
+/* =========================================================================
+   NOTIFICATION BELL
+   The trigger reuses .icon-btn; only the dot and the dropdown are new.
+   ========================================================================= */
+
+.bell {
+  position: relative;
+}
+
+/* Sits on the rim of the button so it reads as an attached badge rather than
+   as part of the icon. The ring matches the topbar so it stays legible
+   whichever edge it overlaps. */
+.bell-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 0 2px var(--card);
+}
+
+.bell-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 20;
+  width: min(340px, calc(100vw - 24px));
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 18px 48px -24px rgba(15, 23, 42, 0.38);
+}
+
+.bell-panel-head strong {
+  display: block;
+  font-size: 13px;
+  letter-spacing: -0.02em;
+}
+.bell-panel-head small {
+  display: block;
+  font-size: 10px;
+  margin-top: 3px;
+}
+
+/* Eight entries is more than the panel should ever grow to hold, so the list
+   scrolls inside it instead of pushing the card past the viewport. */
+.bell-panel-body {
+  max-height: min(60vh, 380px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* .activity-list is built for a panel with a 23px header gap above it; inside
+   the dropdown that head is only 16px away. */
+.bell-panel-body .activity-list {
+  margin-top: 14px;
+  gap: 14px;
+}
+.bell-panel-body .empty-inline {
+  margin: 14px 0 0;
+}
+
+@media (max-width: 700px) {
+  /* Anchored to the topbar's right edge, the panel would otherwise hang off
+     the screen on the narrowest phones. */
+  .bell-panel {
+    right: -6px;
+    width: min(320px, calc(100vw - 32px));
+  }
 }
 
 /* =========================================================================
@@ -1827,21 +1888,301 @@ a.text-btn {
    instead of owning the document.
    ========================================================================= */
 
-/* The root <body> belongs to the host app and already carries its own
-   background, font and colours. flowstate's own body-level rules cannot apply
-   here, so the wrapper re-establishes them for the /work subtree only. */
+/* The root <body> belongs to the host app and carries its own background,
+   font and colours — several of which are dark. This wrapper re-establishes
+   ours for the /work subtree, and paints an explicit ground so no host colour
+   shows through around or behind the page. */
 .work-root {
   font-family: var(--font-thai), Arial, Helvetica, sans-serif;
-  /* Cancel the host body's padding/limits if any are inherited. */
   color: var(--foreground);
+  background: var(--background);
+  min-height: 100vh;
 }
 
-/* .app defines the design tokens, but the host <body> paints its own
-   background behind it. Give the workspace an explicit ground so the page
-   does not show the host's colour around the edges. */
-.work-root .app {
-  background: #f7fbff;
+/* =========================================================================
+   PHASE 4 — REAL DATA
+   Additive only. Forms and inline states reuse the existing tokens, borders
+   and radii so nothing about the prototype's look changes.
+   ========================================================================= */
+
+/* Two-column form grid used by the create/edit project forms. */
+.work-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 18px;
+  margin-top: 4px;
 }
-.work-root .app.dark {
-  background: #0d1420;
+.work-form > label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.work-form > label.full,
+.work-form > .form-actions {
+  grid-column: 1 / -1;
+}
+.work-form > label > span {
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.work-form input,
+.work-form select,
+.work-form textarea {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
+  border-radius: 9px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 12px;
+  width: 100%;
+}
+.work-form textarea {
+  resize: vertical;
+  min-height: 76px;
+}
+.work-form input:focus-visible,
+.work-form select:focus-visible,
+.work-form textarea:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.work-form label.checkbox {
+  grid-auto-flow: column;
+  justify-content: start;
+  align-items: center;
+  gap: 8px;
+}
+.work-form label.checkbox input {
+  width: auto;
+}
+.work-form .form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 2px;
+}
+.work-form button[disabled] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+@media (max-width: 720px) {
+  .work-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Empty state inside a panel that already has a heading — a full state card
+   would repeat the title directly above it. */
+.empty-inline {
+  font-size: 12px;
+  padding: 18px 2px 6px;
+  margin: 0;
+}
+
+/* =========================================================================
+   FOOTER AND LEGAL PAGES
+   ========================================================================= */
+
+.work-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 20px;
+  margin-top: 40px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.work-footer-brand {
+  margin: 0;
+}
+.work-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+}
+.work-footer-links a {
+  color: var(--muted-foreground);
+}
+.work-footer-links a:hover {
+  color: var(--primary);
+}
+
+/* Inside the shell the footer is the last flex item in .main, so auto margin
+   above it takes up whatever vertical space the page did not use. */
+.main > .work-footer {
+  margin-top: auto;
+  width: 100%;
+  max-width: 1500px;
+  margin-inline: auto;
+  padding: 18px 38px 26px;
+}
+
+/* The login screen centres its card, so the footer needs to sit under it
+   rather than stretch across a flex row. */
+.auth-screen .work-footer {
+  width: min(400px, 100%);
+  justify-content: center;
+  gap: 4px 16px;
+  border-top: 0;
+  margin-top: 22px;
+  padding-top: 0;
+}
+
+/* ---- Legal documents ---- */
+.legal-page {
+  max-width: 760px;
+  margin-inline: auto;
+  padding: 34px 24px 40px;
+  /* Same trick as the shell: fill the viewport so the footer sits at the
+     bottom rather than halfway up a short document. */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.legal-page > .work-footer {
+  margin-top: auto;
+  padding-top: 26px;
+}
+.legal-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  margin-bottom: 18px;
+}
+.legal-back:hover {
+  color: var(--primary);
+}
+.legal-panel {
+  padding: 32px 30px;
+}
+.legal-head h1 {
+  font-size: 24px;
+  letter-spacing: -0.03em;
+  margin: 0 0 8px;
+}
+.legal-head .muted {
+  margin: 0;
+  font-size: 13px;
+}
+.legal-updated {
+  margin: 14px 0 0;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.legal-body {
+  margin-top: 26px;
+  display: grid;
+  gap: 26px;
+}
+.legal-section h2 {
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+/* Prose, not UI: a slightly longer line-height than the dense dashboard
+   tables, because these paragraphs are actually read. */
+.legal-section p,
+.legal-section li {
+  font-size: 13px;
+  line-height: 1.85;
+  color: var(--muted-foreground);
+  margin: 0 0 10px;
+}
+.legal-section p:last-child,
+.legal-section li:last-child {
+  margin-bottom: 0;
+}
+.legal-section strong {
+  color: var(--foreground);
+  font-weight: 650;
+}
+.legal-section ul {
+  margin: 0 0 10px;
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+  list-style: disc;
+}
+.legal-section a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+  .legal-page {
+    padding: 22px 14px 40px;
+  }
+  .legal-panel {
+    padding: 22px 18px;
+  }
+  .legal-head h1 {
+    font-size: 20px;
+  }
+}
+
+/* =========================================================================
+   ชุดสีและการป้องกันของ asia-bot — ย้ายเข้ามาเป็นสไตล์เฉพาะของ /work
+   =========================================================================
+   ต้นทางคือ C:\Users\Centered101\public\src\app\globals.css (บล็อก :root +
+   Global protection) ย้ายมาทั้งชุดตามที่สั่ง โดยแก้สองอย่างให้เข้ากับที่นี่:
+
+     1. ตัวแปรย้ายจาก :root มาไว้บน .work-root ตามกติกาข้อ 3 ที่หัวไฟล์ —
+        ห้าตัวในชุดนี้ (--primary-color, --secondary-color, --accent-color,
+        --success, --white-smoker) ชนกับของ app/globals.css ตรง ๆ ถ้าประกาศ
+        บน :root จะไปทับค่าของโฮสต์ทุกครั้งที่เปิดหน้า /work
+     2. ทุกกฎเติม .work-root นำหน้า เพราะ work.css ถูกโหลดคู่กับ globals.css
+        ของโฮสต์เสมอ ไม่ได้อยู่คนละหน้ากัน
+
+   ไม่ยกมาสองอย่าง: box-sizing (มีอยู่แล้วบรรทัด 89) และกฎซ่อน scrollbar
+   (globals.css ของโฮสต์ตั้งไว้ทั้งเว็บอยู่แล้ว เขียนซ้ำไม่เปลี่ยนผลลัพธ์)
+
+   ชื่อลงท้าย -color ไม่ชนกับโทเคน shadcn (--primary, --accent, --secondary)
+   ที่ประกาศไว้ด้านบน ปุ่มและการ์ดจึงยังเป็นสีน้ำเงิน #409EFE เหมือนเดิม
+   ========================================================================= */
+
+.work-root {
+  --primary-color: #84d4fa;
+  --primary-dark: #4db8f5;
+  --primary-light: #eaf7ff;
+  --accent-color: #fe4040;
+  --success: #22c55e;
+  --gray-soft: #f8fafc;
+  --secondary-color: #ff7070;
+  --white-smoker: #f5f5f5;
+  --default: #b2b2b2;
+  --green: #1ed760;
+  --red: #ff7070;
+  --blue: #3b82f6;
+}
+
+/* ── Global protection ───────────────────────────────────── */
+.work-root img,
+.work-root svg,
+.work-root video,
+.work-root canvas,
+.work-root a,
+.work-root button {
+  -webkit-user-drag: none;
+  user-drag: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.work-root ::selection {
+  background: #000000b3;
+  color: var(--primary-color);
+}
+
+/* วางไว้ท้ายไฟล์เพราะ .work-root ที่บรรทัด 1899 ตั้ง font-family เป็น
+   var(--font-thai) ไว้ก่อน สเปซิฟิซิตี้เท่ากัน ตัวหลังจึงเป็นตัวที่ชนะ */
+.work-root {
+  font-family: 'Kanit', 'Bai Jamjuree', monospace;
+  font-weight: 600;
 }

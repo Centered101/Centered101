@@ -1,8 +1,9 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronDown, CircleHelp, LogOut, Settings, X, Zap } from 'lucide-react'
+import { ChevronDown, LogOut, X } from 'lucide-react'
 
 import { signOut } from '@/lib/work/auth/actions'
 import { isNavItemActive, type NavItem } from '@/lib/work/nav'
@@ -40,10 +41,19 @@ export function Sidebar({
   return (
     <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
       <div className="brand">
-        <div className="brand-mark">
-          <Zap size={16} fill="currentColor" />
+        <div className="brand-mark brand-logo">
+          <Image
+            src="/work/favicon.ico"
+            alt=""
+            width={28}
+            height={28}
+            unoptimized
+            /* Both dimensions inline: Tailwind preflight's `height: auto` on img
+               otherwise trips next/image's aspect-ratio warning. */
+            style={{ width: 28, height: 28 }}
+          />
         </div>
-        <span>flowstate</span>
+        <span>Centered101&apos;s Work</span>
         <button onClick={onClose} className="mobile-close" aria-label="ปิดเมนู">
           <X size={18} />
         </button>
@@ -69,15 +79,13 @@ export function Sidebar({
           </Link>
         ))}
       </nav>
+      {/* No Settings link down here.
+          It used to be hardcoded, which broke twice over once the nav became
+          real: it duplicated the ตั้งค่า entry in adminNav, and it pointed at
+          /work/admin/settings from BOTH portals — so a client clicking it was
+          bounced straight back out by requireAdmin(). Navigation belongs in
+          lib/work/nav.ts, where each portal declares its own. */}
       <div className="sidebar-bottom">
-        <Link href="/work/admin/settings">
-          <Settings size={17} />
-          ตั้งค่า
-        </Link>
-        <button type="button">
-          <CircleHelp size={17} />
-          ศูนย์ช่วยเหลือ
-        </button>
         <div className="profile">
           <div className="avatar small">{userInitial}</div>
           <div>

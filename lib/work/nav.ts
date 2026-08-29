@@ -8,6 +8,8 @@ import {
   LifeBuoy,
   MessageSquareWarning,
   Receipt,
+  Settings,
+  UserRound,
   Users,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -44,11 +46,22 @@ export const adminNav: NavItem[] = [
     icon: MessageSquareWarning,
   },
   { label: 'ไฟล์', href: '/work/admin/documents', icon: FileText },
+  { label: 'ตั้งค่า', href: '/work/admin/settings', icon: Settings },
 ]
 
+/**
+ * Client portal navigation.
+ *
+ * Deliberately short. Payments, documents, deployments and maintenance are
+ * PER PROJECT for a client — they are tabs inside a project, not top-level
+ * destinations, because "your invoices" only means something once you have
+ * chosen which project's invoices. The admin side is the reverse: it needs the
+ * cross-project view, and has it.
+ */
 export const portalNav: NavItem[] = [
   { label: 'ภาพรวม', href: '/work/portal', icon: LayoutDashboard },
   { label: 'โปรเจกต์', href: '/work/portal/projects', icon: FolderKanban },
+  { label: 'โปรไฟล์', href: '/work/portal/profile', icon: UserRound },
 ]
 
 /**

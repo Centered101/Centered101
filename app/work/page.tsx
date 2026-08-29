@@ -1,16 +1,15 @@
 import { redirect } from 'next/navigation'
 
+import { resolveLandingPath } from '@/lib/work/auth/permissions'
+
 /**
  * Root entry point.
  *
- * The prototype rendered the entire application here — both portals, all
- * state, all data — from a single client component. That content now lives in
- * `(admin)` and `(portal)`, so this only routes.
- *
- * From Phase 3 the destination depends on the session: admins to the admin
- * dashboard, clients to the portal, everyone else to /login. Until auth
- * exists there is nothing to branch on.
+ * Routes by ROLE, read from the database. Agency staff land on the admin
+ * dashboard, clients on their portal, signed-out visitors on /login. Nothing
+ * here reads a preference, a cookie or a stored "last portal" — where a person
+ * belongs is a fact about their membership rows, and only those decide it.
  */
-export default function RootPage() {
-  redirect('/work/admin/dashboard')
+export default async function RootPage() {
+  redirect(await resolveLandingPath())
 }

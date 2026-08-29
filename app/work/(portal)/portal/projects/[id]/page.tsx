@@ -1,49 +1,76 @@
-import { Clock3, Code2, GitBranch, ShieldCheck } from 'lucide-react'
+import { notFound } from 'next/navigation'
+import { Clock3, Code2, ShieldCheck } from 'lucide-react'
 
 import { Panel, PageHeading, PanelHead } from '@/components/work/data/panel'
 import { Status } from '@/components/work/data/status'
 import { Timeline } from '@/components/work/data/timeline'
-import { mockClientProject } from '@/lib/work/mock/data'
+import { requireProjectAccess } from '@/lib/work/auth/permissions'
+import {
+  DELIVERY_METHOD_LABELS,
+  MILESTONE_STATUS_LABELS,
+  PROJECT_STATUS_LABELS,
+  SOURCE_OWNERSHIP_LABELS,
+  formatDate,
+  formatMoney,
+  idTone,
+  projectStatusTone,
+} from '@/lib/work/format'
+import { getProjectPaymentSummary } from '@/lib/work/queries/payments'
+import { getProjectById, getProjectFeatures } from '@/lib/work/queries/projects'
 
-export const metadata = { title: 'โปรเจกต์ — flowstate' }
+export const metadata = { title: 'โปรเจกต์' }
 
 /**
  * Project overview in the client portal.
  *
- * Reads from mock data. From Phase 2 this loads the project by UUID through
- * the request-scoped Supabase client, so RLS decides whether the row is
- * visible at all — the `id` segment being guessable is fine precisely because
- * the database, not this component, is the boundary.
+ * `requireProjectAccess()` runs before anything is read, and the read itself
+ * runs under the caller's session. Client A passing Client B's UUID gets
+ * notFound() — the id being guessable is fine precisely because the database,
+ * not this component, is the boundary (docs/ARCHITECTURE.md §7).
  */
-export default async function PortalProjectPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
-  const { id } = await params
-  const project = mockClientProject
+export default async function PortalProjectPage(
+  props: PageProps<'/work/portal/projects/[id]'>,
+) {
+  const { id } = await props.params
+  await requireProjectAccess(id)
+
+  const project = await getProjectById(id)
+  if (!project) notFound()
+
+  const [features, payments] = await Promise.all([
+    getProjectFeatures(id),
+    getProjectPaymentSummary(id),
+  ])
 
   return (
     <>
       <PageHeading
-        eyebrow={id}
+        eyebrow={project.projectCode}
         title={project.name}
-        description={project.subtitle}
-        action={<Status>{project.status}</Status>}
+        description={project.description ?? project.clientName}
+        action={
+          <Status tone={projectStatusTone(project.status)}>
+            {PROJECT_STATUS_LABELS[project.status]}
+          </Status>
+        }
       />
 
       <section className="client-main">
         <Panel className="project-hero">
           <div className="hero-top">
-            <div className="project-icon blue large">
+            <div className={`project-icon ${idTone(project.id)} large`}>
               <Code2 size={22} />
             </div>
             <div>
-              <p className="eyebrow">{project.code}</p>
+              <p className="eyebrow">{project.projectCode}</p>
               <h2>{project.name}</h2>
-              <p className="muted">{project.subtitle}</p>
+              <p className="muted">
+                กำหนดส่งมอบ {formatDate(project.expectedDelivery)}
+              </p>
             </div>
-            <Status>{project.status}</Status>
+            <Status tone={projectStatusTone(project.status)}>
+              {PROJECT_STATUS_LABELS[project.status]}
+            </Status>
           </div>
           <div className="big-progress">
             <div>
@@ -53,27 +80,29 @@ export default async function PortalProjectPage({
             <div className="progress">
               <span style={{ width: `${project.progress}%` }} />
             </div>
-            <small>{project.progressNote}</small>
+            <small>{PROJECT_STATUS_LABELS[project.status]}</small>
           </div>
           <div className="hero-details">
             <div>
               <span>มูลค่าโปรเจกต์</span>
-              <strong>{project.value}</strong>
+              <strong>{formatMoney(payments.total, payments.currency)}</strong>
             </div>
             <div>
               <span>ชำระแล้ว</span>
-              <strong>{project.paid}</strong>
+              <strong>{formatMoney(payments.paid, payments.currency)}</strong>
             </div>
             <div>
               <span>คงเหลือ</span>
-              <strong className="orange-text">{project.remaining}</strong>
+              <strong className="orange-text">
+                {formatMoney(payments.remaining, payments.currency)}
+              </strong>
             </div>
           </div>
         </Panel>
 
         <Panel className="timeline-panel">
           <PanelHead title="ไทม์ไลน์โปรเจกต์" description="ติดตามทุกขั้นตอนจนเปิดใช้งาน" />
-          <Timeline />
+          <Timeline items={features} />
         </Panel>
       </section>
 
@@ -87,39 +116,44 @@ export default async function PortalProjectPage({
           <div className="ownership-rows">
             <div>
               <span>เจ้าของโปรเจกต์</span>
-              <strong>{project.owner}</strong>
+              <strong>{project.clientName}</strong>
             </div>
             <div>
               <span>ความเป็นเจ้าของซอร์สโค้ด</span>
-              <strong>{project.sourceOwnership}</strong>
-            </div>
-            <div>
-              <span>สิทธิ์เข้าถึงซอร์สโค้ด</span>
-              <strong className="green-text">{project.sourceAccess}</strong>
+              <strong>{SOURCE_OWNERSHIP_LABELS[project.sourceCodeOwnership]}</strong>
             </div>
             <div>
               <span>โฮสติ้ง</span>
-              <strong>{project.hosting}</strong>
+              <strong>{DELIVERY_METHOD_LABELS[project.deliveryMethod]}</strong>
             </div>
             <div>
-              <span>ที่เก็บโค้ด</span>
-              <strong className="repo">
-                <GitBranch size={14} /> {project.repository}
-              </strong>
+              <span>เริ่มงาน</span>
+              <strong>{formatDate(project.startDate)}</strong>
             </div>
           </div>
         </Panel>
 
         <Panel className="next-payment">
           <PanelHead title="การชำระเงินถัดไป" description="ยอดที่ต้องชำระเพื่อดำเนินการต่อ" />
-          <div className="maintenance-price">
-            <strong>{project.remaining}</strong>
-            <span>คงเหลือ</span>
-          </div>
-          <div className="next-billing">
-            <Clock3 size={15} />
-            <span>ไมล์สโตนสุดท้าย · รอชำระ</span>
-          </div>
+          {payments.nextDue ? (
+            <>
+              <div className="maintenance-price">
+                <strong>
+                  {formatMoney(payments.nextDue.amount, payments.nextDue.currency)}
+                </strong>
+                <span>{payments.nextDue.name}</span>
+              </div>
+              <div className="next-billing">
+                <Clock3 size={15} />
+                <span>
+                  ครบกำหนด <strong>{formatDate(payments.nextDue.dueDate)}</strong> ·{' '}
+                  {MILESTONE_STATUS_LABELS[payments.nextDue.status]}
+                </span>
+              </div>
+            </>
+          ) : (
+            <p className="muted empty-inline">ไม่มียอดค้างชำระ</p>
+          )}
         </Panel>
       </section>
     </>

@@ -11,7 +11,7 @@ import {
   safeRedirectPath,
   signUpSchema,
 } from '@/lib/work/validation/auth'
-import { resolveHomePath } from './session'
+import { resolveLandingPath } from './permissions'
 
 /**
  * Authentication server actions.
@@ -30,15 +30,43 @@ export type AuthState = {
   fieldErrors?: Record<string, string>
 }
 
-/** Absolute origin for OAuth and magic-link redirects. */
-async function getOrigin(): Promise<string> {
-  const configured = process.env.NEXT_PUBLIC_WORK_APP_URL
-  if (configured) return configured.replace(/\/$/, '')
+const LOCAL_HOST = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$|\.localhost(:\d+)?$/i
 
+/**
+ * Absolute origin for OAuth and magic-link redirects.
+ *
+ * NEXT_PUBLIC_WORK_APP_URL is deliberately ignored for a local request. It
+ * holds the production origin, and honouring it in dev sends the browser to
+ * work.centered101.com/... — a URL the local Supabase project has no redirect
+ * entry for, so Supabase silently falls back to its Site URL and the code
+ * lands on the wrong host with the wrong project's PKCE verifier.
+ */
+async function getOrigin(): Promise<string> {
   const headerList = await headers()
   const host = headerList.get('x-forwarded-host') ?? headerList.get('host') ?? 'localhost:3000'
-  const proto = headerList.get('x-forwarded-proto') ?? 'http'
+  const isLocal = LOCAL_HOST.test(host)
+
+  const configured = process.env.NEXT_PUBLIC_WORK_APP_URL
+  if (configured && !isLocal) return configured.replace(/\/$/, '')
+
+  const proto = headerList.get('x-forwarded-proto') ?? (isLocal ? 'http' : 'https')
   return `${proto}://${host}`
+}
+
+/**
+ * Absolute URL of the flowstate auth callback.
+ *
+ * The path depends on how the visitor reached the app. On work.<root> the
+ * proxy rewrites /auth/* into /work/auth/*, so the prefix is invisible; on the
+ * apex host the route only exists at /work/auth/callback, and a bare
+ * /auth/callback there is the MAIN site's callback, which would exchange this
+ * code against the wrong Supabase project.
+ */
+async function getCallbackUrl(next = ''): Promise<string> {
+  const origin = await getOrigin()
+  const prefix = /:\/\/work\./i.test(origin) ? '' : '/work'
+  const query = next ? `?next=${encodeURIComponent(next)}` : ''
+  return `${origin}${prefix}/auth/callback${query}`
 }
 
 function fieldErrorsFrom(error: { issues: { path: PropertyKey[]; message: string }[] }) {
@@ -74,7 +102,7 @@ export async function signInWithPassword(
   }
 
   const next = safeRedirectPath(formData.get('next') as string | null, '')
-  const destination = next || (await resolveHomePath())
+  const destination = next || (await resolveLandingPath())
 
   revalidatePath('/', 'layout')
   redirect(destination)
@@ -94,7 +122,7 @@ export async function signUpWithPassword(
   }
 
   const supabase = await createClient()
-  const origin = await getOrigin()
+  const emailRedirectTo = await getCallbackUrl()
 
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
@@ -102,7 +130,7 @@ export async function signUpWithPassword(
     options: {
       // Read by the on_auth_user_created trigger to populate profiles.
       data: { full_name: parsed.data.fullName },
-      emailRedirectTo: `${origin}/auth/callback`,
+      emailRedirectTo,
     },
   })
 
@@ -120,7 +148,7 @@ export async function signUpWithPassword(
   }
 
   revalidatePath('/', 'layout')
-  redirect(await resolveHomePath())
+  redirect(await resolveLandingPath())
 }
 
 // -----------------------------------------------------------------------------
@@ -136,13 +164,12 @@ export async function signInWithMagicLink(
   }
 
   const supabase = await createClient()
-  const origin = await getOrigin()
   const next = safeRedirectPath(formData.get('next') as string | null, '')
 
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data.email,
     options: {
-      emailRedirectTo: `${origin}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ''}`,
+      emailRedirectTo: await getCallbackUrl(next),
     },
   })
 
@@ -163,13 +190,12 @@ export async function signInWithGoogle(
   formData: FormData,
 ): Promise<AuthState> {
   const supabase = await createClient()
-  const origin = await getOrigin()
   const next = safeRedirectPath(formData.get('next') as string | null, '')
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${origin}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ''}`,
+      redirectTo: await getCallbackUrl(next),
     },
   })
 

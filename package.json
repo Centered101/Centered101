@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "work:db:validate": "node scripts/validate-work-schema.mjs"
+    "work:db:validate": "node scripts/validate-work-schema.mjs",
+    "work:db:bundle": "node scripts/bundle-work-migrations.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.82",

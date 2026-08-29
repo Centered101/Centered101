@@ -194,8 +194,20 @@ html,
   color: var(--primary-color);
 }
 
-html, select { cursor: url(/cursors/old-roblox-cursor-32x32.png), auto !important; }
-a, button, label, .cursor-pointer, [class^="btn-"] { cursor: url(/cursors/old-roblox-pointer-32x32.png), pointer !important; }
+/* เคอร์เซอร์ Roblox — เก็บไว้ในโปรเจกต์เอง ไม่ดึงจาก sweezy-cursors.com แล้ว
+ *
+ * ไฟล์ต้นทางเป็น 32x32 ซึ่งใหญ่กว่าลูกศรมาตรฐานของ Windows ที่สูงราว 19px อยู่
+ * ครึ่งเท่า — cursor: url() ย่อด้วย CSS ไม่ได้ ต้องย่อที่ตัวไฟล์ จึงมี arrow-20 /
+ * hand-20 ที่ย่อไว้แล้วคู่กับไฟล์เดิม
+ *
+ * 20px เพราะลูกศรกินเต็มผืนผ้าใบ (กรอบทึบ 29x32 จากผืน 32x32) ขนาดนี้จึงออกมา
+ * พอ ๆ กับของระบบ ส่วนที่พ่วงมาด้วยคือเลิกยิงไปโฮสต์ภายนอกทุกครั้งที่เปิดหน้า
+ * ถ้าเว็บนั้นล่มหรือช้า เคอร์เซอร์จะกลับไปเป็นของระบบเงียบ ๆ โดยไม่รู้สาเหตุ
+ *
+ * ไม่ระบุ hotspot ให้ค่าปริยาย (0 0) เหมือนเดิม ปลายลูกศรอยู่มุมซ้ายบนพอดีอยู่แล้ว
+ */
+html, select { cursor: url(/cursors/arrow-20.png), auto !important; }
+a, button, label, .cursor-pointer, [class^="btn-"] { cursor: url(/cursors/hand-20.png), pointer !important; }
 
 /* Gradient text utility */
 .gradient-text {

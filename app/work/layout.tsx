@@ -28,17 +28,19 @@ const thaiFont = Noto_Sans_Thai({
 
 export const metadata: Metadata = {
   title: {
-    default: 'flowstate — ระบบจัดการลูกค้าสำหรับเอเจนซี',
-    template: '%s — flowstate',
+    default: "Centered101's Work — ระบบจัดการลูกค้าสำหรับเอเจนซี",
+    template: "%s — Centered101's Work",
   },
   description:
     'พื้นที่ทำงานสำหรับจัดการโปรเจกต์ลูกค้า การชำระเงิน การส่งมอบ การเผยแพร่ และการดูแลรักษา',
+  // The workspace has its own mark, separate from the marketing site's.
+  icons: { icon: '/work/favicon.ico', apple: '/work/favicon.png' },
   // A private client workspace has no reason to be indexed.
   robots: { index: false, follow: false },
 }
 
 export const viewport: Viewport = {
-  colorScheme: 'light dark',
+  colorScheme: 'light',
   themeColor: '#409EFE',
 }
 

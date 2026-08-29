@@ -51,6 +51,22 @@ language sql stable as $$
 $$;
 
 grant usage on schema auth to anon, authenticated, service_role;
+
+-- Supabase Storage. Only the columns the migrations touch: the bucket
+-- registry is enough to prove the bucket is declared PRIVATE, which is the
+-- property worth testing. Object storage itself is not exercised here.
+create schema if not exists storage;
+
+create table if not exists storage.buckets (
+  id                 text primary key,
+  name               text not null,
+  public             boolean not null default false,
+  file_size_limit    bigint,
+  allowed_mime_types text[],
+  created_at         timestamptz not null default now()
+);
+
+grant usage on schema storage to anon, authenticated, service_role;
 `
 
 /**
@@ -100,6 +116,30 @@ async function countAs(db, userId, sql) {
     try {
       const r = await db.query(sql)
       return Number(r.rows[0].count)
+    } catch {
+      return -1
+    }
+  })
+}
+
+/**
+ * Rows actually affected by a write, measured inside the impersonating
+ * transaction.
+ *
+ * Necessary because asUser() rolls back: counting rows AFTERWARDS proves
+ * nothing, since the change would be gone regardless of whether the policy
+ * allowed it. And RLS does not raise on an UPDATE that matches no policy — it
+ * quietly affects zero rows — so the absence of an error is not permission
+ * either. Affected-row count is the one signal that distinguishes "allowed"
+ * from "silently denied".
+ *
+ * Resolves to -1 when the statement itself errored.
+ */
+async function affectedAs(db, userId, sql) {
+  return asUser(db, userId, async () => {
+    try {
+      const result = await db.query(sql)
+      return result.affectedRows ?? 0
     } catch {
       return -1
     }
@@ -625,6 +665,140 @@ async function main() {
   const code = (await db.query(`select app.next_code('${seed.org_id}', 'INV') as code`)).rows[0]
     .code
   check(`code generator produces ${code}`, /^INV-\d{4}-\d{3}$/.test(code))
+
+  // ---------------------------------------------------------------------------
+  console.log('\n[1mPhase 4 — deployments, maintenance, change requests[0m')
+
+  // Seed one of each on project A, so client B has something to fail to reach.
+  await db.exec(`
+    insert into project_deployments (project_id, environment, status, version, url, deployed_at)
+    values ('${seed.project_a}', 'PREVIEW', 'READY', 'v0.9.0', 'https://preview.example.com', now());
+    insert into maintenance_plans (project_id, name, price_amount, next_billing_date)
+    values ('${seed.project_a}', 'แพ็กเกจดูแลเว็บไซต์', 150000, current_date + 30);
+    insert into change_requests (project_id, title, requested_by)
+    values ('${seed.project_a}', 'เพิ่มหน้าติดต่อเรา', '${ids.client_a_id}');
+  `)
+
+  check(
+    'client A sees their own deployment',
+    (await countAs(
+      db,
+      ids.client_a_id,
+      `select count(*)::int as count from project_deployments`,
+    )) === 1,
+  )
+  check(
+    "client B cannot see client A's deployments",
+    (await countAs(
+      db,
+      ids.client_b_id,
+      `select count(*)::int as count from project_deployments`,
+    )) === 0,
+  )
+  check(
+    "client B cannot see client A's maintenance plan",
+    (await countAs(
+      db,
+      ids.client_b_id,
+      `select count(*)::int as count from maintenance_plans`,
+    )) === 0,
+  )
+
+  // A client may raise a change request on their own project...
+  err = await writeAs(
+    db,
+    ids.client_a_id,
+    `insert into change_requests (project_id, title, requested_by)
+     values ('${seed.project_a}', 'ขอแก้สีปุ่ม', '${ids.client_a_id}')`,
+  )
+  check('a client can raise a change request on their own project', err === null, err ?? '')
+
+  // ...but not on someone else's, and not in someone else's name.
+  err = await writeAs(
+    db,
+    ids.client_b_id,
+    `insert into change_requests (project_id, title, requested_by)
+     values ('${seed.project_a}', 'แทรกแซง', '${ids.client_b_id}')`,
+  )
+  check("a client cannot raise a request on another client's project", err !== null)
+
+  err = await writeAs(
+    db,
+    ids.client_a_id,
+    `insert into change_requests (project_id, title, requested_by)
+     values ('${seed.project_a}', 'สวมรอย', '${ids.admin_id}')`,
+  )
+  check('a client cannot attribute a request to someone else', err !== null)
+
+  // The one that matters commercially: pricing and approving are agency-only.
+  // change_requests has no client UPDATE policy, so the statement matches
+  // nothing and touches zero rows.
+  check(
+    'a client cannot approve or price their own change request',
+    (await affectedAs(
+      db,
+      ids.client_a_id,
+      `update change_requests set status = 'APPROVED', estimated_amount = 0
+       where project_id = '${seed.project_a}'`,
+    )) === 0,
+  )
+
+  // A deployment record a client could write is one nobody can trust.
+  check(
+    'a client cannot rewrite a deployment URL',
+    (await affectedAs(
+      db,
+      ids.client_a_id,
+      `update project_deployments set url = 'https://evil.example'
+       where project_id = '${seed.project_a}'`,
+    )) === 0,
+  )
+  // ...while agency staff can, so the check above is measuring the policy and
+  // not simply a statement that matches no rows.
+  check(
+    'agency staff can record a deployment URL',
+    (await affectedAs(
+      db,
+      ids.admin_id,
+      `update project_deployments set url = 'https://preview.example.com'
+       where project_id = '${seed.project_a}'`,
+    )) === 1,
+  )
+
+  // A developer delivers; an accountant prices. A retainer is money, so its
+  // write predicate is can_manage_project_finance, which excludes developers.
+  check(
+    'a developer cannot reprice a maintenance retainer',
+    (await affectedAs(
+      db,
+      ids.dev_id,
+      `update maintenance_plans set price_amount = 1 where project_id = '${seed.project_a}'`,
+    )) === 0,
+  )
+  check(
+    'an admin can reprice a maintenance retainer',
+    (await affectedAs(
+      db,
+      ids.admin_id,
+      `update maintenance_plans set price_amount = 200000 where project_id = '${seed.project_a}'`,
+    )) === 1,
+  )
+
+  // Codes come from a trigger, so the application never supplies one. The
+  // seeded row is the subject here: writes made through asUser() are rolled
+  // back, so only committed rows can be counted.
+  const generatedCodes = (
+    await db.query(
+      `select count(*)::int as count from change_requests
+       where request_code ~ '^CR-[0-9]{4}-[0-9]{3}$'`,
+    )
+  ).rows[0].count
+  check('change request codes are generated automatically', generatedCodes >= 1)
+
+  const bucket = (
+    await db.query(`select public from storage.buckets where id = 'work-documents'`)
+  ).rows[0]
+  check('the documents storage bucket is private', bucket?.public === false)
 
   // ---------------------------------------------------------------------------
   console.log(`\n[1mResult[0m  ${passed} passed, ${failed} failed\n`)

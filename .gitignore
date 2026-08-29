@@ -54,6 +54,7 @@ AGENTS.md
 # Database dumps
 supabase/
 supabase-shop/
+supabase-work/
 newtab/
 !components/newtab/
 !components/newtab/**

@@ -14,48 +14,71 @@ import { Panel, PageHeading, PanelHead } from '@/components/work/data/panel'
 import { ProjectsTable } from '@/components/work/data/projects-table'
 import { RevenueChart } from '@/components/work/data/revenue-chart'
 import { StatCard } from '@/components/work/data/stat-card'
-import { RangeTabs } from './range-tabs'
+import { requireAdmin } from '@/lib/work/auth/permissions'
+import { formatMoney, formatDate } from '@/lib/work/format'
+import { getAdminDashboard } from '@/lib/work/queries/dashboard'
 
-export const metadata = { title: 'ภาพรวม — flowstate' }
+export const metadata = { title: 'ภาพรวม' }
 
 /**
- * Admin dashboard. Server Component — the prototype's version of this markup
- * lived inside a `'use client'` page, so the whole dashboard shipped to the
- * browser. Only the range tabs need interactivity now.
+ * Admin dashboard.
+ *
+ * Server Component. Every figure is computed from rows read under the caller's
+ * session — there is no hardcoded revenue, no seeded chart, and no number that
+ * cannot be traced back to a payment or a project.
  */
-export default function AdminDashboardPage() {
+export default async function AdminDashboardPage() {
+  const staff = await requireAdmin()
+  const data = await getAdminDashboard()
+
+  const totalInWindow = data.revenue.reduce(
+    (sum, month) => sum + month.paid + month.pending,
+    0,
+  )
+
   return (
     <>
       <PageHeading
-        eyebrow="วันจันทร์ที่ 24 สิงหาคม 2569"
-        title="สวัสดีตอนเช้า Centered101"
+        eyebrow={formatDate(new Date().toISOString())}
+        title={`สวัสดี ${staff.organizationName}`}
         description="นี่คือความเคลื่อนไหวของโปรเจกต์ทั้งหมดวันนี้"
         action={
-          <Link className="primary" href="/work/admin/projects/new">
-            <Plus size={17} />
-            สร้างโปรเจกต์
-          </Link>
+          staff.can('project:write') ? (
+            <Link className="primary" href="/work/admin/projects/new">
+              <Plus size={17} />
+              สร้างโปรเจกต์
+            </Link>
+          ) : undefined
         }
       />
 
       <section className="stats-grid">
-        <StatCard label="รายได้รวม" value="฿125,000" change="12.5%" icon={WalletCards} />
+        <StatCard
+          label="รายได้รวม"
+          value={formatMoney(data.totalRevenue, data.currency)}
+          icon={WalletCards}
+        />
         <StatCard
           label="การชำระเงินที่รอดำเนินการ"
-          value="฿32,000"
+          value={formatMoney(data.pendingAmount, data.currency)}
           icon={Clock3}
           tone="orange"
         />
         <StatCard
           label="โปรเจกต์ที่กำลังดำเนินการ"
-          value="8"
+          value={String(data.activeProjects)}
           icon={FolderKanban}
           tone="violet"
         />
-        <StatCard label="การดูแลรักษาที่ใช้งานอยู่" value="12" icon={LifeBuoy} tone="green" />
+        <StatCard
+          label="การดูแลรักษาที่ใช้งานอยู่"
+          value={String(data.maintenanceCount)}
+          icon={LifeBuoy}
+          tone="green"
+        />
         <StatCard
           label="การชำระเงินที่เกินกำหนด"
-          value="฿5,000"
+          value={formatMoney(data.overdueAmount, data.currency)}
           icon={AlertCircle}
           tone="red"
         />
@@ -63,10 +86,13 @@ export default function AdminDashboardPage() {
 
       <section className="dashboard-grid">
         <Panel className="revenue-panel">
+          {/* The prototype's range tabs are gone. They never refetched
+              anything — with mock data that was harmless, but a control that
+              does nothing next to real figures tells the reader the window
+              changed when it did not. The window is stated instead. */}
           <PanelHead
             title="ภาพรวมรายได้"
-            description="ติดตามรายได้ที่ชำระแล้วและรอชำระ"
-            action={<RangeTabs />}
+            description="รายได้ที่ชำระแล้วและรอชำระ ย้อนหลัง 12 เดือน"
           />
           <div className="chart-key">
             <span>
@@ -78,19 +104,18 @@ export default function AdminDashboardPage() {
               รอชำระ
             </span>
             <strong>
-              ฿157,000 <small>รวมทั้งหมด</small>
+              {formatMoney(totalInWindow, data.currency)} <small>รวม 12 เดือน</small>
             </strong>
           </div>
-          <RevenueChart />
+          <RevenueChart data={data.revenue} />
         </Panel>
 
         <Panel className="activity-panel">
           <PanelHead
             title="กิจกรรมล่าสุด"
             description="ความเคลื่อนไหวล่าสุดในพื้นที่ทำงาน"
-            action={<button className="text-btn">ดูทั้งหมด</button>}
           />
-          <ActivityList />
+          <ActivityList items={data.activity} />
         </Panel>
       </section>
 
@@ -104,7 +129,7 @@ export default function AdminDashboardPage() {
             </Link>
           }
         />
-        <ProjectsTable />
+        <ProjectsTable projects={data.recentProjects} />
       </Panel>
     </>
   )

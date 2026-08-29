@@ -4,7 +4,6 @@ import {
   Clock3,
   Code2,
   FolderKanban,
-  GitBranch,
   ShieldCheck,
   WalletCards,
 } from 'lucide-react'
@@ -13,31 +12,64 @@ import { Panel, PageHeading, PanelHead } from '@/components/work/data/panel'
 import { StatCard } from '@/components/work/data/stat-card'
 import { Status } from '@/components/work/data/status'
 import { Timeline } from '@/components/work/data/timeline'
-import { mockClientProject, mockMaintenance } from '@/lib/work/mock/data'
+import { EmptyState } from '@/components/work/states'
+import { requireClient } from '@/lib/work/auth/permissions'
+import {
+  BILLING_CYCLE_LABELS,
+  DELIVERY_METHOD_LABELS,
+  MAINTENANCE_STATUS_LABELS,
+  PROJECT_STATUS_LABELS,
+  SOURCE_OWNERSHIP_LABELS,
+  formatDate,
+  formatMoney,
+  idTone,
+  projectStatusTone,
+} from '@/lib/work/format'
+import { getPortalDashboard } from '@/lib/work/queries/dashboard'
 
-export const metadata = { title: 'พอร์ทัลลูกค้า — flowstate' }
+export const metadata = { title: 'พอร์ทัลลูกค้า' }
 
 /**
- * Client portal dashboard — the prototype's `ClientPortalView`, now a real
- * route and a Server Component.
+ * Client portal dashboard.
  *
- * The brief (Phase 27) wants an ACTION REQUIRED block as the most prominent
- * element here. That needs real payment, agreement and review state to be
- * honest about what is actually outstanding, so it lands with the portal work
- * in Phase 9 rather than being faked now.
+ * Shows only what belongs to the signed-in client, and it does so without a
+ * single "where client_id = ?" in application code: every query runs under the
+ * caller's session, and RLS restricts the rows to projects they are a member
+ * of. There is no code path here that could be pointed at another client.
  */
-export default function PortalDashboardPage() {
-  const project = mockClientProject
+export default async function PortalDashboardPage() {
+  await requireClient()
+  const data = await getPortalDashboard()
+
+  if (!data.featured) {
+    return (
+      <>
+        <PageHeading
+          eyebrow="พอร์ทัลลูกค้า"
+          title="ยินดีต้อนรับ"
+          description="ภาพรวมโปรเจกต์และบัญชีของคุณ"
+        />
+        <EmptyState
+          title="ยังไม่มีโปรเจกต์"
+          description="เมื่อทีมงานเพิ่มคุณเข้าโปรเจกต์แล้ว รายละเอียดจะแสดงที่นี่"
+        />
+      </>
+    )
+  }
+
+  const featured = data.featured
+  const features = data.featuredFeatures
+  const remaining = Math.max(0, featured.totalAmount - featured.paidAmount)
 
   return (
     <>
       <PageHeading
         eyebrow="พอร์ทัลลูกค้า"
-        title="ยินดีต้อนรับกลับมา ABC Company"
+        title="ยินดีต้อนรับกลับมา"
         description="ภาพรวมโปรเจกต์และบัญชีของคุณ"
         action={
-          <Link className="primary" href={`/work/portal/projects/${project.code}/payments`}>
-            ชำระไมล์สโตนถัดไป <ArrowUpRight size={15} />
+          <Link className="primary" href={`/work/portal/projects/${featured.id}/payments`}>
+            ดูการชำระเงิน <ArrowUpRight size={15} />
           </Link>
         }
       />
@@ -45,60 +77,82 @@ export default function PortalDashboardPage() {
       <section className="stats-grid client-stats">
         <StatCard
           label="โปรเจกต์ที่กำลังดำเนินการ"
-          value="2"
+          value={String(data.activeProjects)}
           icon={FolderKanban}
           tone="violet"
         />
-        <StatCard label="ชำระแล้วทั้งหมด" value="฿45,000" change="ตามแผน" icon={WalletCards} />
-        <StatCard label="ยอดค้างชำระ" value="฿10,000" icon={Clock3} tone="orange" />
-        <StatCard label="การดูแลรักษา" value="ใช้งานอยู่" icon={ShieldCheck} tone="green" />
+        <StatCard
+          label="ชำระแล้วทั้งหมด"
+          value={formatMoney(data.totalPaid, data.currency)}
+          icon={WalletCards}
+        />
+        <StatCard
+          label="ยอดค้างชำระ"
+          value={formatMoney(data.outstanding, data.currency)}
+          icon={Clock3}
+          tone="orange"
+        />
+        <StatCard
+          label="การดูแลรักษา"
+          value={
+            data.maintenance ? MAINTENANCE_STATUS_LABELS[data.maintenance.status] : 'ไม่มีแพ็กเกจ'
+          }
+          icon={ShieldCheck}
+          tone="green"
+        />
       </section>
 
       <section className="client-main">
         <Panel className="project-hero">
           <div className="hero-top">
-            <div className="project-icon blue large">
+            <div className={`project-icon ${idTone(featured.id)} large`}>
               <Code2 size={22} />
             </div>
             <div>
-              <p className="eyebrow">{project.code}</p>
-              <h2>{project.name}</h2>
-              <p className="muted">{project.subtitle}</p>
+              <p className="eyebrow">{featured.projectCode}</p>
+              <h2>{featured.name}</h2>
+              <p className="muted">
+                {featured.clientName} · กำหนดส่งมอบ {formatDate(featured.expectedDelivery)}
+              </p>
             </div>
-            <Status>{project.status}</Status>
+            <Status tone={projectStatusTone(featured.status)}>
+              {PROJECT_STATUS_LABELS[featured.status]}
+            </Status>
           </div>
           <div className="big-progress">
             <div>
               <span>ความคืบหน้าโปรเจกต์</span>
-              <strong>{project.progress}%</strong>
+              <strong>{featured.progress}%</strong>
             </div>
             <div className="progress">
-              <span style={{ width: `${project.progress}%` }} />
+              <span style={{ width: `${featured.progress}%` }} />
             </div>
-            <small>{project.progressNote}</small>
+            <small>{PROJECT_STATUS_LABELS[featured.status]}</small>
           </div>
           <div className="hero-details">
             <div>
               <span>มูลค่าโปรเจกต์</span>
-              <strong>{project.value}</strong>
+              <strong>{formatMoney(featured.totalAmount, featured.currency)}</strong>
             </div>
             <div>
               <span>ชำระแล้ว</span>
-              <strong>{project.paid}</strong>
+              <strong>{formatMoney(featured.paidAmount, featured.currency)}</strong>
             </div>
             <div>
               <span>คงเหลือ</span>
-              <strong className="orange-text">{project.remaining}</strong>
+              <strong className="orange-text">
+                {formatMoney(remaining, featured.currency)}
+              </strong>
             </div>
-            <Link className="primary" href={`/work/portal/projects/${project.code}/payments`}>
-              ชำระไมล์สโตนถัดไป <ArrowUpRight size={15} />
+            <Link className="primary" href={`/work/portal/projects/${featured.id}/payments`}>
+              ดูการชำระเงิน <ArrowUpRight size={15} />
             </Link>
           </div>
         </Panel>
 
         <Panel className="timeline-panel">
           <PanelHead title="ไทม์ไลน์โปรเจกต์" description="ติดตามทุกขั้นตอนจนเปิดใช้งาน" />
-          <Timeline />
+          <Timeline items={features} />
         </Panel>
       </section>
 
@@ -112,54 +166,66 @@ export default function PortalDashboardPage() {
           <div className="ownership-rows">
             <div>
               <span>เจ้าของโปรเจกต์</span>
-              <strong>{project.owner}</strong>
+              <strong>{featured.clientName}</strong>
             </div>
             <div>
               <span>ความเป็นเจ้าของซอร์สโค้ด</span>
-              <strong>{project.sourceOwnership}</strong>
-            </div>
-            <div>
-              <span>สิทธิ์เข้าถึงซอร์สโค้ด</span>
-              <strong className="green-text">{project.sourceAccess}</strong>
+              <strong>{SOURCE_OWNERSHIP_LABELS[featured.sourceCodeOwnership]}</strong>
             </div>
             <div>
               <span>โฮสติ้ง</span>
-              <strong>{project.hosting}</strong>
+              <strong>{DELIVERY_METHOD_LABELS[featured.deliveryMethod]}</strong>
             </div>
             <div>
-              <span>ที่เก็บโค้ด</span>
-              <strong className="repo">
-                <GitBranch size={14} /> {project.repository}
-              </strong>
+              <span>เริ่มงาน</span>
+              <strong>{formatDate(featured.startDate)}</strong>
             </div>
           </div>
         </Panel>
 
-        <Panel className="maintenance">
-          <PanelHead
-            title={mockMaintenance.planName}
-            description="แพ็กเกจดูแลรักษาของคุณ"
-            action={<Status tone="green">ใช้งานอยู่</Status>}
-          />
-          <div className="maintenance-price">
-            <strong>{mockMaintenance.price}</strong>
-            <span>{mockMaintenance.period}</span>
-          </div>
-          <div className="next-billing">
-            <Clock3 size={15} />
-            <span>
-              รอบบิลถัดไป <strong>{mockMaintenance.nextBilling}</strong>
-            </span>
-          </div>
-          <div className="service-tags">
-            {mockMaintenance.services.map((service) => (
-              <span key={service}>{service}</span>
-            ))}
-          </div>
-          <Link className="outline full" href={`/work/portal/projects/${project.code}/maintenance`}>
-            จัดการแพ็กเกจ <ArrowUpRight size={15} />
-          </Link>
-        </Panel>
+        {data.maintenance ? (
+          <Panel className="maintenance">
+            <PanelHead
+              title={data.maintenance.name}
+              description="แพ็กเกจดูแลรักษาของคุณ"
+              action={
+                <Status tone={data.maintenance.status === 'ACTIVE' ? 'green' : 'orange'}>
+                  {MAINTENANCE_STATUS_LABELS[data.maintenance.status]}
+                </Status>
+              }
+            />
+            <div className="maintenance-price">
+              <strong>
+                {formatMoney(data.maintenance.priceAmount, data.maintenance.currency)}
+              </strong>
+              <span>{BILLING_CYCLE_LABELS[data.maintenance.billingCycle]}</span>
+            </div>
+            <div className="next-billing">
+              <Clock3 size={15} />
+              <span>
+                รอบบิลถัดไป <strong>{formatDate(data.maintenance.nextBillingDate)}</strong>
+              </span>
+            </div>
+            <div className="service-tags">
+              {data.maintenance.services.map((service) => (
+                <span key={service}>{service}</span>
+              ))}
+            </div>
+            <Link
+              className="outline full"
+              href={`/work/portal/projects/${data.maintenance.projectId}/maintenance`}
+            >
+              ดูรายละเอียด <ArrowUpRight size={15} />
+            </Link>
+          </Panel>
+        ) : (
+          <Panel className="maintenance">
+            <PanelHead title="การดูแลรักษา" description="ยังไม่มีแพ็กเกจสำหรับโปรเจกต์นี้" />
+            <p className="muted empty-inline">
+              หากต้องการแพ็กเกจดูแลรักษา กรุณาติดต่อทีมงาน
+            </p>
+          </Panel>
+        )}
       </section>
     </>
   )
