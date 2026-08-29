@@ -6,6 +6,87 @@ import { changePasswordSchema, setPasswordSchema } from '@/lib/work/validation/a
 import type { ActionState } from './projects'
 
 /**
+ * Whether the CURRENT session was created by a recovery link.
+ *
+ * This is the whole safety of the reset flow. `completePasswordReset()` skips
+ * the current-password check — it has to, since not knowing it is the reason
+ * someone is here — so without this it would be a server action that lets
+ * anybody holding any session change the password, which is exactly the
+ * control `changePassword()` exists to enforce.
+ *
+ * Supabase records how the session was authenticated in the JWT's `amr`
+ * claim, surfaced through the AAL helper. A recovery sign-in carries
+ * `recovery`; a normal password or OAuth sign-in does not.
+ *
+ * FAILS CLOSED. If the claim cannot be read for any reason, the answer is no.
+ */
+async function isRecoverySession(): Promise<boolean> {
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+    if (error || !data) return false
+    // The SDK types this as `string | AMREntry`: older tokens carry the bare
+    // method name, newer ones an object. Both shapes are accepted rather than
+    // picking one and having the check silently stop matching.
+    return (data.currentAuthenticationMethods ?? []).some((entry) =>
+      typeof entry === 'string' ? entry === 'recovery' : entry.method === 'recovery',
+    )
+  } catch (error) {
+    console.error('[password] could not read authentication methods', error)
+    return false
+  }
+}
+
+/**
+ * Sets a new password from a recovery link.
+ *
+ * Separate from `changePassword()` rather than a flag on it: the two differ in
+ * what proves identity — the current password there, possession of the mailbox
+ * here — and collapsing them into one action with a "skip verification" branch
+ * is how that branch eventually gets reached from the wrong place.
+ */
+export async function completePasswordReset(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireUser()
+
+  if (!(await isRecoverySession())) {
+    return {
+      error:
+        'เซสชันนี้ไม่ได้มาจากลิงก์ตั้งรหัสผ่านใหม่ — กรุณาขอลิงก์ใหม่อีกครั้ง หรือเปลี่ยนรหัสผ่านจากหน้าโปรไฟล์',
+    }
+  }
+
+  const parsed = setPasswordSchema.safeParse({
+    newPassword: String(formData.get('newPassword') ?? ''),
+    confirmPassword: String(formData.get('confirmPassword') ?? ''),
+  })
+
+  if (!parsed.success) {
+    const fieldErrors: Record<string, string> = {}
+    for (const issue of parsed.error.issues) {
+      const key = String(issue.path[0] ?? '')
+      if (key && !fieldErrors[key]) fieldErrors[key] = issue.message
+    }
+    return { fieldErrors }
+  }
+
+  const supabase = await createClient()
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.newPassword })
+
+  if (error) {
+    console.error('[password] reset failed', error)
+    if (/different from the old password/i.test(error.message)) {
+      return { fieldErrors: { newPassword: 'รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสผ่านเดิม' } }
+    }
+    return { error: 'ตั้งรหัสผ่านใหม่ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง' }
+  }
+
+  return { message: 'ตั้งรหัสผ่านใหม่แล้ว' }
+}
+
+/**
  * Change (or set) the account password.
  *
  * WHY THE CURRENT PASSWORD IS RE-VERIFIED: `supabase.auth.updateUser()` accepts

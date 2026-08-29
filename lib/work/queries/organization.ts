@@ -13,6 +13,7 @@ export type OrganizationMember = {
   role: OrgRole
   fullName: string | null
   email: string
+  avatarUrl: string | null
   createdAt: string
 }
 
@@ -21,7 +22,7 @@ export async function getOrganizationMembers(): Promise<OrganizationMember[]> {
 
   const result = await supabase
     .from('organization_members')
-    .select('id, profile_id, role, created_at, profiles(full_name, email)')
+    .select('id, profile_id, role, created_at, profiles(full_name, email, avatar_url)')
     .order('created_at', { ascending: true })
 
   const rows = unwrapOr<
@@ -30,7 +31,7 @@ export async function getOrganizationMembers(): Promise<OrganizationMember[]> {
       profile_id: string
       role: OrgRole
       created_at: string
-      profiles: { full_name: string | null; email: string } | null
+      profiles: { full_name: string | null; email: string; avatar_url: string | null } | null
     }[]
   >(result, 'สมาชิกทีม', [])
 
@@ -40,6 +41,11 @@ export async function getOrganizationMembers(): Promise<OrganizationMember[]> {
     role: row.role,
     fullName: row.profiles?.full_name ?? null,
     email: row.profiles?.email ?? '',
+    // From `profiles`, not from the session — this is somebody else's picture,
+    // and their session is not ours to read. It is populated by the signup
+    // trigger, so a teammate who joined with a password and linked Google
+    // later has none until `syncOwnAvatar()` runs for them.
+    avatarUrl: row.profiles?.avatar_url ?? null,
     createdAt: row.created_at,
   }))
 }

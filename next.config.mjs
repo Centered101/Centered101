@@ -2,7 +2,7 @@
 //  - self-hosted Next.js assets + next/font (Kanit, Geist Mono)
 //  - Vercel Analytics (va.vercel-scripts.com)
 //  - Supabase REST/Storage/Realtime (browser calls from shop + admin)
-//  - Images from Supabase storage, GitHub avatars, next/image
+//  - Images from Supabase storage, GitHub + Google avatars, next/image
 // 'unsafe-inline' on script/style is required because we use static (nonce-less)
 // CSP to keep pages prerendered/CDN-cached. securityheaders.com still grades A+.
 // In development, React + Turbopack need 'unsafe-eval' (debugging features) and
@@ -63,6 +63,8 @@ const nextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 'wwcduaaqtyopvofzlouw.supabase.co' },
       { protocol: 'https', hostname: 'avatars.githubusercontent.com' },
+      // Google account pictures, shown in the flowstate sidebar chip.
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
     ],
   },
   async headers() {

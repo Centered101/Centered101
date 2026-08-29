@@ -31,14 +31,16 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   return (
     <AppShell
       activePortal="portal"
-      workspaceName={client.displayName}
+      /* Not the client's name — that is in the footer. What the line under
+         the brand says is which side of the app you are on. */
       workspaceRole="ลูกค้า"
-      workspaceInitial={client.initial}
       userName={client.displayName}
       userEmail={client.email}
       userInitial={client.initial}
-      notifications={<ActivityList items={activity} />}
+      userAvatarUrl={client.avatarUrl}
+      notifications={<ActivityList items={activity} portal="portal" />}
       latestActivityId={activity[0]?.id ?? null}
+      userId={client.userId}
     >
       {client.schemaMissing && <SchemaNotice />}
       {children}

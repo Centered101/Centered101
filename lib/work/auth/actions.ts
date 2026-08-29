@@ -1,9 +1,9 @@
 'use server'
 
-import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 
+import { getCallbackUrl } from './callback-url'
 import { createClient } from '@/lib/work/supabase/server'
 import {
   credentialsSchema,
@@ -30,44 +30,6 @@ export type AuthState = {
   fieldErrors?: Record<string, string>
 }
 
-const LOCAL_HOST = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$|\.localhost(:\d+)?$/i
-
-/**
- * Absolute origin for OAuth and magic-link redirects.
- *
- * NEXT_PUBLIC_WORK_APP_URL is deliberately ignored for a local request. It
- * holds the production origin, and honouring it in dev sends the browser to
- * work.centered101.com/... — a URL the local Supabase project has no redirect
- * entry for, so Supabase silently falls back to its Site URL and the code
- * lands on the wrong host with the wrong project's PKCE verifier.
- */
-async function getOrigin(): Promise<string> {
-  const headerList = await headers()
-  const host = headerList.get('x-forwarded-host') ?? headerList.get('host') ?? 'localhost:3000'
-  const isLocal = LOCAL_HOST.test(host)
-
-  const configured = process.env.NEXT_PUBLIC_WORK_APP_URL
-  if (configured && !isLocal) return configured.replace(/\/$/, '')
-
-  const proto = headerList.get('x-forwarded-proto') ?? (isLocal ? 'http' : 'https')
-  return `${proto}://${host}`
-}
-
-/**
- * Absolute URL of the flowstate auth callback.
- *
- * The path depends on how the visitor reached the app. On work.<root> the
- * proxy rewrites /auth/* into /work/auth/*, so the prefix is invisible; on the
- * apex host the route only exists at /work/auth/callback, and a bare
- * /auth/callback there is the MAIN site's callback, which would exchange this
- * code against the wrong Supabase project.
- */
-async function getCallbackUrl(next = ''): Promise<string> {
-  const origin = await getOrigin()
-  const prefix = /:\/\/work\./i.test(origin) ? '' : '/work'
-  const query = next ? `?next=${encodeURIComponent(next)}` : ''
-  return `${origin}${prefix}/auth/callback${query}`
-}
 
 function fieldErrorsFrom(error: { issues: { path: PropertyKey[]; message: string }[] }) {
   const fieldErrors: Record<string, string> = {}
@@ -180,6 +142,45 @@ export async function signInWithMagicLink(
   // Always the same response, whether or not the address has an account —
   // otherwise this endpoint reveals which emails are registered.
   return { message: 'ถ้าอีเมลนี้มีบัญชีอยู่ เราได้ส่งลิงก์เข้าสู่ระบบไปให้แล้ว' }
+}
+
+// -----------------------------------------------------------------------------
+// Password recovery
+// -----------------------------------------------------------------------------
+/**
+ * Sends a one-time link that signs the person in so they can set a new
+ * password.
+ *
+ * The link lands on the normal auth callback, which exchanges the code for a
+ * session and then forwards to /work/reset-password. That page is NOT public:
+ * by the time it renders there is a real session, and the recovery link is
+ * what created it.
+ *
+ * Reports the same message whether or not the address has an account, for the
+ * same reason the magic-link action does — otherwise this form answers "is
+ * this email registered here?" for anyone who asks.
+ */
+export async function requestPasswordReset(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const parsed = magicLinkSchema.safeParse({ email: formData.get('email') })
+  if (!parsed.success) {
+    return { fieldErrors: fieldErrorsFrom(parsed.error) }
+  }
+
+  const supabase = await createClient()
+
+  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+    redirectTo: await getCallbackUrl('/work/reset-password'),
+  })
+
+  if (error) {
+    console.error('[auth] reset email failed', error)
+    return { error: 'ส่งลิงก์ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง' }
+  }
+
+  return { message: 'ถ้าอีเมลนี้มีบัญชีอยู่ เราได้ส่งลิงก์ตั้งรหัสผ่านใหม่ไปให้แล้ว' }
 }
 
 // -----------------------------------------------------------------------------

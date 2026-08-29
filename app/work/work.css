@@ -136,6 +136,20 @@ button {
   font-weight: 750;
   letter-spacing: -0.03em;
 }
+/* Title plus the workspace line beneath it. The auth screens use .brand with
+   a bare <span>, so this wrapper only exists in the sidebar and nothing about
+   those pages changes. */
+.brand-text {
+  display: grid;
+  min-width: 0;
+}
+.brand-text small {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--muted-foreground);
+  margin-top: 2px;
+}
 .brand-mark {
   width: 28px;
   height: 28px;
@@ -163,34 +177,21 @@ button {
   border: 0;
   color: var(--muted-foreground);
 }
-.workspace {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 10px;
-  background: var(--muted);
-  border-radius: 10px;
-  margin-bottom: 22px;
-}
-.workspace strong,
-.workspace small,
+/* .workspace is gone with the chip it styled: the organization name, its
+   avatar tile and a chevron that promised a switcher nobody built. What it
+   actually told you — which workspace this is — is a line under the brand now
+   (.brand-text small). */
 .profile strong,
 .profile small {
   display: block;
 }
-.workspace strong,
 .profile strong {
   font-size: 12px;
 }
-.workspace small,
 .profile small {
   font-size: 10px;
   color: var(--muted-foreground);
   margin-top: 3px;
-}
-.workspace > svg {
-  margin-left: auto;
-  color: var(--muted-foreground);
 }
 .avatar {
   display: grid;
@@ -580,7 +581,9 @@ button {
   gap: 18px;
   margin-top: 23px;
 }
-.activity-list > div {
+/* `> *`, not `> div`: entries that link out are anchors, and an element
+   selector here silently dropped the whole row layout for them. */
+.activity-list > * {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1438,10 +1441,23 @@ a.text-btn {
 .state-panel .muted {
   max-width: 420px;
 }
+/*
+ * The four outside-the-shell screens (error, loading, forbidden, not-found)
+ * carry one short card on an otherwise empty page, so `margin: auto` alone
+ * left it pinned to the top with the viewport empty below it.
+ *
+ * min-height + align-content centers it vertically. It stays min-height, not
+ * height, so a card taller than the viewport grows the page and scrolls
+ * normally instead of being clipped, and align-content (not place-items)
+ * keeps the panel at its full width — only its vertical position changes.
+ */
 .standalone-state {
   padding: 34px 38px 48px;
   max-width: 1500px;
   margin: auto;
+  display: grid;
+  align-content: center;
+  min-height: 100dvh;
 }
 
 .skeleton-panel {
@@ -1478,10 +1494,26 @@ a.text-btn {
 }
 
 /* ---- Auth and share screens (outside the app shell) ---- */
+/*
+ * Card owns the fold; the footer starts below it.
+ *
+ * `place-items: center` on auto rows was not centering the card in the
+ * viewport: with no align-content set, the two auto rows stretched to share
+ * the leftover height of the 100vh box, so the card sat centered in a tall
+ * top row and the footer floated in the middle of the empty space under it.
+ *
+ * An explicit first row fixes the reference the card is centered against.
+ * minmax() rather than a flat 100dvh so a card taller than the viewport grows
+ * its row instead of overflowing. The login screen is the only one of the
+ * three .auth-screen pages with a second child — for the other two the single
+ * card just centers in the fold, which is what they did before.
+ */
 .auth-screen {
   min-height: 100vh;
   display: grid;
-  place-items: center;
+  grid-template-rows: minmax(100dvh, auto) auto;
+  justify-items: center;
+  align-items: center;
   padding: 24px;
   background: var(--background);
 }
@@ -1562,21 +1594,12 @@ a.text-btn {
   background: var(--border);
 }
 
-.auth-error,
-.auth-success,
+/* .auth-error and .auth-success are gone with the paragraphs they styled:
+   form-level results are toasts now (see login-form.tsx). Field-level errors
+   stay inline, beside the input that has to change. */
 .field-error {
-  font-size: 11px;
+  color: #db6767;
   line-height: 1.5;
-  margin: 12px 0 0;
-}
-.auth-error {
-  color: #db6767;
-}
-.auth-success {
-  color: #269b6c;
-}
-.field-error {
-  color: #db6767;
   margin: 4px 0 0;
   font-size: 10px;
 }
@@ -1655,11 +1678,6 @@ a.text-btn {
 
 .brand {
   padding: 0 10px 18px;
-}
-
-.workspace {
-  border-radius: 14px;
-  margin-bottom: 18px;
 }
 
 .sidebar nav {
@@ -1805,6 +1823,137 @@ a.text-btn {
   }
   /* .content and .topbar already carry the same 12px inner padding at this
      breakpoint, so the shared gutter keeps them aligned untouched. */
+}
+
+/* Invite form: two fields and a button, sitting under the members panel head
+   rather than in a dialog — there is not enough of it to justify one. */
+.invite-form {
+  /* Email, role, button on one row — the two-column .work-form grid would
+     push the button onto a line of its own. */
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+  align-items: end;
+  margin-top: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.invite-form .form-actions {
+  grid-column: auto;
+  justify-content: flex-start;
+}
+.invite-form button {
+  gap: 7px;
+}
+
+/* Inline role selector. Sized down from .work-form's inputs so the row keeps
+   a table's rhythm rather than a form's. */
+.member-role-form select {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
+  border-radius: 8px;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 11px;
+  max-width: 160px;
+}
+.member-role-form select:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.member-role-form select:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* Destructive row control. Muted until armed, so the confirming state is the
+   only one that looks like a warning. */
+td.row-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+.row-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted-foreground);
+  border-radius: 8px;
+  padding: 5px 9px;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.row-action:hover {
+  border-color: #f1b7b7;
+  color: #db6767;
+}
+.row-action.armed {
+  border-color: #db6767;
+  background: #fdecec;
+  color: #c04a4a;
+  font-weight: 650;
+}
+.row-action:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* Name cell in the members table: chip beside the name. */
+.member-cell {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.member-avatar {
+  width: 26px;
+  height: 26px;
+  font-size: 10px;
+  flex: none;
+}
+
+@media (max-width: 720px) {
+  .invite-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* The account chip when it is a photo rather than a letter. .avatar sizes it
+   already; these only stop the image from stretching and keep the fixed box
+   next/image sets from being overridden into a squashed one. */
+.avatar-photo {
+  object-fit: cover;
+  flex: none;
+}
+
+/* The identity card at the foot of the sidebar is a link to the account page.
+   The generic `.sidebar-bottom a` rules above would otherwise strip its tint
+   and mute the name, so the card's own look is restated here — later in the
+   file, at equal specificity, so it wins on source order. */
+a.profile {
+  text-decoration: none;
+  color: inherit;
+  background: var(--muted);
+  border-radius: 14px;
+  padding: 11px 12px;
+  gap: 10px;
+  transition: background 0.15s, color 0.15s;
+}
+a.profile strong {
+  color: var(--foreground);
+}
+a.profile:hover,
+a.profile[aria-current='page'] {
+  background: #eef7ff;
+}
+a.profile:hover strong,
+a.profile[aria-current='page'] strong {
+  color: var(--primary);
+}
+a.profile:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 
 /* =========================================================================
@@ -2185,4 +2334,102 @@ a.text-btn {
 .work-root {
   font-family: 'Kanit', 'Bai Jamjuree', monospace;
   font-weight: 600;
+}
+
+/* ---- Sign-in methods ---- */
+.connection-rows {
+  display: grid;
+  gap: 2px;
+  margin-top: 20px;
+}
+.connection-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--border);
+}
+.connection-row:last-child {
+  border-bottom: 0;
+}
+.connection-row > div:first-child {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.connection-row strong {
+  font-size: 13px;
+}
+.connection-row small {
+  font-size: 11px;
+}
+.connection-action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+/* The form is a button in a wrapper — strip the grid the shared .work-form
+   layout would otherwise impose on it. */
+.connection-form {
+  display: flex;
+}
+.connection-form button {
+  font-size: 11px;
+  padding: 7px 13px;
+}
+
+/* Activity rows that lead somewhere. The unlinked ones keep the plain look,
+   so "clickable" stays a real signal rather than decoration. */
+.activity-list .activity-link {
+  border-radius: 10px;
+  margin: 0 -8px;
+  padding-left: 8px;
+  padding-right: 8px;
+  color: inherit;
+  transition: background 0.12s ease;
+}
+.activity-list .activity-link:hover {
+  background: var(--muted);
+}
+.activity-list .activity-link:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+.activity-list .activity-link strong {
+  color: var(--foreground);
+}
+
+/* ---- Password recovery ---- */
+/* "ลืมรหัสผ่าน?" under the password field, and the "back to sign in" line at
+   the foot of the recovery cards. Both are escape hatches, so they read as
+   quieter than the primary action rather than competing with it. */
+.auth-secondary-link {
+  justify-self: end;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.auth-secondary-link:hover {
+  color: var(--primary);
+}
+.auth-alt {
+  margin: 18px 0 0;
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.auth-alt a:hover {
+  color: var(--primary);
+}
+/* The recovery form uses .auth-form, whose children are a single column; the
+   shared .form-actions expects the two-column .work-form grid around it. */
+.auth-form .form-actions {
+  display: block;
+  margin-top: 20px;
+}
+.auth-form .form-actions button {
+  width: 100%;
 }

@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/work/supabase/server'
 import { safeRedirectPath } from '@/lib/work/validation/auth'
 import { resolveLandingPath } from '@/lib/work/auth/permissions'
+import { syncOwnAvatar } from '@/lib/work/services/profile'
 
 /**
  * OAuth and magic-link landing point.
@@ -43,6 +44,10 @@ export async function GET(request: NextRequest) {
     url.searchParams.set('reason', error.message)
     return NextResponse.redirect(url)
   }
+
+  // After the exchange, so the session exists; before the redirect, so a
+  // teammate's picture is current the next time anyone loads a member list.
+  await syncOwnAvatar()
 
   const destination = next || (await resolveLandingPath())
   return NextResponse.redirect(new URL(destination, origin))

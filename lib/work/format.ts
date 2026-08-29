@@ -92,6 +92,18 @@ export function formatRelative(value: string | null | undefined): string {
   return formatDate(value)
 }
 
+/**
+ * First letter of a name, for an avatar chip.
+ *
+ * Lives here rather than beside <Avatar> because that file is `'use client'`,
+ * and every export of a client module is a client reference — a Server
+ * Component calling one gets "Attempted to call initialFor() from the server".
+ * A pure helper has no business being pinned to one side of that boundary.
+ */
+export function initialFor(name: string | null | undefined, fallback = ''): string {
+  return ((name || fallback).trim()[0] ?? '?').toUpperCase()
+}
+
 // -----------------------------------------------------------------------------
 // Enum labels
 // -----------------------------------------------------------------------------

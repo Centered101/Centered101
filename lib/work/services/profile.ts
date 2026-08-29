@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { requireUser } from '@/lib/work/auth/session'
+import { avatarUrlFor, requireUser } from '@/lib/work/auth/session'
 import { createClient } from '@/lib/work/supabase/server'
 import { updateProfileSchema } from '@/lib/work/validation/auth'
 import type { ActionState } from './projects'
@@ -61,4 +61,41 @@ export async function updateOwnProfile(
   revalidatePath('/work/portal', 'layout')
 
   return { message: 'บันทึกข้อมูลแล้ว' }
+}
+
+/**
+ * Copies the session's profile picture into `profiles.avatar_url`.
+ *
+ * The chrome renders YOUR picture from the session, which is always current.
+ * A teammate's picture cannot be read that way — their session is not ours —
+ * so member lists read `profiles.avatar_url`, which the signup trigger fills
+ * once and never again. An account created with a password and linked to
+ * Google afterwards would therefore show a letter to everyone but themselves.
+ *
+ * Called from the auth callback, which runs after every OAuth sign-in and
+ * magic link: the one moment the metadata is both fresh and free to read.
+ *
+ * Silent on failure, and deliberately so — a stale picture must never turn a
+ * successful sign-in into an error page.
+ */
+export async function syncOwnAvatar(): Promise<void> {
+  try {
+    const user = await requireUser()
+    const avatarUrl = avatarUrlFor(user)
+    if (!avatarUrl) return
+
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('profiles')
+      .select('avatar_url')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    // Skipped when unchanged so a sign-in is not also a write.
+    if (data?.avatar_url === avatarUrl) return
+
+    await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', user.id)
+  } catch (error) {
+    console.error('[profile] avatar sync failed', error)
+  }
 }

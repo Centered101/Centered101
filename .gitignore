@@ -54,7 +54,25 @@ AGENTS.md
 # Database dumps
 supabase/
 supabase-shop/
-supabase-work/
+
+# flowstate schema. `supabase-work/` used to be ignored wholesale, which
+# silently swallowed every migration written after the rule was added — 4 of
+# them, plus the dev seed. Migrations are the source of truth for the schema,
+# and `npm run work:db:validate` applies them from here, so a fresh clone
+# without them cannot verify or rebuild anything.
+#
+# The directory itself must stay unignored (`/*`, not `/`): git will not
+# re-include a path whose parent directory is excluded, so a blanket ignore
+# makes the negations below dead rules.
+supabase-work/*
+!supabase-work/migrations/
+!supabase-work/seed.sql
 newtab/
 !components/newtab/
 !components/newtab/**
+
+# Generated SQL bundles from scripts/bundle-work-migrations.mjs. The migrations
+# in supabase-work/migrations/ are the source of truth; these are throwaway
+# copies made for pasting into a SQL editor.
+/apply-*.sql
+/verify-*.sql

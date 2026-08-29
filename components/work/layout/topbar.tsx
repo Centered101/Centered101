@@ -33,12 +33,14 @@ export function Topbar({
   onOpenMobileNav,
   notifications,
   latestActivityId,
+  userId,
 }: {
   breadcrumb: string
   onOpenMobileNav: () => void
   /** The activity feed, rendered on the server — see NotificationBell. */
   notifications: ReactNode
   latestActivityId: number | null
+  userId: string
 }) {
   return (
     <header className="topbar">
@@ -51,7 +53,9 @@ export function Topbar({
         <strong>{breadcrumb}</strong>
       </div>
       <div className="top-actions">
-        <NotificationBell latestId={latestActivityId}>{notifications}</NotificationBell>
+        <NotificationBell userId={userId} latestId={latestActivityId}>
+          {notifications}
+        </NotificationBell>
       </div>
     </header>
   )

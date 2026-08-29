@@ -1,8 +1,10 @@
 'use client'
 
 import { useActionState, useState } from 'react'
+import Link from 'next/link'
 import { ArrowUpRight, Mail } from 'lucide-react'
 
+import { useActionToast } from '@/components/work/forms'
 import {
   signInWithGoogle,
   signInWithMagicLink,
@@ -22,6 +24,13 @@ const EMPTY: AuthState = {}
  * user switches. Every submission goes to a Server Action — credentials are
  * never handled by client-side JavaScript, and whether a sign-in succeeded is
  * never something this component decides.
+ *
+ * FORM-LEVEL RESULTS ARE TOASTS, field-level ones are not. "อีเมลหรือ
+ * รหัสผ่านไม่ถูกต้อง" is about the submission, so it goes to the same
+ * Toaster every other action in the app reports through; "รูปแบบอีเมลไม่
+ * ถูกต้อง" is about one input and stays beside it, where the correction has
+ * to be made. Sonner renders into an aria-live region, so the announcement
+ * the removed role="alert" paragraphs provided is not lost.
  */
 export function LoginForm({ next }: { next?: string }) {
   const [mode, setMode] = useState<Mode>('signin')
@@ -30,6 +39,13 @@ export function LoginForm({ next }: { next?: string }) {
   const [signUpState, signUpAction, signUpPending] = useActionState(signUpWithPassword, EMPTY)
   const [magicState, magicAction, magicPending] = useActionState(signInWithMagicLink, EMPTY)
   const [googleState, googleAction, googlePending] = useActionState(signInWithGoogle, EMPTY)
+
+  // One per action rather than one for the merged `state` below: each carries
+  // its own result, and a hook cannot be called conditionally.
+  useActionToast(signInState)
+  useActionToast(signUpState)
+  useActionToast(magicState)
+  useActionToast(googleState)
 
   const state = mode === 'signin' ? signInState : mode === 'signup' ? signUpState : magicState
   const action =
@@ -118,18 +134,14 @@ export function LoginForm({ next }: { next?: string }) {
             {state.fieldErrors?.password && (
               <p className="field-error">{state.fieldErrors.password}</p>
             )}
+            {/* Only on sign-in: offering "forgot password" while somebody is
+                choosing a new one reads as an error message. */}
+            {mode === 'signin' && (
+              <Link className="auth-secondary-link" href="/work/forgot-password">
+                ลืมรหัสผ่าน?
+              </Link>
+            )}
           </>
-        )}
-
-        {state.error && (
-          <p className="auth-error" role="alert">
-            {state.error}
-          </p>
-        )}
-        {state.message && (
-          <p className="auth-success" role="status">
-            {state.message}
-          </p>
         )}
 
         <button className="primary full" type="submit" disabled={pending}>
@@ -155,11 +167,6 @@ export function LoginForm({ next }: { next?: string }) {
           {googlePending ? 'กำลังเปลี่ยนเส้นทาง…' : 'ดำเนินการต่อด้วย Google'}
         </button>
       </form>
-      {googleState.error && (
-        <p className="auth-error" role="alert">
-          {googleState.error}
-        </p>
-      )}
     </>
   )
 }

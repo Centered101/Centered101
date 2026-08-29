@@ -3,9 +3,10 @@ import 'server-only'
 import { cache } from 'react'
 import { notFound, redirect } from 'next/navigation'
 
+import { initialFor } from '@/lib/work/format'
 import { createClient } from '@/lib/work/supabase/server'
 import type { OrgRole, ProjectRole } from '@/lib/work/types/enums'
-import { displayNameFor, getUser, requireUser } from './session'
+import { avatarUrlFor, displayNameFor, getUser } from './session'
 
 /**
  * Server-side authorization.
@@ -105,6 +106,8 @@ type BaseContext = {
   displayName: string
   /** First letter of the display name, for the avatar chip. */
   initial: string
+  /** Provider profile picture (Google), or null — the chip falls back to `initial`. */
+  avatarUrl: string | null
   /**
    * True when the membership tables do not exist yet.
    *
@@ -156,7 +159,8 @@ export const getAccessContext = cache(async (): Promise<AccessContext | null> =>
     userId: user.id,
     email: user.email ?? '',
     displayName,
-    initial: (displayName.trim()[0] ?? '?').toUpperCase(),
+    initial: initialFor(displayName),
+    avatarUrl: avatarUrlFor(user),
     schemaMissing: false,
   }
 

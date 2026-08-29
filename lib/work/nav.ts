@@ -58,6 +58,20 @@ export const adminNav: NavItem[] = [
  * chosen which project's invoices. The admin side is the reverse: it needs the
  * cross-project view, and has it.
  */
+/**
+ * Where the sidebar's identity card leads, per portal.
+ *
+ * Declared here with the rest of the navigation rather than in the Sidebar,
+ * for the reason the hardcoded ตั้งค่า link was removed from it: a destination
+ * written into shared chrome points at one portal from both, and the wrong
+ * half of the users get bounced by a guard. The admin side has no /profile
+ * route — ตั้งค่า is where an admin's own account lives.
+ */
+export const accountHref: Record<'admin' | 'portal', string> = {
+  admin: '/work/admin/settings',
+  portal: '/work/portal/profile',
+}
+
 export const portalNav: NavItem[] = [
   { label: 'ภาพรวม', href: '/work/portal', icon: LayoutDashboard },
   { label: 'โปรเจกต์', href: '/work/portal/projects', icon: FolderKanban },

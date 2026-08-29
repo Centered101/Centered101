@@ -54,10 +54,16 @@ export function SubmitButton({
  */
 export function useActionToast(state: ActionState, onSuccess?: () => void) {
   const lastMessage = useRef<string | undefined>(undefined)
+
+  // Held in a ref so an inline arrow from the caller does not re-run the toast
+  // effect on every render. Written in ITS OWN effect, not during render:
+  // mutating a ref while rendering is what React's `react-hooks/refs` rule
+  // forbids, because a render may be thrown away or replayed and the write
+  // would happen anyway.
   const onSuccessRef = useRef(onSuccess)
-  // Kept in a ref so an inline arrow passed by the caller does not re-run the
-  // effect on every render.
-  onSuccessRef.current = onSuccess
+  useEffect(() => {
+    onSuccessRef.current = onSuccess
+  })
 
   useEffect(() => {
     if (state.error) toast.error(state.error)

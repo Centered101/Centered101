@@ -20,7 +20,12 @@ import {
 } from '@/lib/work/format'
 import { getDeployments } from '@/lib/work/queries/deployments'
 import { getProjectPaymentSummary } from '@/lib/work/queries/payments'
-import { getProjectById, getProjectFeatures } from '@/lib/work/queries/projects'
+import {
+  getProjectById,
+  getProjectFeatures,
+  getProjectMembers,
+} from '@/lib/work/queries/projects'
+import { ProjectPeople } from '@/components/work/data/project-people'
 import { CreatedToast } from './created-toast'
 import { DeploymentForm } from './deployment-form'
 import { EditProjectForm } from './edit-form'
@@ -48,10 +53,11 @@ export default async function AdminProjectDetailPage(
   // it was deleted between the two reads.
   if (!project) notFound()
 
-  const [features, payments, deployments] = await Promise.all([
+  const [features, payments, deployments, members] = await Promise.all([
     getProjectFeatures(id),
     getProjectPaymentSummary(id),
     getDeployments({ projectId: id, limit: 5 }),
+    getProjectMembers(id),
   ])
 
   return (
@@ -189,6 +195,8 @@ export default async function AdminProjectDetailPage(
           )}
         </Panel>
       </section>
+
+      <ProjectPeople project={project} members={members} />
 
       <Panel className="projects-panel">
         <PanelHead title="การเผยแพร่ล่าสุด" description="ลิงก์ตัวอย่างและเวอร์ชันที่เผยแพร่" />

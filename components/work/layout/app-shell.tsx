@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
 
-import { adminNav, isNavItemActive, portalNav } from '@/lib/work/nav'
+import { accountHref, adminNav, isNavItemActive, portalNav } from '@/lib/work/nav'
 import { Footer } from './footer'
 import { Sidebar } from './sidebar'
 import { Topbar } from './topbar'
@@ -23,26 +23,28 @@ import { Topbar } from './topbar'
  */
 export function AppShell({
   activePortal,
-  workspaceName,
   workspaceRole,
-  workspaceInitial,
   userName,
   userEmail,
   userInitial,
+  userAvatarUrl,
   notifications,
   latestActivityId,
+  userId,
   children,
 }: {
   activePortal: 'admin' | 'portal'
-  workspaceName: string
-  workspaceRole: string
-  workspaceInitial: string
+  /** One-line description of the workspace, under the brand — see Sidebar. */
+  workspaceRole: string | null
   userName: string
   userEmail: string
   userInitial: string
+  userAvatarUrl: string | null
   /** The activity feed for the bell, already rendered by the layout above. */
   notifications: ReactNode
   latestActivityId: number | null
+  /** Namespaces the bell's per-account "seen" marker. */
+  userId: string
   children: ReactNode
 }) {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -62,12 +64,12 @@ export function AppShell({
     <div className="app">
       <Sidebar
         items={nav}
-        workspaceName={workspaceName}
         workspaceRole={workspaceRole}
-        workspaceInitial={workspaceInitial}
+        accountHref={accountHref[activePortal]}
         userName={userName}
         userEmail={userEmail}
         userInitial={userInitial}
+        userAvatarUrl={userAvatarUrl}
         mobileOpen={mobileOpen}
         onClose={() => setMobileOpen(false)}
       />
@@ -77,6 +79,7 @@ export function AppShell({
           onOpenMobileNav={() => setMobileOpen(true)}
           notifications={notifications}
           latestActivityId={latestActivityId}
+          userId={userId}
         />
         {/* The footer is a sibling of .content, not a child: .main is a
             flex column filling the viewport, so `margin-top: auto` on the

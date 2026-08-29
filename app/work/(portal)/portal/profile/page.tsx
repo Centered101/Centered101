@@ -1,8 +1,7 @@
 import { Panel, PageHeading, PanelHead } from '@/components/work/data/panel'
 import { Status } from '@/components/work/data/status'
-import { PasswordForm } from '@/components/work/forms/password-form'
+import { AccountSecurity } from '@/components/work/account/account-security'
 import { requireClient } from '@/lib/work/auth/permissions'
-import { hasPasswordIdentity, requireUser } from '@/lib/work/auth/session'
 import { formatDate } from '@/lib/work/format'
 import { getOwnProfile } from '@/lib/work/queries/organization'
 import { getClientProjects } from '@/lib/work/queries/projects'
@@ -21,14 +20,7 @@ export const metadata = { title: 'โปรไฟล์' }
  */
 export default async function PortalProfilePage() {
   const client = await requireClient()
-  // requireUser() is free here: getUser() is request-memoised and the guard
-  // above already resolved it.
-  const [user, profile, projects] = await Promise.all([
-    requireUser(),
-    getOwnProfile(),
-    getClientProjects(),
-  ])
-  const hasPassword = hasPasswordIdentity(user)
+  const [profile, projects] = await Promise.all([getOwnProfile(), getClientProjects()])
 
   return (
     <>
@@ -53,17 +45,7 @@ export default async function PortalProfilePage() {
       </Panel>
 
 
-      <Panel>
-        <PanelHead
-          title={hasPassword ? 'เปลี่ยนรหัสผ่าน' : 'ตั้งรหัสผ่าน'}
-          description={
-            hasPassword
-              ? 'ต้องกรอกรหัสผ่านปัจจุบันเพื่อยืนยันตัวตน'
-              : 'บัญชีนี้เข้าสู่ระบบด้วย Google — ตั้งรหัสผ่านไว้เพื่อเข้าสู่ระบบด้วยอีเมลได้อีกทาง'
-          }
-        />
-        <PasswordForm hasPassword={hasPassword} />
-      </Panel>
+      <AccountSecurity returnTo="/work/portal/profile" />
 
       <Panel className="projects-panel">
         <PanelHead

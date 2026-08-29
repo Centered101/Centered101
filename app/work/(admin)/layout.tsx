@@ -31,14 +31,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   return (
     <AppShell
       activePortal="admin"
-      workspaceName={staff.organizationName}
       workspaceRole={ORG_ROLE_LABELS[staff.role]}
-      workspaceInitial={(staff.organizationName.trim()[0] ?? '?').toUpperCase()}
       userName={staff.displayName}
       userEmail={staff.email}
       userInitial={staff.initial}
+      userAvatarUrl={staff.avatarUrl}
       notifications={<ActivityList items={activity} />}
       latestActivityId={activity[0]?.id ?? null}
+      userId={staff.userId}
     >
       {staff.schemaMissing && <SchemaNotice />}
       {children}

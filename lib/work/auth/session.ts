@@ -81,6 +81,27 @@ export function displayNameFor(user: User): string {
 }
 
 /**
+ * The account's profile picture, or null.
+ *
+ * READ FROM user_metadata, NOT from `profiles.avatar_url`. The
+ * `handle_new_auth_user` trigger copies the picture into `profiles` once, at
+ * signup — so an account created with a password and linked to Google
+ * afterwards has a picture in the session and nothing in the table. The
+ * session is the only source that is right in both cases.
+ *
+ * Google fills `avatar_url`; `picture` is the raw OIDC claim other providers
+ * send. Both are checked so linking a second provider later does not
+ * silently stop working.
+ */
+export function avatarUrlFor(user: User): string | null {
+  const metadata = user.user_metadata as { avatar_url?: string; picture?: string } | undefined
+  const url = metadata?.avatar_url || metadata?.picture
+  // Only https: a metadata field is provider-supplied data, and it renders in
+  // an <img> — nothing else belongs in there.
+  return url && url.startsWith('https://') ? url : null
+}
+
+/**
  * WHERE A USER BELONGS AFTER SIGNING IN lives in `./permissions.ts` as
  * `resolveLandingPath()`, with the other role decisions. It is deliberately
  * not re-exported from here: permissions.ts imports this file, and a re-export

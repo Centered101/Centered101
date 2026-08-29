@@ -16,7 +16,12 @@ import {
   projectStatusTone,
 } from '@/lib/work/format'
 import { getProjectPaymentSummary } from '@/lib/work/queries/payments'
-import { getProjectById, getProjectFeatures } from '@/lib/work/queries/projects'
+import {
+  getProjectById,
+  getProjectFeatures,
+  getProjectMembers,
+} from '@/lib/work/queries/projects'
+import { ProjectPeople } from '@/components/work/data/project-people'
 
 export const metadata = { title: 'โปรเจกต์' }
 
@@ -37,9 +42,10 @@ export default async function PortalProjectPage(
   const project = await getProjectById(id)
   if (!project) notFound()
 
-  const [features, payments] = await Promise.all([
+  const [features, payments, members] = await Promise.all([
     getProjectFeatures(id),
     getProjectPaymentSummary(id),
+    getProjectMembers(id),
   ])
 
   return (
@@ -105,6 +111,8 @@ export default async function PortalProjectPage(
           <Timeline items={features} />
         </Panel>
       </section>
+
+      <ProjectPeople project={project} members={members} />
 
       <section className="bottom-grid">
         <Panel className="ownership">

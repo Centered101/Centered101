@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { Bell } from 'lucide-react'
 
 /**
@@ -22,32 +22,88 @@ import { Bell } from 'lucide-react'
  * a column on `profiles` would make it a synchronised fact the app would then
  * have to keep true across tabs and devices, for a red dot. If storage is
  * unavailable or cleared, the worst case is the dot showing once more.
+ *
+ * THE KEY IS NAMESPACED BY USER ID. It used to be one shared key, which broke
+ * as soon as two accounts used the same browser: signing in as staff and
+ * opening the bell cleared the dot for the client account too, even though the
+ * two see completely different feeds. Storage is per-origin, not per-session,
+ * so the account has to be part of the key.
  */
-const SEEN_KEY = 'work:activity-seen'
+
+// -----------------------------------------------------------------------------
+// The reading position, as an external store
+// -----------------------------------------------------------------------------
+// localStorage is state that lives outside React, which is precisely what
+// `useSyncExternalStore` is for. The alternative — an effect that reads storage
+// and calls setState — is the pattern React's `set-state-in-effect` rule warns
+// about: it renders once with the wrong value, then again with the right one.
+//
+// The store is module-level because the value is per-origin, not per-component:
+// two bells on one page (there are not, but) would read the same thing.
+
+function seenKey(userId: string): string {
+  return `work:activity-seen:${userId}`
+}
+
+const listeners = new Set<() => void>()
+
+function subscribe(onStoreChange: () => void): () => void {
+  listeners.add(onStoreChange)
+  return () => {
+    listeners.delete(onStoreChange)
+  }
+}
+
+/**
+ * The stored reading position, or 0 when there is none.
+ *
+ * Must be cheap and return a stable primitive: useSyncExternalStore calls it on
+ * every render and compares by identity, so an object would loop forever.
+ */
+function readSeen(userId: string): number {
+  try {
+    const stored = window.localStorage.getItem(seenKey(userId))
+    return stored === null ? 0 : Number(stored) || 0
+  } catch {
+    // Private windows and locked-down browsers throw on access rather than
+    // returning null. Losing the reading position only shows the dot again.
+    return 0
+  }
+}
+
+function writeSeen(userId: string, value: number): void {
+  try {
+    window.localStorage.setItem(seenKey(userId), String(value))
+  } catch {
+    // A locked-down browser loses the reading position, not the feed.
+  }
+  // Storage does not notify the tab that wrote it — the `storage` event fires
+  // in OTHER tabs only — so the store publishes its own change.
+  for (const listener of listeners) listener()
+}
 
 export function NotificationBell({
+  userId,
   latestId,
   children,
 }: {
+  /** Whose reading position this is. Feeds differ per account, so must this. */
+  userId: string
   /** Highest `activity_logs.id` the caller can see; null when the feed is empty. */
   latestId: number | null
   children: ReactNode
 }) {
   const [open, setOpen] = useState(false)
-  // undefined until the effect below has run: localStorage is not available
-  // during the server render, and reading it in a lazy initialiser would make
-  // the first client paint disagree with the HTML.
-  const [seenId, setSeenId] = useState<number | undefined>(undefined)
   const rootRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(SEEN_KEY)
-      setSeenId(stored === null ? 0 : Number(stored) || 0)
-    } catch {
-      setSeenId(0)
-    }
-  }, [])
+  // The server snapshot is `undefined`, not 0: during SSR there is no reading
+  // position to know, and claiming 0 would render the unread dot into the HTML
+  // and then remove it on hydration.
+  const seenId = useSyncExternalStore(
+    subscribe,
+    () => readSeen(userId),
+    () => undefined,
+  )
 
   // Closing on an outside click or on Escape is what makes this behave like a
   // menu rather than a panel you have to hit the button again to dismiss.
@@ -76,14 +132,7 @@ export function NotificationBell({
     setOpen(next)
     // Opening is the act of reading, so the dot clears on open rather than on
     // close — closing without reading would otherwise mark everything seen.
-    if (next && latestId !== null) {
-      setSeenId(latestId)
-      try {
-        window.localStorage.setItem(SEEN_KEY, String(latestId))
-      } catch {
-        // A locked-down browser loses the reading position, not the feed.
-      }
-    }
+    if (next && latestId !== null) writeSeen(userId, latestId)
   }
 
   return (
@@ -106,7 +155,13 @@ export function NotificationBell({
             <strong>การแจ้งเตือน</strong>
             <small className="muted">กิจกรรมล่าสุดในพื้นที่ทำงานของคุณ</small>
           </div>
-          <div className="bell-panel-body">{children}</div>
+          {/* Entries are links. A click navigates without unmounting this
+              component, so the panel has to be told to close — closing here
+              rather than watching the URL keeps it to the event that actually
+              happened. */}
+          <div className="bell-panel-body" onClick={() => setOpen(false)}>
+            {children}
+          </div>
         </div>
       )}
     </div>

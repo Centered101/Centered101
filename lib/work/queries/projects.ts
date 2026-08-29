@@ -3,6 +3,7 @@ import 'server-only'
 import { createClient } from '@/lib/work/supabase/server'
 import type {
   DeliveryMethod,
+  ProjectRole,
   ProjectStatus,
   ProjectType,
   SourceCodeOwnership,
@@ -45,6 +46,9 @@ export type ProjectDetail = ProjectListItem & {
   maintenanceEnabled: boolean
   organizationId: string
   createdAt: string
+  /** Who entered this project. Null when that account has since been deleted. */
+  createdByName: string | null
+  createdByEmail: string | null
 }
 
 type ProjectRow = {
@@ -68,6 +72,7 @@ type ProjectRow = {
   created_at: string
   updated_at: string
   clients: { id: string; name: string } | null
+  profiles: { full_name: string | null; email: string } | null
 }
 
 /**
@@ -83,7 +88,7 @@ const PROJECT_COLUMNS =
   'id, organization_id, client_id, project_code, name, description, type, status, progress, ' +
   'start_date, expected_delivery, actual_delivery, total_amount, currency, delivery_method, ' +
   'source_code_ownership, maintenance_enabled, created_at, updated_at, ' +
-  'clients!projects_client_id_fkey(id, name)'
+  'clients!projects_client_id_fkey(id, name), profiles(full_name, email)'
 
 /**
  * Paid totals for a set of projects, in one query.
@@ -181,6 +186,8 @@ export async function getProjectById(id: string): Promise<ProjectDetail | null> 
     maintenanceEnabled: row.maintenance_enabled,
     organizationId: row.organization_id,
     createdAt: row.created_at,
+    createdByName: row.profiles?.full_name ?? null,
+    createdByEmail: row.profiles?.email ?? null,
   }
 }
 
@@ -221,9 +228,60 @@ export async function getProjectFeatures(projectId: string): Promise<ProjectFeat
   }))
 }
 
-// A getProjectMembers() lived here with no callers — no screen lists project
-// members yet. Bring it back with the screen that needs it, rather than
-// leaving an untested query to rot.
+export type ProjectMember = {
+  id: string
+  profileId: string
+  role: ProjectRole
+  fullName: string | null
+  email: string
+  createdAt: string
+}
+
+/**
+ * Who has access to this project, and as what.
+ *
+ * Reads `project_members` — the table that actually GRANTS a client access,
+ * rather than the `clients` company record, which grants nothing. So this list
+ * is the honest answer to "who can open this project", not a guess from the
+ * customer's name.
+ *
+ * RLS (`project_members_select_project`) lets anyone who can read the project
+ * read its member list, so the same query serves the admin detail page and the
+ * client portal — a client sees who else is on their own project and nobody
+ * else's.
+ */
+export async function getProjectMembers(projectId: string): Promise<ProjectMember[]> {
+  const supabase = await createClient()
+
+  const result = await supabase
+    .from('project_members')
+    // project_members has TWO foreign keys to profiles — `profile_id` (the
+    // member) and `created_by` (the staffer who added them) — so a bare
+    // `profiles(...)` embed is ambiguous and PostgREST rejects it outright
+    // (PGRST201). Same reason as the clients hints in PROJECT_COLUMNS.
+    .select('id, profile_id, role, created_at, profiles!project_members_profile_id_fkey(full_name, email)')
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: true })
+
+  const rows = unwrapOr<
+    {
+      id: string
+      profile_id: string
+      role: ProjectRole
+      created_at: string
+      profiles: { full_name: string | null; email: string } | null
+    }[]
+  >(result, 'สมาชิกโปรเจกต์', [])
+
+  return rows.map((row) => ({
+    id: row.id,
+    profileId: row.profile_id,
+    role: row.role,
+    fullName: row.profiles?.full_name ?? null,
+    email: row.profiles?.email ?? '',
+    createdAt: row.created_at,
+  }))
+}
 
 /** Portfolio totals used by both dashboards. */
 export function summariseProjects(projects: readonly ProjectListItem[]) {

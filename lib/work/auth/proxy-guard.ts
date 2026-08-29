@@ -24,6 +24,7 @@ import { createServerClient } from '@supabase/ssr'
  */
 const PUBLIC_PREFIXES = [
   '/work/login',
+  '/work/forgot-password',
   '/work/auth',
   '/work/share',
   '/work/privacy-policy',
