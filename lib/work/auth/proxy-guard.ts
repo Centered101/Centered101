@@ -31,7 +31,26 @@ const PUBLIC_PREFIXES = [
   '/work/terms-of-service',
 ]
 
+/**
+ * Static files under /work — the brand icon, and anything else served from
+ * `public/work/`.
+ *
+ * THEY MUST NOT BE GUARDED. `/work/favicon.ico` is not a route, but it starts
+ * with `/work/`, so the guard redirected it to /login for signed-out
+ * visitors — and the login page is exactly where the browser asks for it. The
+ * icon request came back as the login page's HTML, and the brand rendered as
+ * a broken image.
+ *
+ * A trailing extension is the test because routes in this app never have one:
+ * every path here is a segment name, and every file is `name.ext`. Letting a
+ * static file through gives nothing away either — the auth boundary is
+ * requireAdmin()/requireClient() in the layouts and RLS underneath, and this
+ * proxy has never been more than a convenience.
+ */
+const STATIC_FILE = /\.[a-z0-9]+$/i
+
 function isPublic(targetPath: string): boolean {
+  if (STATIC_FILE.test(targetPath)) return true
   return PUBLIC_PREFIXES.some((p) => targetPath === p || targetPath.startsWith(p + '/'))
 }
 
