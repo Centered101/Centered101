@@ -51,22 +51,36 @@ AGENTS.md
 # Temp
 .tmp.driveupload/
 
-# Database dumps
-supabase/
-supabase-shop/
+# Database dumps.
+#
+# ANCHORED WITH A LEADING SLASH, and that is not cosmetic. A pattern like
+# `supabase/` with no slash matches a directory of that name at ANY depth — so
+# it also swallowed `lib/work/supabase/`, the four Supabase client modules the
+# entire workspace imports. They were never committed, the local build kept
+# passing because the files were on disk, and the first fresh clone (Vercel)
+# failed with 21 "Can't resolve '@/lib/work/supabase/server'" errors.
+#
+# Anchor every directory rule meant for the repo root.
+/supabase/
+/supabase-shop/
 
-# flowstate schema. `supabase-work/` used to be ignored wholesale, which
-# silently swallowed every migration written after the rule was added — 4 of
-# them, plus the dev seed. Migrations are the source of truth for the schema,
-# and `npm run work:db:validate` applies them from here, so a fresh clone
-# without them cannot verify or rebuild anything.
+# Work schema. `supabase-work/` used to be ignored wholesale, which silently
+# swallowed every migration written after the rule was added — 4 of them, plus
+# the dev seed. Migrations are the source of truth for the schema, and
+# `npm run work:db:validate` applies them from here, so a fresh clone without
+# them cannot verify or rebuild anything.
 #
 # The directory itself must stay unignored (`/*`, not `/`): git will not
 # re-include a path whose parent directory is excluded, so a blanket ignore
 # makes the negations below dead rules.
-supabase-work/*
-!supabase-work/migrations/
-!supabase-work/seed.sql
+/supabase-work/*
+!/supabase-work/migrations/
+!/supabase-work/seed.sql
+
+# Unanchored, so it also hides `app/newtab/` — the route the ecosystem page
+# links to. Left as-is rather than changed here: this fix is for the build
+# break, and un-ignoring it adds files that were never meant to be in the
+# commit that repairs the deploy.
 newtab/
 !components/newtab/
 !components/newtab/**
