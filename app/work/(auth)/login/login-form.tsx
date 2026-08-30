@@ -4,7 +4,7 @@ import { useActionState, useState } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight, Mail } from 'lucide-react'
 
-import { useActionToast } from '@/components/work/forms'
+import { PasswordInput, useActionToast } from '@/components/work/forms'
 import {
   signInWithGoogle,
   signInWithMagicLink,
@@ -121,10 +121,9 @@ export function LoginForm({ next }: { next?: string }) {
             <label className="field-label" htmlFor="password">
               รหัสผ่าน
             </label>
-            <input
+            <PasswordInput
               id="password"
               name="password"
-              type="password"
               autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
               required
               minLength={8}

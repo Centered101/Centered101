@@ -6,6 +6,8 @@ import { toast } from 'sonner'
 
 import type { ActionState } from '@/lib/work/services/projects'
 
+export { PasswordInput } from './password-input'
+
 /**
  * The two pieces every Server Action form in this app needs.
  *

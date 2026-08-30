@@ -1,7 +1,7 @@
-import Image from 'next/image'
 import { redirect } from 'next/navigation'
 import { ShieldCheck } from 'lucide-react'
 
+import { AuthBrand } from '@/components/work/layout/auth-brand'
 import { Footer } from '@/components/work/layout/footer'
 import { resolveLandingPath } from '@/lib/work/auth/permissions'
 import { getUser } from '@/lib/work/auth/session'
@@ -29,19 +29,7 @@ export default async function LoginPage({ searchParams }: PageProps<'/work/login
   return (
     <div className="auth-screen">
       <div className="auth-card">
-        <div className="brand auth-brand">
-          <div className="brand-mark brand-logo">
-            <Image
-              src="/work/favicon.ico"
-              alt=""
-              width={28}
-              height={28}
-              unoptimized
-              style={{ width: 28, height: 28 }}
-            />
-          </div>
-          <span>Centered101&apos;s Work</span>
-        </div>
+        <AuthBrand />
         <h1>เข้าสู่ระบบ</h1>
         <p className="muted">เข้าสู่พื้นที่ทำงานเพื่อจัดการโปรเจกต์และการชำระเงิน</p>
 

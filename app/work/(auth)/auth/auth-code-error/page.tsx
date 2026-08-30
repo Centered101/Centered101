@@ -1,6 +1,8 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { AlertCircle } from 'lucide-react'
+
+import { AuthBrand } from '@/components/work/layout/auth-brand'
+import { Footer } from '@/components/work/layout/footer'
 
 export const metadata = { title: 'เข้าสู่ระบบไม่สำเร็จ' }
 
@@ -21,19 +23,7 @@ export default async function AuthCodeErrorPage({
   return (
     <div className="auth-screen">
       <div className="auth-card">
-        <div className="brand auth-brand">
-          <div className="brand-mark brand-logo">
-            <Image
-              src="/work/favicon.ico"
-              alt=""
-              width={28}
-              height={28}
-              unoptimized
-              style={{ width: 28, height: 28 }}
-            />
-          </div>
-          <span>Centered101&apos;s Work</span>
-        </div>
+        <AuthBrand />
 
         <div className="stat-icon icon-red">
           <AlertCircle size={18} />
@@ -50,6 +40,7 @@ export default async function AuthCodeErrorPage({
           กลับไปหน้าเข้าสู่ระบบ
         </Link>
       </div>
+      <Footer />
     </div>
   )
 }

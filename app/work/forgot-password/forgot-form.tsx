@@ -3,6 +3,7 @@
 import { useActionState } from 'react'
 import { Mail } from 'lucide-react'
 
+import { useActionToast } from '@/components/work/forms'
 import { requestPasswordReset, type AuthState } from '@/lib/work/auth/actions'
 
 const EMPTY: AuthState = {}
@@ -18,6 +19,11 @@ const EMPTY: AuthState = {}
  */
 export function ForgotPasswordForm() {
   const [state, action, pending] = useActionState(requestPasswordReset, EMPTY)
+
+  // Form-level results are toasts across this app; .auth-error/.auth-success
+  // were deleted from work.css when that was decided, so the paragraphs below
+  // used to render as unstyled black body text sitting under the button.
+  useActionToast(state)
 
   return (
     <form className="auth-form" action={action}>
@@ -39,9 +45,6 @@ export function ForgotPasswordForm() {
         {pending ? 'กำลังส่ง…' : 'ส่งลิงก์ตั้งรหัสผ่านใหม่'}
         <Mail size={16} />
       </button>
-
-      {state.error && <p className="auth-error">{state.error}</p>}
-      {state.message && <p className="auth-success">{state.message}</p>}
     </form>
   )
 }

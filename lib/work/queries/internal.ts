@@ -65,17 +65,34 @@ export function isPartialSchema(error: PostgrestError | null | undefined): boole
  * @param context short description used in the server log, e.g. "โปรเจกต์"
  */
 function unwrap<T>(
-  result: { data: unknown; error: PostgrestError | null },
+  result: { data: unknown; error: PostgrestError | null; status?: number },
   context: string,
 ): T {
   if (result.error) {
-    console.error(`[query] ${context} failed:`, result.error)
+    // Spread the fields rather than logging the error object itself. Next's dev
+    // overlay serialises a bare error to `{}`, which is what a reader of this
+    // log actually got: "[query] การชำระเงิน failed: {}" and nothing to act on.
+    const { code, message, details, hint } = result.error
+    console.error(`[query] ${context} failed:`, { code, message, details, hint })
+
+    // PostgREST reports status 0 when the request never reached the server, so
+    // the "error" is a dead connection, not something the query did wrong. Said
+    // plainly here because every other line in this file points at the schema,
+    // and reading a network outage as a migration problem wastes an afternoon.
+    if (result.status === 0) {
+      console.error(
+        `[query] ${context}: could not reach the work Supabase project. ` +
+          'The query is fine — the request never got there. Check the connection ' +
+          'and that NEXT_PUBLIC_WORK_SUPABASE_URL points at a live project.',
+      )
+    }
+
     if (isPartialSchema(result.error)) {
       console.error(
         '[query] This looks like a partially applied schema — the table exists but a ' +
           'later migration has not been run. Generate the pending SQL with ' +
           '`npm run work:db:bundle -- --since <timestamp>` and apply it to the ' +
-          'flowstate Supabase project.',
+          'work Supabase project.',
       )
     }
     throw new QueryError(`ไม่สามารถโหลดข้อมูล${context}ได้`, result.error)
@@ -92,7 +109,7 @@ function unwrap<T>(
  * errors still throw.
  */
 export function unwrapOr<T>(
-  result: { data: unknown; error: PostgrestError | null },
+  result: { data: unknown; error: PostgrestError | null; status?: number },
   context: string,
   fallback: T,
 ): T {

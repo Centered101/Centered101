@@ -20,6 +20,8 @@
  * Nothing here is legal advice.
  */
 
+import { APP_NAME } from './branding'
+
 export const LEGAL = {
   /** TODO: the legal name of the operating entity, not the brand name. */
   entityName: 'Centered101',
@@ -27,8 +29,10 @@ export const LEGAL = {
   address: '—',
   /** TODO: an inbox that is actually monitored for data-subject requests. */
   contactEmail: 'contact@centered101.com',
-  /** The service these documents cover, as users know it. */
-  serviceName: "Centered101's Work",
+  /** The service these documents cover, as users know it — the same string
+   *  the sidebar and the page title use, so a rename cannot leave the privacy
+   *  policy naming a product nobody sees. */
+  serviceName: APP_NAME,
   serviceUrl: 'work.centered101.com',
 } as const
 

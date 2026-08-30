@@ -1,21 +1,23 @@
 import type { Metadata, Viewport } from 'next'
 import { Noto_Sans_Thai } from 'next/font/google'
 
+import { APP_NAME, APP_TAGLINE } from '@/lib/work/branding'
+
 import './work.css'
 
 /**
- * flowstate — the client project & billing workspace, mounted at /work and
+ * Centered101's Work — the client project & billing workspace, mounted at /work and
  * served as work.centered101.com (see proxy.ts).
  *
  * This is a NESTED layout: the root app/layout.tsx already renders <html> and
  * <body>, so this one only scopes styling, fonts and metadata for the subtree.
  *
- * work.css is imported here rather than globally, so none of flowstate's
+ * work.css is imported here rather than globally, so none of the workspace's
  * ~1800 lines of styling reaches the rest of centered101.com.
  */
 
 /**
- * The host app loads Kanit and exposes --font-kanit; flowstate's stylesheet
+ * The host app loads Kanit and exposes --font-kanit; the workspace's stylesheet
  * was built against --font-thai (Noto Sans Thai). Rather than restyle the
  * workspace around a different typeface, the font it was designed with is
  * loaded here — scoped to /work, so it costs nothing on the rest of the site.
@@ -28,8 +30,8 @@ const thaiFont = Noto_Sans_Thai({
 
 export const metadata: Metadata = {
   title: {
-    default: "Centered101's Work — ระบบจัดการลูกค้าสำหรับเอเจนซี",
-    template: "%s — Centered101's Work",
+    default: `${APP_NAME} — ${APP_TAGLINE}`,
+    template: `%s — ${APP_NAME}`,
   },
   description:
     'พื้นที่ทำงานสำหรับจัดการโปรเจกต์ลูกค้า การชำระเงิน การส่งมอบ การเผยแพร่ และการดูแลรักษา',

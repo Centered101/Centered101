@@ -53,7 +53,6 @@
 }
 
 /* Tailwind v4 reads utilities from /* Brand color: #409EFE */
-.bar.paid,
 .key-paid,
 .progress span {
   background: #409efe !important;
@@ -522,59 +521,17 @@ button {
 .chart-wrap {
   padding-top: 6px;
 }
-.chart-grid {
-  height: 185px;
-  display: flex;
-  border-bottom: 1px solid var(--border);
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent 45px,
-    var(--border) 46px
-  );
-}
-.y-labels {
-  width: 40px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  color: var(--muted-foreground);
-  font-size: 9px;
-  padding: 0 0 5px;
-}
-.bars {
-  flex: 1;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-around;
-  gap: 7px;
-  padding: 0 8px;
-}
-.bar-col {
-  height: 100%;
-  flex: 1;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 2px;
-}
-.bar {
-  width: calc(50% - 1px);
-  border-radius: 4px 4px 0 0;
-  min-height: 4px;
-}
-.bar.paid {
-  background: #ed82ad;
-}
-.bar.pending {
-  background: #b7d8f8;
-}
-.x-labels {
-  display: flex;
-  justify-content: space-around;
-  color: var(--muted-foreground);
-  font-size: 9px;
-  padding: 9px 0 0 38px;
+/* Chart.js draws into a canvas that fills this box. The height lives here
+   rather than on the <canvas>, because `maintainAspectRatio: false` hands
+   sizing to the parent — and it is the same 185px + axis room the CSS bars
+   occupied, so the panel does not change height.
+
+   The gridlines, axis labels and bar geometry that used to be CSS
+   (.chart-grid, .y-labels, .bars, .bar-col, .bar, .x-labels) are Chart.js
+   scale options now. */
+.chart-canvas {
+  position: relative;
+  height: 215px;
 }
 .activity-list {
   display: grid;
@@ -1269,11 +1226,10 @@ td {
     font-size: 12px;
     margin-left: auto;
   }
-  .chart-wrap {
-    min-width: 480px;
-  }
-  .revenue-panel {
-    overflow-x: auto;
+  /* No min-width + horizontal scroll any more: the CSS bars needed 480px to
+     stay legible, but Chart.js reflows and drops x labels on its own. */
+  .chart-canvas {
+    height: 190px;
   }
   .activity-list p {
     min-width: 0;
@@ -1442,55 +1398,25 @@ a.text-btn {
   max-width: 420px;
 }
 /*
- * The four outside-the-shell screens (error, loading, forbidden, not-found)
- * carry one short card on an otherwise empty page, so `margin: auto` alone
- * left it pinned to the top with the viewport empty below it.
+ * The outside-the-shell screens (error, forbidden, not-found) carry one short
+ * card on an otherwise empty page, so `margin: auto` alone left it pinned to
+ * the top with the viewport empty below it.
  *
- * min-height + align-content centers it vertically. It stays min-height, not
- * height, so a card taller than the viewport grows the page and scrolls
- * normally instead of being clipped, and align-content (not place-items)
- * keeps the panel at its full width — only its vertical position changes.
+ * Same two rows as .auth-screen below: the card owns the fold, the footer
+ * starts under it. minmax() rather than a flat 100dvh so a card taller than
+ * the viewport grows its row instead of overflowing.
+ *
+ * align-items only — no justify-items. The auth cards are 400px and want
+ * centering on both axes; these panels are full-width by design, so touching
+ * the horizontal axis would shrink them to their content.
  */
 .standalone-state {
   padding: 34px 38px 48px;
   max-width: 1500px;
   margin: auto;
   display: grid;
-  align-content: center;
-  min-height: 100dvh;
-}
-
-.skeleton-panel {
-  display: grid;
-  gap: 12px;
-  padding: 20px;
-}
-.skeleton-row,
-.skeleton-card {
-  border-radius: 9px;
-  background: linear-gradient(90deg, var(--muted) 25%, var(--border) 37%, var(--muted) 63%);
-  background-size: 400% 100%;
-  animation: flowstate-shimmer 1.4s ease-in-out infinite;
-}
-.skeleton-row {
-  height: 18px;
-}
-.skeleton-card {
-  min-height: 120px;
-}
-@keyframes flowstate-shimmer {
-  0% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0 50%;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .skeleton-row,
-  .skeleton-card {
-    animation: none;
-  }
+  grid-template-rows: minmax(100dvh, auto) auto;
+  align-items: center;
 }
 
 /* ---- Auth and share screens (outside the app shell) ---- */
@@ -1823,6 +1749,45 @@ a.text-btn {
   }
   /* .content and .topbar already carry the same 12px inner padding at this
      breakpoint, so the shared gutter keeps them aligned untouched. */
+}
+
+/* Password field with its reveal toggle.
+   The wrapper is a grid item / form child in place of the bare <input>, so it
+   inherits the width the input used to claim; the input then fills it. Both
+   .auth-form input and .work-form input are descendant selectors, so their
+   styling still reaches through it untouched. */
+.password-field {
+  position: relative;
+  display: grid;
+  min-width: 0;
+}
+.password-field input {
+  width: 100%;
+  /* Room for the button, so a long password does not run underneath it. */
+  padding-right: 38px;
+}
+.password-toggle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 1px;
+  width: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  border-radius: 0 9px 9px 0;
+  transition: color 0.15s;
+}
+.password-toggle:hover {
+  color: var(--primary);
+}
+/* .auth-form inputs carry a 2px bottom margin; without matching it the button
+   sits one pixel low against the field. */
+.auth-form .password-field .password-toggle {
+  bottom: 2px;
 }
 
 /* Invite form: two fields and a button, sitting under the members panel head
@@ -2329,12 +2294,11 @@ a.profile:focus-visible {
   color: var(--primary-color);
 }
 
-/* วางไว้ท้ายไฟล์เพราะ .work-root ที่บรรทัด 1899 ตั้ง font-family เป็น
-   var(--font-thai) ไว้ก่อน สเปซิฟิซิตี้เท่ากัน ตัวหลังจึงเป็นตัวที่ชนะ */
-.work-root {
-  font-family: 'Kanit', 'Bai Jamjuree', monospace;
-  font-weight: 600;
-}
+/* ตัวอักษรไม่ได้ยกมาด้วย — บล็อกนี้เคยตั้ง Kanit + font-weight: 600 ทับ
+   var(--font-thai) (Noto Sans Thai) ที่ layout.tsx ตั้งใจโหลดมาให้ /work
+   ผลคือทั้งเวิร์กสเปซกลายเป็นตัวหนากึ่งหนึ่งทุกตัวอักษร และ 'Bai Jamjuree'
+   ก็ไม่มีใครโหลดในโปรเจกต์นี้อยู่แล้ว จึงตกไปใช้ Kanit เสมอ
+   ชุดสีและกฎกันลากยังอยู่ครบ เอาออกเฉพาะส่วนตัวอักษร */
 
 /* ---- Sign-in methods ---- */
 .connection-rows {

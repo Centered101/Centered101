@@ -1,5 +1,5 @@
 /**
- * Bundles flowstate migrations into one paste-ready SQL file.
+ * Bundles the work migrations into one paste-ready SQL file.
  *
  * WHY THIS EXISTS: this repository holds three Supabase projects (main, shop,
  * work), so the work migrations live in `supabase-work/migrations/` rather
@@ -16,7 +16,7 @@
  *   node scripts/bundle-work-migrations.mjs --out apply.sql
  *
  * The output is ordinary SQL. Run it in the Supabase SQL editor for the
- * flowstate project, or with psql against that database.
+ * work project, or with psql against that database.
  *
  * NOTE ON RE-RUNNING: the migrations are forward-only, not idempotent —
  * `create table` and `create type` fail if the object already exists. Bundle
@@ -49,11 +49,11 @@ if (files.length === 0) {
 
 const parts = [
   '-- =============================================================================',
-  '-- flowstate — bundled migrations',
+  "-- Centered101's Work — bundled migrations",
   `-- Generated ${new Date().toISOString()} by scripts/bundle-work-migrations.mjs`,
   `-- Files: ${files.length}${since ? ` (from ${since})` : ''}`,
   '--',
-  '-- Run this once, in full, against the flowstate Supabase project. It is',
+  '-- Run this once, in full, against the work Supabase project. It is',
   '-- forward-only: running it twice will fail on the first `create table`.',
   '-- =============================================================================',
   '',

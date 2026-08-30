@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+import { AuthBrand } from '@/components/work/layout/auth-brand'
+import { Footer } from '@/components/work/layout/footer'
 import { resolveLandingPath } from '@/lib/work/auth/permissions'
 import { requireUser } from '@/lib/work/auth/session'
 import { ResetPasswordForm } from './reset-form'
@@ -24,6 +26,7 @@ export default async function ResetPasswordPage() {
   return (
     <div className="auth-screen">
       <div className="auth-card">
+        <AuthBrand />
         <h1>ตั้งรหัสผ่านใหม่</h1>
         <p className="muted">เลือกรหัสผ่านใหม่สำหรับบัญชีของคุณ</p>
 
@@ -33,6 +36,7 @@ export default async function ResetPasswordPage() {
           <Link href={landingPath}>ข้ามไปก่อน</Link>
         </p>
       </div>
+      <Footer />
     </div>
   )
 }

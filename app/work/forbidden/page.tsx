@@ -1,4 +1,5 @@
 import { UnauthorizedState } from '@/components/work/states'
+import { Footer } from '@/components/work/layout/footer'
 
 export const metadata = { title: 'ไม่มีสิทธิ์เข้าถึง' }
 
@@ -25,6 +26,7 @@ export default async function WorkForbiddenPage(props: PageProps<'/work/forbidde
       <UnauthorizedState
         description={message ?? 'บัญชีของคุณไม่มีสิทธิ์เข้าถึงหน้านี้ กรุณาติดต่อผู้ดูแลระบบ'}
       />
+      <Footer />
     </div>
   )
 }

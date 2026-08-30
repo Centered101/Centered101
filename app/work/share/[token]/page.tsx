@@ -1,6 +1,7 @@
-import Image from 'next/image'
 import type { Metadata } from 'next'
 
+import { AuthBrand } from '@/components/work/layout/auth-brand'
+import { Footer } from '@/components/work/layout/footer'
 import { isPlausibleShareToken } from '@/lib/work/tokens'
 
 /**
@@ -28,19 +29,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
   return (
     <div className="auth-screen">
       <div className="auth-card">
-        <div className="brand auth-brand">
-          <div className="brand-mark brand-logo">
-            <Image
-              src="/work/favicon.ico"
-              alt=""
-              width={28}
-              height={28}
-              unoptimized
-              style={{ width: 28, height: 28 }}
-            />
-          </div>
-          <span>Centered101&apos;s Work</span>
-        </div>
+        <AuthBrand />
         <h1>{plausible ? 'ลิงก์นี้ยังไม่พร้อมใช้งาน' : 'ลิงก์ไม่ถูกต้อง'}</h1>
         <p className="muted">
           {plausible
@@ -48,6 +37,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
             : 'ลิงก์นี้ไม่ถูกต้อง หมดอายุ หรือถูกยกเลิกแล้ว'}
         </p>
       </div>
+      <Footer />
     </div>
   )
 }

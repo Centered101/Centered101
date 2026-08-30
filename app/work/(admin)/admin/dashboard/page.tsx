@@ -107,7 +107,7 @@ export default async function AdminDashboardPage() {
               {formatMoney(totalInWindow, data.currency)} <small>รวม 12 เดือน</small>
             </strong>
           </div>
-          <RevenueChart data={data.revenue} />
+          <RevenueChart data={data.revenue} currency={data.currency} />
         </Panel>
 
         <Panel className="activity-panel">

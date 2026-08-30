@@ -131,23 +131,13 @@ export function LockedState({
   return <StateShell icon={LockKeyhole} tone="orange" title={title} description={description} />
 }
 
-/** Skeleton rows sized to the real content, so nothing shifts on load. */
-export function PanelSkeleton({ rows = 3 }: { rows?: number }) {
-  return (
-    <Panel className="skeleton-panel">
-      {Array.from({ length: rows }).map((_, i) => (
-        <div className="skeleton-row" key={i} />
-      ))}
-    </Panel>
-  )
-}
-
-export function StatsSkeleton({ count = 5 }: { count?: number }) {
-  return (
-    <section className="stats-grid">
-      {Array.from({ length: count }).map((_, i) => (
-        <article className="stat-card skeleton-card" key={i} />
-      ))}
-    </section>
-  )
-}
+/*
+ * PanelSkeleton and StatsSkeleton lived here, rendered by the loading.tsx
+ * files of /work, (admin) and (portal). All three are gone: the shimmering
+ * grey blocks were more conspicuous than the wait they covered. Without a
+ * loading boundary the router simply holds the current screen until the next
+ * one is ready, which reads as a pause rather than as a different page.
+ *
+ * If a wait ever needs covering again, cover THAT ONE with a <Suspense>
+ * around the slow part, rather than replacing the whole route.
+ */

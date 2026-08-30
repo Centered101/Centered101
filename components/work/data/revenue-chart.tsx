@@ -1,47 +1,120 @@
-import { formatMoneyCompact } from '@/lib/work/format'
+'use client'
+
+import {
+  BarElement,
+  CategoryScale,
+  Chart as ChartJS,
+  LinearScale,
+  Tooltip,
+  type ChartOptions,
+  type TooltipItem,
+} from 'chart.js'
+import { Bar } from 'react-chartjs-2'
+
+import { formatMoney, formatMoneyCompact } from '@/lib/work/format'
 import type { MonthlyRevenue } from '@/lib/work/queries/payments'
 
 /**
  * Revenue bars, from `payments` grouped by month.
  *
- * Still the prototype's hand-rolled CSS bars — deliberately. The change here
- * is the data, not the design.
+ * Chart.js, replacing the prototype's hand-rolled CSS bars. The bars looked
+ * the part but could not do what a chart is for: there was no hover, no
+ * readable value for a specific month, and a bar under about 2% of the peak
+ * collapsed to its `min-height` and read as a rounding error rather than as a
+ * small month.
  *
- * Bars are scaled to the largest month in the window rather than to a fixed
- * ceiling, and the y-axis labels are derived from that same maximum. The
- * prototype hardcoded ฿0–฿40k, which would have quietly clipped any month
- * above it once real numbers arrived.
+ * REGISTERED PIECE BY PIECE rather than importing `chart.js/auto`. The auto
+ * bundle pulls in every controller, scale and plugin — line, radar, doughnut,
+ * the animations and the legend — for a chart that uses four of them.
+ *
+ * `Legend` is deliberately absent: the panel already draws its own key above
+ * the canvas, with the twelve-month total beside it.
  */
-export function RevenueChart({ data }: { data: MonthlyRevenue[] }) {
-  const peak = Math.max(...data.map((month) => month.paid + month.pending), 1)
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip)
 
-  // Four gridlines from the top down, so the axis always matches the bars.
-  const ticks = [1, 0.75, 0.5, 0.25, 0].map((fraction) => Math.round(peak * fraction))
+/** Matches .key-paid / .key-pending in work.css. */
+const PAID = '#409efe'
+const PENDING = '#b7d8f8'
+
+export function RevenueChart({
+  data,
+  currency = 'THB',
+}: {
+  data: MonthlyRevenue[]
+  currency?: string
+}) {
+  const options: ChartOptions<'bar'> = {
+    responsive: true,
+    // The wrapper below owns the height; without this Chart.js would impose
+    // its own 2:1 ratio and the panel would grow with the viewport.
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      tooltip: {
+        backgroundColor: '#0f172a',
+        padding: 10,
+        cornerRadius: 8,
+        titleFont: { size: 11, weight: 'bold' },
+        bodyFont: { size: 11 },
+        displayColors: true,
+        boxWidth: 8,
+        boxHeight: 8,
+        boxPadding: 4,
+        callbacks: {
+          // The raw values are minor units; formatMoney is what turns them
+          // into money, here as everywhere else.
+          label: (item: TooltipItem<'bar'>) =>
+            ` ${item.dataset.label}: ${formatMoney(item.parsed.y, currency)}`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        border: { color: '#dfe3e8' },
+        ticks: { color: '#647084', font: { size: 9 } },
+      },
+      y: {
+        beginAtZero: true,
+        grid: { color: '#eef2f6' },
+        border: { display: false },
+        ticks: {
+          color: '#647084',
+          font: { size: 9 },
+          maxTicksLimit: 5,
+          callback: (value) => formatMoneyCompact(Number(value), currency),
+        },
+      },
+    },
+  }
 
   return (
     <div className="chart-wrap">
-      <div className="chart-grid">
-        <div className="y-labels">
-          {ticks.map((tick, i) => (
-            <span key={i}>{formatMoneyCompact(tick)}</span>
-          ))}
-        </div>
-        <div className="bars">
-          {data.map((month) => (
-            <div className="bar-col" key={month.month}>
-              <div className="bar paid" style={{ height: `${(month.paid / peak) * 100}%` }} />
-              <div
-                className="bar pending"
-                style={{ height: `${(month.pending / peak) * 100}%` }}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="x-labels">
-        {data.map((month) => (
-          <span key={month.month}>{month.label}</span>
-        ))}
+      <div className="chart-canvas">
+        <Bar
+          options={options}
+          data={{
+            labels: data.map((month) => month.label),
+            datasets: [
+              {
+                label: 'ชำระแล้ว',
+                data: data.map((month) => month.paid),
+                backgroundColor: PAID,
+                borderRadius: 4,
+                // Bars keep a readable width in a 12-month window without
+                // stretching to fill it when the window is short.
+                maxBarThickness: 14,
+              },
+              {
+                label: 'รอชำระ',
+                data: data.map((month) => month.pending),
+                backgroundColor: PENDING,
+                borderRadius: 4,
+                maxBarThickness: 14,
+              },
+            ],
+          }}
+        />
       </div>
     </div>
   )

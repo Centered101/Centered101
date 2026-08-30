@@ -27,25 +27,61 @@ function returnPath(formData: FormData): string {
   return safeRedirectPath(formData.get('next') as string | null, '/work/portal/profile')
 }
 
+/**
+ * Could not reach the auth server at all.
+ *
+ * supabase-js turns a failed fetch into an AuthRetryableFetchError and returns
+ * it in `error`, so it arrives on the same channel as a real rejection — and
+ * without this check a dropped connection was reported as "Manual linking is
+ * off", sending people to a dashboard setting that was never the problem.
+ *
+ * Anything that is NOT an auth error it rethrows instead. Left uncaught in a
+ * Server Action that becomes a 500 whose body the client cannot parse, which
+ * is the "An unexpected response was received from the server." overlay rather
+ * than the message this form is built to show.
+ */
+function isNetworkError(error: unknown): boolean {
+  const { name, message } = (error ?? {}) as { name?: string; message?: string }
+  return name === 'AuthRetryableFetchError' || message === 'fetch failed'
+}
+
+const NETWORK_MESSAGE = 'ติดต่อเซิร์ฟเวอร์ยืนยันตัวตนไม่ได้ ตรวจสอบการเชื่อมต่อแล้วลองใหม่อีกครั้ง'
+
 export async function linkGoogle(_prev: ActionState, formData: FormData): Promise<ActionState> {
   await requireUser()
 
   const supabase = await createClient()
-  const { data, error } = await supabase.auth.linkIdentity({
-    provider: 'google',
-    options: { redirectTo: await getCallbackUrl(returnPath(formData)) },
-  })
 
-  if (error || !data?.url) {
-    console.error('[identities] link failed', error)
-    return {
-      error:
-        'เชื่อมบัญชี Google ไม่สำเร็จ — ตรวจสอบว่าเปิด Manual linking ไว้ที่ Supabase Dashboard → Authentication → Providers',
+  let url: string | null = null
+
+  // redirect() throws NEXT_REDIRECT to do its job, so it stays outside the try
+  // — catching it here would swallow the navigation and report it as a failure.
+  try {
+    const { data, error } = await supabase.auth.linkIdentity({
+      provider: 'google',
+      options: { redirectTo: await getCallbackUrl(returnPath(formData)) },
+    })
+
+    if (error) {
+      console.error('[identities] link failed', error)
+      return {
+        error: isNetworkError(error)
+          ? NETWORK_MESSAGE
+          : 'เชื่อมบัญชี Google ไม่สำเร็จ — ตรวจสอบว่าเปิด Manual linking ไว้ที่ Supabase Dashboard → Authentication → Providers',
+      }
     }
+
+    url = data?.url ?? null
+  } catch (thrown) {
+    console.error('[identities] link threw', thrown)
+    return { error: isNetworkError(thrown) ? NETWORK_MESSAGE : 'เชื่อมบัญชี Google ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง' }
   }
 
-  // redirect() throws, so it is the last statement.
-  redirect(data.url)
+  if (!url) {
+    return { error: 'เชื่อมบัญชี Google ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง' }
+  }
+
+  redirect(url)
 }
 
 export async function unlinkGoogle(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -60,7 +96,11 @@ export async function unlinkGoogle(_prev: ActionState, formData: FormData): Prom
 
   if (listError) {
     console.error('[identities] list failed', listError)
-    return { error: 'ไม่สามารถอ่านข้อมูลการเชื่อมต่อได้ กรุณาลองใหม่อีกครั้ง' }
+    return {
+      error: isNetworkError(listError)
+        ? NETWORK_MESSAGE
+        : 'ไม่สามารถอ่านข้อมูลการเชื่อมต่อได้ กรุณาลองใหม่อีกครั้ง',
+    }
   }
 
   const identities = data?.identities ?? []
@@ -85,7 +125,9 @@ export async function unlinkGoogle(_prev: ActionState, formData: FormData): Prom
 
   if (error) {
     console.error('[identities] unlink failed', error)
-    return { error: 'ยกเลิกการเชื่อมไม่สำเร็จ กรุณาลองใหม่อีกครั้ง' }
+    return {
+      error: isNetworkError(error) ? NETWORK_MESSAGE : 'ยกเลิกการเชื่อมไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',
+    }
   }
 
   // 'layout': the sidebar renders the display name and avatar, which came from

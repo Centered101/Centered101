@@ -1,5 +1,5 @@
 -- =============================================================================
--- DEVELOPMENT SEED — flowstate
+-- DEVELOPMENT SEED — Centered101's Work
 -- =============================================================================
 -- Realistic data for local and preview work: one agency, two client companies
 -- that must never see each other, two projects, a payment plan with paid and
@@ -8,7 +8,7 @@
 --
 -- RUN IT LIKE THIS:
 --   psql "$WORK_DATABASE_URL" -f supabase-work/seed.sql
--- or paste it into the Supabase SQL editor for the flowstate project.
+-- or paste it into the Supabase SQL editor for the work project.
 --
 -- -----------------------------------------------------------------------------
 -- FIRST: PUT YOUR OWN EMAIL IN THE CONFIGURATION BLOCK BELOW.
@@ -45,6 +45,12 @@
 -- NOT FOR PRODUCTION. Everything below is scoped to the organization with slug
 -- 'flowstate-dev'; nothing touches rows outside it. Even so, the guard at the
 -- top refuses to run when any production-looking organization already exists.
+--
+-- THAT SLUG KEEPS THE OLD PRODUCT NAME ON PURPOSE. It is a data value, not a
+-- label: databases seeded before the rename already hold it, and changing it
+-- here would make this file create a SECOND organization — at which point the
+-- guard above sees a non-dev org and refuses to run at all. Same for the
+-- @flowstate.test placeholder addresses below, which are fixtures, not brand.
 -- =============================================================================
 
 do $$

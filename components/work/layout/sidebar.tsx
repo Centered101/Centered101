@@ -7,6 +7,7 @@ import { LogOut, X } from 'lucide-react'
 
 import { Avatar } from '@/components/work/data/avatar'
 import { signOut } from '@/lib/work/auth/actions'
+import { APP_NAME } from '@/lib/work/branding'
 import { isNavItemActive, type NavItem } from '@/lib/work/nav'
 
 /**
@@ -72,7 +73,7 @@ export function Sidebar({
           />
         </div>
         <div className="brand-text">
-          <span>Centered101&apos;s Work</span>
+          <span>{APP_NAME}</span>
           {workspaceRole && <small>พื้นที่ทำงาน{workspaceRole}</small>}
         </div>
         <button onClick={onClose} className="mobile-close" aria-label="ปิดเมนู">

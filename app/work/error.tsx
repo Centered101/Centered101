@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 
 import { ErrorState } from '@/components/work/states'
+import { Footer } from '@/components/work/layout/footer'
 
 /**
  * Root error boundary. Never leaves a blank screen (brief Phase 29).
@@ -28,6 +29,7 @@ export default function GlobalError({
           </button>
         }
       />
+      <Footer />
     </div>
   )
 }

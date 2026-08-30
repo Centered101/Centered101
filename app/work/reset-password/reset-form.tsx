@@ -3,7 +3,7 @@
 import { useActionState } from 'react'
 import { useRouter } from 'next/navigation'
 
-import { SubmitButton, useActionToast } from '@/components/work/forms'
+import { PasswordInput, SubmitButton, useActionToast } from '@/components/work/forms'
 import { completePasswordReset } from '@/lib/work/services/password'
 import type { ActionState } from '@/lib/work/services/projects'
 
@@ -29,10 +29,9 @@ export function ResetPasswordForm({ landingPath }: { landingPath: string }) {
       <label className="field-label" htmlFor="newPassword">
         รหัสผ่านใหม่
       </label>
-      <input
+      <PasswordInput
         id="newPassword"
         name="newPassword"
-        type="password"
         autoComplete="new-password"
         required
         minLength={8}
@@ -46,10 +45,9 @@ export function ResetPasswordForm({ landingPath }: { landingPath: string }) {
       <label className="field-label" htmlFor="confirmPassword">
         ยืนยันรหัสผ่านใหม่
       </label>
-      <input
+      <PasswordInput
         id="confirmPassword"
         name="confirmPassword"
-        type="password"
         autoComplete="new-password"
         required
         minLength={8}
@@ -62,8 +60,6 @@ export function ResetPasswordForm({ landingPath }: { landingPath: string }) {
       <div className="form-actions">
         <SubmitButton pendingLabel="กำลังบันทึก…">ตั้งรหัสผ่านใหม่</SubmitButton>
       </div>
-
-      {state.error && <p className="auth-error">{state.error}</p>}
     </form>
   )
 }

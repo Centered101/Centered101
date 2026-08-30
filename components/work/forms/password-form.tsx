@@ -2,7 +2,8 @@
 
 import { useActionState, useRef } from 'react'
 
-import { SubmitButton, useActionToast } from '@/components/work/forms'
+import { PasswordInput } from './password-input'
+import { SubmitButton, useActionToast } from './index'
 import { changePassword } from '@/lib/work/services/password'
 import type { ActionState } from '@/lib/work/services/projects'
 
@@ -31,9 +32,8 @@ export function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
       {hasPassword && (
         <label className="full">
           <span>รหัสผ่านปัจจุบัน</span>
-          <input
+          <PasswordInput
             name="currentPassword"
-            type="password"
             required
             autoComplete="current-password"
           />
@@ -45,9 +45,8 @@ export function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
 
       <label>
         <span>รหัสผ่านใหม่</span>
-        <input
+        <PasswordInput
           name="newPassword"
-          type="password"
           required
           minLength={8}
           autoComplete="new-password"
@@ -60,9 +59,8 @@ export function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
 
       <label>
         <span>ยืนยันรหัสผ่านใหม่</span>
-        <input
+        <PasswordInput
           name="confirmPassword"
-          type="password"
           required
           minLength={8}
           autoComplete="new-password"
