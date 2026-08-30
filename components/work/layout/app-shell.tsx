@@ -80,6 +80,13 @@ export function AppShell({
           notifications={notifications}
           latestActivityId={latestActivityId}
           userId={userId}
+          /* "Get help instead" has a different answer per audience: staff
+             raise it as a change request, a client asks on one of their
+             projects. Resolved here because this is where the portal is
+             already known. */
+          helpHref={
+            activePortal === 'admin' ? '/work/admin/change-requests' : '/work/portal/projects'
+          }
         />
         {/* The footer is a sibling of .content, not a child: .main is a
             flex column filling the viewport, so `margin-top: auto` on the

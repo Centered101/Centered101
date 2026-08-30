@@ -1995,6 +1995,252 @@ a.profile:focus-visible {
   }
 }
 
+/* -------------------------------------------------------------------------
+   FEEDBACK WIDGET
+   -------------------------------------------------------------------------
+   The topbar's one writing control. Shares the bell's dropdown geometry — same
+   offset, same shadow, same card — so the two read as one row of controls
+   rather than as two widgets that happened to land next to each other. It is
+   wider (360px against 340px) because it holds a textarea, and it is a
+   labelled pill rather than an icon because "ความคิดเห็น" is an invitation and
+   an unlabelled speech bubble is a guess.
+   ------------------------------------------------------------------------- */
+.feedback {
+  position: relative;
+}
+
+.feedback-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 13px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted-foreground);
+  font-size: 12px;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.feedback-trigger:hover,
+.feedback-trigger[aria-expanded='true'] {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--accent);
+}
+
+.feedback-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 20;
+  width: min(360px, calc(100vw - 24px));
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 18px 48px -24px rgba(15, 23, 42, 0.38);
+}
+
+.feedback-head strong {
+  display: block;
+  font-size: 13px;
+  letter-spacing: -0.02em;
+}
+.feedback-head small {
+  display: block;
+  font-size: 10px;
+  margin-top: 3px;
+}
+
+/* The second screen's header: back arrow, then the chosen kind. */
+.feedback-head-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.feedback-back {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted-foreground);
+}
+.feedback-back:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Two equal cards, because the choice is genuinely even — sizing one larger
+   would be an opinion about which kind of message we would rather receive. */
+.feedback-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+.feedback-choice {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 16px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--muted);
+  color: var(--foreground);
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+}
+.feedback-choice:hover {
+  border-color: var(--primary);
+  background: var(--accent);
+}
+.feedback-choice strong {
+  font-size: 13px;
+}
+.feedback-choice small {
+  font-size: 10px;
+  color: var(--muted-foreground);
+}
+/* The only two colours in this panel that are not the brand blue. An issue is
+   not an idea, and the icon is where that difference costs nothing to say. */
+.feedback-choice.issue > svg {
+  color: #e2624f;
+}
+.feedback-choice.idea > svg {
+  color: #e3a008;
+}
+
+.feedback-form {
+  display: block;
+}
+.feedback-textarea {
+  width: 100%;
+  margin-top: 12px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--muted);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.6;
+  /* Vertical only: the panel has a fixed width, and a textarea dragged wider
+     than its card is the one resize handle nobody wants. */
+  resize: vertical;
+  min-height: 96px;
+}
+.feedback-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--card);
+}
+
+/* The attached file, once chosen. A name and a way to remove it — no preview
+   thumbnail: the person attaching a screenshot just took it and knows what is
+   in it, and a 5 MB image rendered in a dropdown moves the send button. */
+.feedback-attachment {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--primary);
+  font-size: 11px;
+}
+.feedback-attachment span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.feedback-attachment button {
+  display: grid;
+  place-items: center;
+  border: none;
+  background: none;
+  color: inherit;
+  padding: 0;
+}
+
+.feedback-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+}
+.feedback-help {
+  font-size: 11px;
+  color: var(--muted-foreground);
+  text-decoration: none;
+}
+.feedback-help:hover {
+  color: var(--primary);
+}
+.feedback-send {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* Hidden, not display:none — a `display: none` input is skipped by some
+   browsers' form validation and cannot be focused by its label. */
+.feedback-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.feedback-attach {
+  cursor: pointer;
+}
+.feedback-attach:hover,
+.feedback-file:focus-visible + .feedback-attach {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+.feedback-submit {
+  height: 34px;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 12px;
+}
+.feedback-submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+@media (max-width: 700px) {
+  /* The label is the first thing to go: at this width the topbar is a
+     breadcrumb and two controls, and the icon carries it. */
+  .feedback-trigger span {
+    display: none;
+  }
+  .feedback-trigger {
+    width: 34px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 8px;
+  }
+  /* Anchored to the bar's right edge, the panel would hang off the narrowest
+     phones — the same correction the bell panel makes. */
+  .feedback-panel {
+    right: -6px;
+    width: min(340px, calc(100vw - 32px));
+  }
+}
+
 /* =========================================================================
    HOST INTEGRATION
    =========================================================================

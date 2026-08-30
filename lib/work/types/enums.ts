@@ -192,6 +192,17 @@ export const CHANGE_REQUEST_PRIORITIES = ['LOW', 'NORMAL', 'HIGH', 'URGENT'] as 
 export type ChangeRequestPriority = (typeof CHANGE_REQUEST_PRIORITIES)[number]
 
 /**
+ * In-app feedback (migration 0017). Two kinds only: the person typing knows
+ * whether something is broken or merely missing, and asking them is cheaper
+ * than triaging it later.
+ */
+export const FEEDBACK_KINDS = ['ISSUE', 'IDEA'] as const
+export type FeedbackKind = (typeof FEEDBACK_KINDS)[number]
+
+export const FEEDBACK_STATUSES = ['NEW', 'TRIAGED', 'PLANNED', 'SHIPPED', 'DECLINED'] as const
+export type FeedbackStatus = (typeof FEEDBACK_STATUSES)[number]
+
+/**
  * Maps each TS union to its PostgreSQL enum type name, so the validation
  * harness can diff them. Adding an enum above without adding it here is caught
  * by the harness's completeness check.
@@ -219,4 +230,6 @@ export const PG_ENUM_MAP = {
   maintenance_billing_cycle: MAINTENANCE_BILLING_CYCLES,
   change_request_status: CHANGE_REQUEST_STATUSES,
   change_request_priority: CHANGE_REQUEST_PRIORITIES,
+  feedback_kind: FEEDBACK_KINDS,
+  feedback_status: FEEDBACK_STATUSES,
 } as const satisfies Record<string, readonly string[]>

@@ -15,8 +15,19 @@ import { requirePublicSupabaseEnv } from './env'
  * for `admin.ts` only in the Stripe webhook, where there is no user session.
  */
 export async function createClient() {
-  const { url, key } = requirePublicSupabaseEnv()
+  // cookies() FIRST, before the env check, and the order is load-bearing.
+  //
+  // Awaiting cookies() is what marks the caller dynamic. Validating the
+  // environment before that meant a missing variable threw while Next still
+  // believed the page was static — so instead of the page opting out of
+  // prerendering, the prerender itself failed and took the whole build with
+  // it ("Error occurred prerendering page /work/admin/change-requests").
+  //
+  // Every page reaching this function needs a session, so none of them may
+  // ever be prerendered. Touching the dynamic API first makes that true even
+  // when the configuration is wrong.
   const cookieStore = await cookies()
+  const { url, key } = requirePublicSupabaseEnv()
 
   return createServerClient<Database>(url, key, {
     cookies: {

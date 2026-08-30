@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react'
 import { Menu } from 'lucide-react'
 
+import { FeedbackMenu } from './feedback-menu'
 import { NotificationBell } from './notification-bell'
 
 /**
@@ -27,6 +28,10 @@ import { NotificationBell } from './notification-bell'
  *
  * The user avatar moved out too: identity already sits in the sidebar footer,
  * with the name, the email and the sign-out control next to it.
+ *
+ * ONE CONTROL WAS ADDED: the feedback widget, left of the bell. It is the only
+ * thing in this bar that writes rather than reads, which is why it is a
+ * labelled pill and the bell is an icon — see `feedback-menu.tsx`.
  */
 export function Topbar({
   breadcrumb,
@@ -34,6 +39,7 @@ export function Topbar({
   notifications,
   latestActivityId,
   userId,
+  helpHref,
 }: {
   breadcrumb: string
   onOpenMobileNav: () => void
@@ -41,6 +47,8 @@ export function Topbar({
   notifications: ReactNode
   latestActivityId: number | null
   userId: string
+  /** Where "ขอความช่วยเหลือแทน" goes — differs per portal, so it is passed in. */
+  helpHref: string
 }) {
   return (
     <header className="topbar">
@@ -53,6 +61,7 @@ export function Topbar({
         <strong>{breadcrumb}</strong>
       </div>
       <div className="top-actions">
+        <FeedbackMenu helpHref={helpHref} />
         <NotificationBell userId={userId} latestId={latestActivityId}>
           {notifications}
         </NotificationBell>

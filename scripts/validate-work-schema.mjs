@@ -209,6 +209,7 @@ async function main() {
     'payment_provider_events',
     'documents',
     'activity_logs',
+    'feedback',
   ]
   const tables = (
     await db.query(
@@ -799,6 +800,104 @@ async function main() {
     await db.query(`select public from storage.buckets where id = 'work-documents'`)
   ).rows[0]
   check('the documents storage bucket is private', bucket?.public === false)
+
+  // ---------------------------------------------------------------------------
+  console.log('
+[1mFeedback[0m')
+
+  // Anyone signed in may file, staff and clients alike — that is the widget's
+  // whole premise, so it is the first thing proved.
+  err = await writeAs(
+    db,
+    ids.client_a_id,
+    `insert into feedback (organization_id, profile_id, kind, message)
+     values ('${seed.org_id}', '${ids.client_a_id}', 'ISSUE', 'หน้าใบแจ้งหนี้โหลดช้า')`,
+  )
+  check('a client can file feedback against the agency behind their project', err === null, err ?? '')
+
+  // ...but only as themselves. A widget that lets the page name its submitter
+  // is a widget for filing reports as somebody else.
+  err = await writeAs(
+    db,
+    ids.client_a_id,
+    `insert into feedback (organization_id, profile_id, kind, message)
+     values ('${seed.org_id}', '${ids.admin_id}', 'IDEA', 'สวมรอย')`,
+  )
+  check('feedback cannot be filed in someone else's name', err !== null)
+
+  // An account with no membership and no project has no organization to file
+  // against — which must not stop them reporting that the app is broken.
+  err = await writeAs(
+    db,
+    ids.outsider_id,
+    `insert into feedback (profile_id, kind, message)
+     values ('${ids.outsider_id}', 'ISSUE', 'เข้าใช้งานไม่ได้')`,
+  )
+  check('an unassigned user can still file feedback', err === null, err ?? '')
+
+  // ...but not into an agency's queue they have nothing to do with.
+  err = await writeAs(
+    db,
+    ids.outsider_id,
+    `insert into feedback (organization_id, profile_id, kind, message)
+     values ('${seed.org_id}', '${ids.outsider_id}', 'ISSUE', 'สแปม')`,
+  )
+  check('an outsider cannot file into an organization they do not belong to', err !== null)
+
+  // Committed rows for the read and update checks below. Written outside
+  // asUser() because those transactions roll back.
+  await db.exec(`
+    insert into feedback (organization_id, profile_id, kind, message, page_path)
+    values ('${seed.org_id}', '${ids.client_a_id}', 'ISSUE', 'ปุ่มดาวน์โหลดกดไม่ได้', '/work/portal/projects');
+    insert into feedback (organization_id, profile_id, kind, message)
+    values ('${seed.org_id}', '${ids.admin_id}', 'IDEA', 'อยากได้ dark mode');
+  `)
+
+  check(
+    'agency staff read the whole feedback queue',
+    (await countAs(db, ids.admin_id, `select count(*)::int as count from feedback`)) === 2,
+  )
+  check(
+    'a client reads back only their own reports',
+    (await countAs(db, ids.client_a_id, `select count(*)::int as count from feedback`)) === 1,
+  )
+  check(
+    "a client cannot read another client's feedback",
+    (await countAs(db, ids.client_b_id, `select count(*)::int as count from feedback`)) === 0,
+  )
+
+  // Triage is a manager action...
+  check(
+    'an admin can triage feedback',
+    (await affectedAs(
+      db,
+      ids.admin_id,
+      `update feedback set status = 'TRIAGED' where organization_id = '${seed.org_id}'`,
+    )) === 2,
+  )
+  // ...and the author is not one, even on their own report.
+  check(
+    'the author cannot change the status of their own report',
+    (await affectedAs(
+      db,
+      ids.client_a_id,
+      `update feedback set status = 'DECLINED' where profile_id = '${ids.client_a_id}'`,
+    )) === 0,
+  )
+
+  // The report itself is immutable for EVERYONE — this runs as the owner,
+  // outside RLS, so it is the trigger being measured and not a policy.
+  try {
+    await db.exec(`update feedback set message = 'แก้ข้อความ' where kind = 'IDEA'`)
+    check('feedback text cannot be edited', false, 'update was accepted')
+  } catch {
+    check('feedback text cannot be edited', true)
+  }
+
+  const feedbackBucket = (
+    await db.query(`select public from storage.buckets where id = 'work-feedback'`)
+  ).rows[0]
+  check('the feedback storage bucket is private', feedbackBucket?.public === false)
 
   // ---------------------------------------------------------------------------
   console.log(`\n[1mResult[0m  ${passed} passed, ${failed} failed\n`)
