@@ -12,7 +12,8 @@
     "work:db:validate": "node scripts/validate-work-schema.mjs",
     "work:db:bundle": "node scripts/bundle-work-migrations.mjs",
     "verify": "npm run typecheck && npm run work:db:validate && npm run build",
-    "work:db:snapshot": "node scripts/snapshot-work-schema.mjs"
+    "work:db:snapshot": "node scripts/snapshot-work-schema.mjs",
+    "work:db:verify": "node scripts/verify-work-schema.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.82",
