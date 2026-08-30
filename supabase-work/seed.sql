@@ -11,23 +11,26 @@
 -- or paste it into the Supabase SQL editor for the work project.
 --
 -- -----------------------------------------------------------------------------
--- FIRST: PUT YOUR OWN EMAIL IN THE CONFIGURATION BLOCK BELOW.
+-- THE CONFIGURATION BLOCK BELOW HOLDS REAL DEVELOPMENT ADDRESSES.
 -- -----------------------------------------------------------------------------
--- Exactly ONE account is required — the agency admin — and it must be an
--- account that already exists, because signing in is what creates it. Use the
--- address you sign in with; the seed finds it by email and makes it
--- super_admin of the development workspace.
+-- They are committed so the file runs unedited. If that is not wanted, put the
+-- placeholders back and keep the real ones out of the repo with:
 --
---   v_admin_email     REQUIRED. An account you can already sign in with.
+--   git update-index --skip-worktree supabase-work/seed.sql
+--
+-- These are DEVELOPMENT accounts on a database the guard below refuses to run
+-- against once any non-development organization exists.
+-- -----------------------------------------------------------------------------
+--   v_admin_email     REQUIRED. Becomes super_admin of the dev workspace.
 --   v_client_a_email  Optional. Becomes client_owner of the ABC project.
 --   v_client_b_email  Optional. Becomes client_owner of the XYZ project.
 --
--- The two client addresses are optional on purpose: the admin portal is fully
--- populated without them, and there is no reason to create two more logins
--- just to look at a dashboard. Every project, payment, invoice and deployment
--- still seeds — only the client-side PORTAL access does not, because
--- project_members needs a real profile to point at. Sign those two up later
--- (/work/login → สมัครสมาชิก) and re-run this file; it will wire them in.
+-- Every address must already exist as an account, because signing in is what
+-- creates one — this file deliberately does not (see below). An address with
+-- no account is reported and skipped rather than being fatal: only the
+-- client-side PORTAL access depends on it. Every project, payment, invoice and
+-- deployment still seeds, so the admin side is complete either way. Sign the
+-- missing one up and re-run; it will be wired in.
 --
 -- -----------------------------------------------------------------------------
 -- IT DOES NOT CREATE LOGIN ACCOUNTS, AND THAT IS DELIBERATE.
@@ -62,18 +65,17 @@ declare
   -- addresses may point at accounts that do not exist yet; the seed says so
   -- and carries on.
   --
-  -- Placeholders on purpose: this file is versioned, and a committed fixture is
-  -- the wrong place for anyone's real address. Put your own in before running.
-  --
-  -- Running it unedited is safe — it stops with a list of the accounts that DO
-  -- exist in the database, so there is nothing to look up by hand.
+  -- Filled in with the three accounts in the development database, so this
+  -- file runs as-is. THAT PUTS THOSE ADDRESSES IN GIT — see the note at the
+  -- top of the file if you would rather they were not.
   --
   -- The admin and client roles are mutually exclusive: staff are redirected out
-  -- of /work/portal and clients out of /work/admin, so previewing both sides
-  -- needs two different accounts.
-  v_admin_email    text := 'admin@flowstate.test';
-  v_client_a_email text := 'client-a@flowstate.test';
-  v_client_b_email text := 'client-b@flowstate.test';
+  -- of /work/portal and clients out of /work/admin, so seeing both sides needs
+  -- different accounts. One admin plus two clients covers every path, including
+  -- "client A cannot reach client B's project".
+  v_admin_email    text := 'savencenter5047@gmail.com';
+  v_client_a_email text := 'centered101@outlook.com';
+  v_client_b_email text := 'tcrffalok.1333118768@gmail.com';
   -- ===========================================================================
 
   v_admin    uuid;
