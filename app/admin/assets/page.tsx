@@ -3,7 +3,7 @@
 import { usePageTitle } from '@/lib/hooks/use-page-title'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { Archive, File, FileCode, FileText, HardDrive, Image, Loader2, Trash2, Upload } from 'lucide-react'
+import { Archive, File, FileCode, FileText, HardDrive, Image as ImageIcon, Loader2, Trash2, Upload } from 'lucide-react'
 import { AdminLoading, AdminError, AdminEmpty } from '@/components/admin/AdminStates'
 import { ConfirmModal } from '@/components/admin/ConfirmModal'
 import { useAdminApi, useAdminMutation } from '@/lib/hooks/useAdminApi'
@@ -49,7 +49,7 @@ function formatBytes(bytes: number): string {
 
 function FileIcon({ mime }: { mime: string }) {
   const cls = 'size-3.5 shrink-0'
-  if (mime.startsWith('image/')) return <Image className={cls} style={{ color: '#409EFE' }} />
+  if (mime.startsWith('image/')) return <ImageIcon className={cls} style={{ color: '#409EFE' }} />
   if (mime === 'application/pdf') return <FileText className={cls} style={{ color: '#EF4444' }} />
   if (mime.includes('zip') || mime.includes('gzip') || mime.includes('tar')) return <Archive className={cls} style={{ color: '#F59E0B' }} />
   if (mime.startsWith('text/') || mime.includes('json')) return <FileCode className={cls} style={{ color: '#A1A1AA' }} />

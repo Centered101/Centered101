@@ -214,11 +214,21 @@ export default function AIPage() {
         const { done, value } = await reader.read()
         if (done) break
         acc += decoder.decode(value, { stream: true })
-        setMessages((prev) => {
-          const u = [...prev]
-          u[u.length - 1] = { role: 'assistant', content: acc }
-          return u
-        })
+
+        // `content`, not `acc`, and a rebuilt array rather than a write into a
+        // copy. Two separate things the React Compiler rules object to:
+        //
+        //   * `[...prev]` copies the array, but assigning into the copy is
+        //     still a mutation.
+        //   * `acc` is reassigned on every chunk. Capturing it in the updater
+        //     hands React a reference to a value that keeps changing, so a
+        //     deferred update would render whatever `acc` had become by then
+        //     rather than the chunk it was queued for.
+        //
+        // A const snapshot per chunk fixes the second, and building the array
+        // outright fixes the first.
+        const content = acc
+        setMessages((prev) => [...prev.slice(0, -1), { role: 'assistant', content }])
       }
 
       const finalMessages: Message[] = [...newMessages, { role: 'assistant', content: acc }]

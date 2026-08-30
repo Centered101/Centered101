@@ -13,7 +13,7 @@ import {
   Folder,
   Globe,
   HardDrive,
-  Image,
+  Image as ImageIcon,
   Lock,
   Loader2,
   Music,
@@ -94,7 +94,7 @@ function fileIconClass(mime: string, isFolder?: boolean) {
 function FileIcon({ mime, isFolder }: { mime: string; isFolder?: boolean }) {
   const className = cn('size-4 shrink-0', fileIconClass(mime, isFolder))
   if (isFolder) return <Folder className={className} />
-  if (mime.startsWith('image/')) return <Image className={className} />
+  if (mime.startsWith('image/')) return <ImageIcon className={className} />
   if (mime === 'application/pdf') return <FileText className={className} />
   if (mime.includes('zip') || mime.includes('gzip')) return <Archive className={className} />
   if (mime.startsWith('video/')) return <FileVideo className={className} />

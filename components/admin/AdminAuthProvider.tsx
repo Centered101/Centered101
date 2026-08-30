@@ -187,7 +187,6 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       setIsBooting(false)
     }
     boot()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function unlockDashboard(
@@ -278,8 +277,8 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         window.removeEventListener(event, resetTimer)
       }
     }
-    // logout is intentionally omitted so activity listeners do not reset on every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // logout is intentionally omitted so activity listeners do not reset on
+    // every render.
   }, [isAuthenticated, sessionTimeoutMs])
 
   return (

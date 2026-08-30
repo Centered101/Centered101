@@ -6,8 +6,13 @@ import { createClient } from '@/lib/supabase/client'
 
 export function useAdminRealtime(tables: string[], refetch: () => void) {
   const { isAuthenticated } = useAdminAuth()
+  // Written in an effect, not during render: a render may be discarded or
+  // replayed, and the ref write would happen anyway. React's
+  // `react-hooks/refs` rule exists for exactly this.
   const refetchRef = useRef(refetch)
-  refetchRef.current = refetch
+  useEffect(() => {
+    refetchRef.current = refetch
+  })
   const key = tables.join(',')
 
   useEffect(() => {

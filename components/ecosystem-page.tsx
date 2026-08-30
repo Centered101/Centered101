@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { CheckCircle2, CircleDashed } from 'lucide-react'
 import { aboutTimeline, ecosystemPages, ecosystemServices } from '@/lib/ecosystem'
 
@@ -18,9 +19,11 @@ export function EcosystemPage({ slug }: EcosystemPageProps) {
   return (
     <main className="min-h-screen bg-background px-6 py-28 text-foreground">
       <div className="mx-auto w-full max-w-[1400px]">
-        <a href="/" className="mb-10 inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-accent">
+        {/* Link, not <a>: a bare anchor to an internal route reloads the
+            whole document instead of navigating client-side. */}
+        <Link href="/" className="mb-10 inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-accent">
           Back to Centered101
-        </a>
+        </Link>
 
         <section className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
           <div>
