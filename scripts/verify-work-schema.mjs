@@ -53,11 +53,62 @@ const db = await PGlite.create({ extensions: { pgcrypto, pg_trgm } })
 await db.exec(SHIM)
 
 const files = (await readdir(MIGRATIONS)).filter((f) => f.endsWith('.sql')).sort()
-for (const file of files) {
-  await db.exec(await readFile(path.join(MIGRATIONS, file), 'utf8'))
-}
 
 const rows = async (sql) => (await db.query(sql)).rows
+
+/**
+ * Every object the schema is expected to contain, as `kind\u0000name` keys.
+ *
+ * Taken after each migration so the difference attributes each object to the
+ * file that introduced it. Knowing something is missing is only half an
+ * answer; the other half is which migration to run.
+ */
+async function snapshot() {
+  const keys = new Set()
+  const add = (kind, list) => list.forEach((r) => keys.add(kind + '\u0000' + r.name))
+
+  add('table', await rows(
+    `select tablename as name from pg_tables where schemaname = 'public'`))
+  add('enum type', await rows(
+    `select t.typname as name from pg_type t join pg_namespace n on n.oid = t.typnamespace
+     where n.nspname = 'public' and t.typtype = 'e'`))
+  // Extension-owned functions are excluded. pgcrypto and pg_trgm install
+  // theirs into `public` here, but Supabase puts extensions in their own
+  // schema — listing them would produce a screenful of MISSING rows for
+  // functions this project never created and does not need there.
+  add('function', await rows(
+    `select n.nspname || '.' || p.proname as name from pg_proc p
+     join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname in ('public', 'app')
+       and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')`))
+  add('trigger', await rows(
+    `select tgname as name from pg_trigger where not tgisinternal`))
+  add('RLS enabled', await rows(
+    `select c.relname as name from pg_class c join pg_namespace n on n.oid = c.relnamespace
+     where n.nspname = 'public' and c.relkind = 'r' and c.relrowsecurity`))
+  add('storage bucket', await rows(`select id as name from storage.buckets`))
+  add('column', await rows(
+    `select table_name || '.' || column_name as name from information_schema.columns
+     where table_schema = 'public'
+       and (table_name, column_name) in (
+         ('projects','progress'), ('projects','project_code'), ('documents','storage_path'))`))
+
+  return keys
+}
+
+/** kind\u0000name -> the migration filename that introduced it. */
+const origin = new Map()
+let seen = new Set()
+
+for (const file of files) {
+  await db.exec(await readFile(path.join(MIGRATIONS, file), 'utf8'))
+  const now = await snapshot()
+  for (const key of now) if (!seen.has(key)) origin.set(key, file)
+  seen = now
+}
+
+/** Short label for the report: the numeric prefix is enough to find the file. */
+const from = (kind, name) => origin.get(kind + '\u0000' + name) ?? '(unknown)'
 
 const tables = await rows(`
   select tablename as name from pg_tables
@@ -158,14 +209,16 @@ const blocks = [
 const arms = blocks
   .filter((b) => b.names.length > 0)
   .map(
-    (b) => `select ${q(b.kind)} as kind, t.name,
+    (b) => `select ${q(b.kind)} as kind, t.name, t.migration,
        case when ${b.test} then 'OK' else 'MISSING' end as status
-from (values ${b.names.map((n) => `(${q(n)})`).join(',\n              ')}) as t(name)`,
+from (values ${b.names
+      .map((n) => `(${q(n)}, ${q(from(b.kind, n))})`)
+      .join(',\n              ')}) as t(name, migration)`,
   )
 
 // Policy counts: fewer than expected means some were dropped or never applied.
 arms.push(
-  `select 'policies' as kind, t.name,
+  `select 'policies' as kind, t.name, t.migration,
        case when coalesce((select count(*) from pg_policies p
                            where p.schemaname='public' and p.tablename = t.name), 0) >= t.n
             then 'OK (' || coalesce((select count(*) from pg_policies p
@@ -173,14 +226,18 @@ arms.push(
             else 'MISSING (' || coalesce((select count(*) from pg_policies p
                                           where p.schemaname='public' and p.tablename = t.name), 0) || '/' || t.n || ')'
        end as status
-from (values ${policies.map((p) => `(${q(p.name)}, ${p.n})`).join(',\n              ')}) as t(name, n)`,
+from (values ${policies
+    .map((p) => `(${q(p.name)}, ${p.n}, ${q(from('table', p.name))})`)
+    .join(',\n              ')}) as t(name, n, migration)`,
 )
 
 arms.push(
-  `select 'storage bucket' as kind, t.name,
+  `select 'storage bucket' as kind, t.name, t.migration,
        coalesce((select case when b.public then 'WRONG — PUBLIC' else 'OK (private)' end
                  from storage.buckets b where b.id = t.name), 'MISSING') as status
-from (values ${buckets.map((b) => `(${q(b.name)})`).join(', ')}) as t(name)`,
+from (values ${buckets
+    .map((b) => `(${q(b.name)}, ${q(from('storage bucket', b.name))})`)
+    .join(', ')}) as t(name, migration)`,
 )
 
 const total =
@@ -197,16 +254,33 @@ const sql = `-- ================================================================
 -- READ-ONLY. Safe to run any number of times, on any database.
 --
 -- Run it in the Supabase SQL editor for the work project. Every one of the
--- ${total} rows should say OK. A MISSING row means that object was never
--- created there — apply the migration that adds it.
+-- ${total} rows should say OK, and anything that is not OK is sorted to the
+-- top — so the answer to "what is missing?" is the first thing on screen.
+--
+-- The "migration" column names the file that creates each object, so a MISSING
+-- row also tells you which migration to apply.
+--
+-- (No backticks in this text: it is emitted from inside a JS template literal,
+--  where a backtick would close the string and break the generator.)
 --
 -- Built from:
 ${files.map((f) => `--   ${f}`).join('\n')}
 -- ============================================================================
 
+-- Anything not OK is sorted to the top: the question this file answers is
+-- "what is missing", and that answer should not be buried in the middle of
+-- ${total} rows.
+--
+-- The arms are wrapped in a subquery because Postgres accepts only output
+-- column names or positions in a UNION's ORDER BY. An expression there fails
+-- with "invalid UNION/INTERSECT/EXCEPT ORDER BY clause" — which it did.
+select kind, name, migration, status
+from (
+
 ${arms.join('\n\nunion all\n\n')}
 
-order by 1, 2;
+) as report
+order by (status like 'MISSING%' or status like 'WRONG%') desc, migration, kind, name;
 `
 
 await writeFile(OUT, sql, 'utf8')
