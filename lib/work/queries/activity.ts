@@ -1,6 +1,11 @@
 import 'server-only'
 
 import { createClient } from '@/lib/work/supabase/server'
+import {
+  ACTIVITY_ACTIONS,
+  UNKNOWN_ACTIVITY,
+  type ActivityPresentation,
+} from '@/lib/work/types/activity-actions'
 import { unwrapOr } from './internal'
 
 /**
@@ -23,10 +28,10 @@ export type ActivityItem = {
   actorName: string | null
   metadata: Record<string, unknown>
   createdAt: string
-  /** Presentation, derived from `action` — see ACTION_LABELS. */
+  /** Presentation, derived from `action` — see ACTIVITY_ACTIONS. */
   title: string
-  icon: 'payment' | 'check' | 'branch' | 'file'
-  tone: 'blue' | 'green' | 'violet' | 'orange'
+  icon: ActivityPresentation['icon']
+  tone: ActivityPresentation['tone']
 }
 
 type ActivityRow = {
@@ -42,38 +47,13 @@ type ActivityRow = {
   projects: { name: string } | null
 }
 
-/**
- * How each action reads in the feed.
- *
- * Keyed by the dotted verb the database stores. An unknown action still
- * renders — with its raw verb — rather than being dropped: a missing audit
- * entry is worse than an ugly one.
- */
-const ACTION_LABELS: Record<string, { title: string; icon: ActivityItem['icon']; tone: ActivityItem['tone'] }> = {
-  'project.created': { title: 'สร้างโปรเจกต์', icon: 'file', tone: 'violet' },
-  'project.updated': { title: 'อัปเดตโปรเจกต์', icon: 'file', tone: 'blue' },
-  'project.status_changed': { title: 'เปลี่ยนสถานะโปรเจกต์', icon: 'check', tone: 'blue' },
-  'client.created': { title: 'เพิ่มลูกค้าใหม่', icon: 'file', tone: 'violet' },
-  'member.invited': { title: 'เชิญสมาชิกทีม', icon: 'check', tone: 'violet' },
-  'member.role_changed': { title: 'เปลี่ยนบทบาทสมาชิก', icon: 'check', tone: 'blue' },
-  'member.removed': { title: 'นำสมาชิกออกจากทีม', icon: 'check', tone: 'orange' },
-  'payment.created': { title: 'สร้างรายการชำระเงิน', icon: 'payment', tone: 'blue' },
-  'payment.succeeded': { title: 'ได้รับการชำระเงิน', icon: 'payment', tone: 'green' },
-  'payment.failed': { title: 'การชำระเงินไม่สำเร็จ', icon: 'payment', tone: 'orange' },
-  'milestone.completed': { title: 'ไมล์สโตนเสร็จสมบูรณ์', icon: 'check', tone: 'green' },
-  'invoice.created': { title: 'ออกใบแจ้งหนี้', icon: 'file', tone: 'blue' },
-  'document.created': { title: 'เพิ่มเอกสาร', icon: 'file', tone: 'blue' },
-  'deployment.created': { title: 'เผยแพร่สำเร็จ', icon: 'branch', tone: 'violet' },
-  'change_request.created': { title: 'คำขอเปลี่ยนแปลงใหม่', icon: 'file', tone: 'orange' },
-  'maintenance.updated': { title: 'อัปเดตแพ็กเกจดูแลรักษา', icon: 'check', tone: 'green' },
-}
-
 function toActivity(row: ActivityRow): ActivityItem {
-  const label = ACTION_LABELS[row.action] ?? {
-    title: row.action,
-    icon: 'file' as const,
-    tone: 'blue' as const,
-  }
+  // A row whose action has no label is one written before that action was
+  // renamed or removed; it still renders, minus a title only a developer
+  // could read. New actions cannot reach here — ACTIVITY_ACTIONS is what
+  // `logActivity()` accepts, so the compiler rejects an unlabelled one.
+  const label: ActivityPresentation =
+    ACTIVITY_ACTIONS[row.action as keyof typeof ACTIVITY_ACTIONS] ?? UNKNOWN_ACTIVITY
 
   return {
     id: row.id,
@@ -96,8 +76,16 @@ export function activityDetail(item: ActivityItem, projectName?: string | null):
   const parts: string[] = []
   if (projectName) parts.push(projectName)
 
+  // `metadata.name` is most often the project's own name, which the line
+  // above already carries — "5555 · 5555" was the common case rather than
+  // the exception.
   const name = item.metadata.name ?? item.metadata.title
-  if (typeof name === 'string' && name) parts.push(name)
+  if (typeof name === 'string' && name && name !== projectName) parts.push(name)
+
+  // The raw verb, for the one case where the title had to drop it. Here
+  // rather than in the title because this line is already the technical
+  // one, and an operator reading the same feed still needs to see it.
+  if (!(item.action in ACTIVITY_ACTIONS)) parts.push(item.action)
 
   if (parts.length === 0 && (item.actorName || item.actorEmail)) {
     parts.push(item.actorName ?? item.actorEmail ?? '')
@@ -154,8 +142,57 @@ export function activityHref(
   }
 }
 
+/**
+ * Groups of related actions, so a filter can say "payments" rather than
+ * listing eleven dotted verbs. Derived from the action PREFIX, which is why
+ * the `entity.verb` naming convention is worth keeping.
+ */
+export const ACTIVITY_CATEGORIES = {
+  project: ['project'],
+  payment: ['payment', 'payment_plan', 'invoice'],
+  work: ['work_milestone', 'milestone'],
+  delivery: ['deliverable', 'handover', 'publishing', 'source_code', 'deployment'],
+  documents: ['document', 'brand', 'asset'],
+  change: ['change_request'],
+  maintenance: ['maintenance'],
+  people: ['member', 'invitation', 'profile', 'auth'],
+} as const
+
+export type ActivityCategory = keyof typeof ACTIVITY_CATEGORIES
+
+export const ACTIVITY_CATEGORY_LABELS: Record<ActivityCategory, string> = {
+  project: 'โปรเจกต์',
+  payment: 'การเงิน',
+  work: 'งาน',
+  delivery: 'ส่งมอบ/เผยแพร่',
+  documents: 'เอกสาร/แบรนด์',
+  change: 'คำขอเปลี่ยนแปลง',
+  maintenance: 'ดูแลรักษา',
+  people: 'ผู้ใช้งาน',
+}
+
+/**
+ * Activity, optionally filtered and paged.
+ *
+ * EVERY filter here is a convenience, never a permission. `activity_logs` has
+ * two SELECT policies — staff see their organization, a client sees only their
+ * own projects' entries (0012, widened to self-serve owners in 0039) — so a
+ * caller who passes another project's id gets an empty list from RLS, not from
+ * this code. Removing every filter below would not widen what anybody can see.
+ *
+ * `before` is a keyset cursor on `created_at`, which the existing
+ * `activity_logs_project_time_idx` / `activity_logs_org_time_idx` already
+ * serve; no OFFSET, so page 50 costs what page 1 costs.
+ */
 export async function getActivity(
-  options: { projectId?: string; limit?: number } = {},
+  options: {
+    projectId?: string
+    limit?: number
+    /** Restrict to one category (see ACTIVITY_CATEGORIES). */
+    category?: ActivityCategory
+    /** Keyset cursor: return entries strictly older than this timestamp. */
+    before?: string
+  } = {},
 ): Promise<(ActivityItem & { projectName: string | null })[]> {
   const supabase = await createClient()
 
@@ -169,6 +206,15 @@ export async function getActivity(
     .limit(options.limit ?? 20)
 
   if (options.projectId) query = query.eq('project_id', options.projectId)
+  if (options.before) query = query.lt('created_at', options.before)
+
+  if (options.category) {
+    // `action` is `entity.verb`, so a category is a set of prefixes and this
+    // is an OR of `like` patterns rather than a fragile enumeration of every
+    // action that exists today.
+    const prefixes = ACTIVITY_CATEGORIES[options.category]
+    query = query.or(prefixes.map((prefix) => `action.like.${prefix}.%`).join(','))
+  }
 
   const rows = unwrapOr<ActivityRow[]>(await query, 'กิจกรรม', [])
 
@@ -176,4 +222,29 @@ export async function getActivity(
     ...toActivity(row),
     projectName: row.projects?.name ?? null,
   }))
+}
+
+/**
+ * The most recent "please provide more information" request on a project
+ * (docs/ADMIN_PROJECT_REVIEW.md §6) — read straight from `activity_logs`
+ * (`project.information_requested`, written by `requestMoreInformation`)
+ * rather than a dedicated column, since this is a message TO the client
+ * about ONE past event, not current project state. Null once the project
+ * has moved on (a later status means this note is no longer "the reason
+ * you're blocked" even if it is still in the log).
+ */
+export async function getLatestInformationRequest(projectId: string): Promise<string | null> {
+  const supabase = await createClient()
+
+  const result = await supabase
+    .from('activity_logs')
+    .select('metadata')
+    .eq('project_id', projectId)
+    .eq('action', 'project.information_requested')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle<{ metadata: { note?: string } }>()
+
+  const row = unwrapOr<{ metadata: { note?: string } } | null>(result, 'คำขอข้อมูลเพิ่มเติม', null)
+  return row?.metadata?.note ?? null
 }

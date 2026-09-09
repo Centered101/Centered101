@@ -16,8 +16,27 @@
 export const ORG_ROLES = ['super_admin', 'admin', 'developer', 'accountant'] as const
 export type OrgRole = (typeof ORG_ROLES)[number]
 
-export const PROJECT_ROLES = ['client_owner', 'client_member', 'developer'] as const
+export const PROJECT_ROLES = [
+  'client_owner',
+  'client_member',
+  'developer',
+  'OWNER',
+  'MANAGER',
+  'MEMBER',
+  'VIEWER',
+] as const
 export type ProjectRole = (typeof PROJECT_ROLES)[number]
+
+/** Self-serve collaboration roles only — the disjoint, uppercase axis added
+ * alongside client_owner/client_member/developer (migration 0025a). */
+export const PROJECT_COLLABORATION_ROLES = ['OWNER', 'MANAGER', 'MEMBER', 'VIEWER'] as const
+export type ProjectCollaborationRole = (typeof PROJECT_COLLABORATION_ROLES)[number]
+
+export const PROJECT_MEMBER_STATUSES = ['ACTIVE', 'REMOVED'] as const
+export type ProjectMemberStatus = (typeof PROJECT_MEMBER_STATUSES)[number]
+
+export const PROJECT_INVITATION_STATUSES = ['PENDING', 'ACCEPTED', 'EXPIRED', 'REVOKED'] as const
+export type ProjectInvitationStatus = (typeof PROJECT_INVITATION_STATUSES)[number]
 
 /** The full project lifecycle (brief Phase 5). */
 export const PROJECT_STATUSES = [
@@ -40,6 +59,28 @@ export const PROJECT_STATUSES = [
   'PAUSED',
   'CANCELLED',
   'OVERDUE',
+  // Everything above is the original 18, in their original order — the
+  // validator checks pg_enum's actual order, which for `ALTER TYPE ... ADD
+  // VALUE` (no BEFORE/AFTER) is always an append. These four were added by
+  // migration 0027a, in this exact order, for the admin project lifecycle
+  // (docs/ADMIN_PROJECT_LIFECYCLE.md §1) — nothing existing modeled "waiting
+  // on admin to look at a submission" before this. DELIVERED is distinct
+  // from DEPLOYED: the client formally ACCEPTED delivery, not merely "the
+  // code is live" (docs/PROJECT_WORKSPACE_ARCHITECTURE.md §4).
+  'SUBMITTED',
+  'UNDER_REVIEW',
+  'NEEDS_INFORMATION',
+  'DELIVERED',
+  // Migration 0028a — the quotation-adjacent states, distinct from the
+  // unused WAITING_FOR_AGREEMENT/CLIENT_REVIEW/FINAL_APPROVAL/
+  // READY_FOR_HANDOVER values above (see that migration's own comment for
+  // why these are new values rather than reuses).
+  'QUOTATION_DRAFT',
+  'QUOTATION_SENT',
+  'AWAITING_CLIENT_APPROVAL',
+  'IN_REVIEW',
+  'CLIENT_APPROVAL',
+  'READY_FOR_DELIVERY',
 ] as const
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number]
 
@@ -106,6 +147,9 @@ export const AGREEMENT_STATUSES = [
   'DECLINED',
   'EXPIRED',
   'SUPERSEDED',
+  // Migration 0029 — added after the original 6, appended at the end
+  // (matches ALTER TYPE ... ADD VALUE's actual pg_enum order).
+  'VIEWED',
 ] as const
 export type AgreementStatus = (typeof AGREEMENT_STATUSES)[number]
 
@@ -118,6 +162,20 @@ export const PAYMENT_PLAN_TYPES = [
 ] as const
 export type PaymentPlanType = (typeof PAYMENT_PLAN_TYPES)[number]
 
+/** Payment-plan lifecycle (migration 0034). Mirrors AGREEMENT_STATUSES. */
+export const PAYMENT_PLAN_STATUSES = [
+  'DRAFT',
+  'PROPOSED',
+  'ACCEPTED',
+  'SUPERSEDED',
+  'DECLINED',
+] as const
+export type PaymentPlanStatus = (typeof PAYMENT_PLAN_STATUSES)[number]
+
+/** State of a client's "propose something else" request against a plan (migration 0034). */
+export const PAYMENT_PLAN_CHANGE_STATUSES = ['OPEN', 'ADDRESSED', 'DISMISSED'] as const
+export type PaymentPlanChangeStatus = (typeof PAYMENT_PLAN_CHANGE_STATUSES)[number]
+
 export const MILESTONE_STATUSES = [
   'PENDING',
   'INVOICED',
@@ -126,6 +184,49 @@ export const MILESTONE_STATUSES = [
   'CANCELLED',
 ] as const
 export type MilestoneStatus = (typeof MILESTONE_STATUSES)[number]
+
+/**
+ * WORK milestone lifecycle (migration 0035) — project EXECUTION, entirely
+ * separate from MILESTONE_STATUSES above, which is money. A work milestone
+ * may be COMPLETED while its payment milestone is still PENDING, and vice
+ * versa; that is the point of keeping two enums.
+ */
+export const WORK_MILESTONE_STATUSES = [
+  'PENDING',
+  'IN_PROGRESS',
+  'IN_REVIEW',
+  'CHANGES_REQUESTED',
+  'APPROVED',
+  'COMPLETED',
+  'BLOCKED',
+  'CANCELLED',
+] as const
+export type WorkMilestoneStatus = (typeof WORK_MILESTONE_STATUSES)[number]
+
+/** What the client said about a work milestone — separate axis from its status. */
+export const WORK_MILESTONE_REVIEW_STATUSES = [
+  'NOT_REQUIRED',
+  'PENDING',
+  'APPROVED',
+  'CHANGES_REQUESTED',
+] as const
+export type WorkMilestoneReviewStatus = (typeof WORK_MILESTONE_REVIEW_STATUSES)[number]
+
+/**
+ * What a milestone's `unlock_rules` (migration 0009) may name. Matches the
+ * client portal's own tabs (lib/work/nav.ts) one-for-one — a milestone can
+ * only sensibly unlock a page that exists. Data only, at this phase: nothing
+ * yet reads these to actually gate a tab (that is the UNLOCK phase); creating
+ * a milestone just records which resources it is meant to unlock once paid.
+ */
+export const UNLOCKABLE_RESOURCES = [
+  'preview',
+  'source_code',
+  'deployment',
+  'documents',
+  'maintenance',
+] as const
+export type UnlockableResource = (typeof UNLOCKABLE_RESOURCES)[number]
 
 /** Brief Phase 9. Only a verified webhook may move a payment to PAID. */
 export const PAYMENT_STATUSES = [
@@ -151,11 +252,45 @@ export const DOCUMENT_TYPES = [
   'CREDIT_NOTE',
   'DEBIT_NOTE',
   'OTHER',
+  // Phase 5 (migration 0039). Order matches the enum's own sort order: new
+  // values are appended, never inserted, so an existing row's meaning cannot
+  // shift underneath it.
+  'REQUIREMENT',
+  'PAYMENT',
+  'BRAND',
+  'DESIGN',
+  'DEVELOPMENT',
+  'DELIVERY',
 ] as const
 export type DocumentType = (typeof DOCUMENT_TYPES)[number]
 
 export const DOCUMENT_STATUSES = ['DRAFT', 'ISSUED', 'SENT', 'VOID'] as const
 export type DocumentStatus = (typeof DOCUMENT_STATUSES)[number]
+
+/**
+ * Who may read a document (migration 0039). Deliberately NOT derived from
+ * `DocumentStatus`: an internal DESIGN document is legitimately ISSUED and
+ * must still never reach a client.
+ */
+/**
+ * Phase 7 (migration 0041). The state of ONE agreed deliverable.
+ *
+ * WAIVED is not a failure: it records that the team and client agreed NOT to
+ * deliver something, which is why it does not block a handover from being
+ * complete. Without it, "we agreed to skip training" could only be expressed
+ * by deleting the row, destroying the record that it was ever discussed.
+ */
+export const DELIVERABLE_STATUSES = [
+  'PENDING',
+  'IN_PROGRESS',
+  'READY',
+  'DELIVERED',
+  'WAIVED',
+] as const
+export type DeliverableStatus = (typeof DELIVERABLE_STATUSES)[number]
+
+export const DOCUMENT_VISIBILITIES = ['INTERNAL', 'CLIENT_VISIBLE'] as const
+export type DocumentVisibility = (typeof DOCUMENT_VISIBILITIES)[number]
 
 /** Deploy records (0014). One table covers preview and production. */
 export const DEPLOYMENT_ENVIRONMENTS = ['PREVIEW', 'STAGING', 'PRODUCTION'] as const
@@ -202,6 +337,26 @@ export type FeedbackKind = (typeof FEEDBACK_KINDS)[number]
 export const FEEDBACK_STATUSES = ['NEW', 'TRIAGED', 'PLANNED', 'SHIPPED', 'DECLINED'] as const
 export type FeedbackStatus = (typeof FEEDBACK_STATUSES)[number]
 
+export const PROJECT_ASSET_KINDS = [
+  'LOGO',
+  'ICON',
+  'FAVICON',
+  'IMAGE',
+  'FONT',
+  'BRAND_GUIDELINE',
+  'REFERENCE',
+  'OTHER',
+] as const
+export type ProjectAssetKind = (typeof PROJECT_ASSET_KINDS)[number]
+
+export const PROJECT_ASSET_REVIEW_STATUSES = [
+  'PENDING',
+  'APPROVED',
+  'NEEDS_REPLACEMENT',
+  'NEEDS_CLARIFICATION',
+] as const
+export type ProjectAssetReviewStatus = (typeof PROJECT_ASSET_REVIEW_STATUSES)[number]
+
 /**
  * Maps each TS union to its PostgreSQL enum type name, so the validation
  * harness can diff them. Adding an enum above without adding it here is caught
@@ -219,11 +374,17 @@ export const PG_ENUM_MAP = {
   pricing_item_kind: PRICING_ITEM_KINDS,
   agreement_status: AGREEMENT_STATUSES,
   payment_plan_type: PAYMENT_PLAN_TYPES,
+  payment_plan_status: PAYMENT_PLAN_STATUSES,
+  payment_plan_change_status: PAYMENT_PLAN_CHANGE_STATUSES,
   milestone_status: MILESTONE_STATUSES,
+  work_milestone_status: WORK_MILESTONE_STATUSES,
+  work_milestone_review_status: WORK_MILESTONE_REVIEW_STATUSES,
   payment_status: PAYMENT_STATUSES,
   payment_method: PAYMENT_METHODS,
   document_type: DOCUMENT_TYPES,
   document_status: DOCUMENT_STATUSES,
+  document_visibility: DOCUMENT_VISIBILITIES,
+  deliverable_status: DELIVERABLE_STATUSES,
   deployment_environment: DEPLOYMENT_ENVIRONMENTS,
   deployment_status: DEPLOYMENT_STATUSES,
   maintenance_status: MAINTENANCE_STATUSES,
@@ -232,4 +393,8 @@ export const PG_ENUM_MAP = {
   change_request_priority: CHANGE_REQUEST_PRIORITIES,
   feedback_kind: FEEDBACK_KINDS,
   feedback_status: FEEDBACK_STATUSES,
+  project_member_status: PROJECT_MEMBER_STATUSES,
+  invitation_status: PROJECT_INVITATION_STATUSES,
+  project_asset_kind: PROJECT_ASSET_KINDS,
+  project_asset_review_status: PROJECT_ASSET_REVIEW_STATUSES,
 } as const satisfies Record<string, readonly string[]>

@@ -44,6 +44,7 @@ export default async function PortalChangeRequestsPage(
                   <th>ความสำคัญ</th>
                   <th>สถานะ</th>
                   <th>ราคาที่เสนอ</th>
+                  <th>ผลกระทบ</th>
                   <th>ส่งเมื่อ</th>
                 </tr>
               </thead>
@@ -72,6 +73,11 @@ export default async function PortalChangeRequestsPage(
                       ) : (
                         <strong>{formatMoney(request.estimatedAmount, request.currency)}</strong>
                       )}
+                    </td>
+                    {/* NULL and 0 are different answers: "not assessed yet"
+                        versus "assessed, and it costs no time". */}
+                    <td className="muted">
+                      {request.impactDays === null ? '—' : `+${request.impactDays} วัน`}
                     </td>
                     <td className="muted">{formatDate(request.createdAt)}</td>
                   </tr>

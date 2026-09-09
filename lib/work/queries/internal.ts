@@ -38,6 +38,16 @@ const MISSING_TABLE_CODES = new Set(['42P01', 'PGRST205'])
 /** 42703 = undefined_column; PGRST204 is PostgREST's schema-cache equivalent. */
 const MISSING_COLUMN_CODES = new Set(['42703', 'PGRST204'])
 
+/**
+ * A missing column does not always arrive with a code we recognise: depending
+ * on the PostgREST version and whether the failure came from the planner or the
+ * schema cache, the only reliable signal is the message text. Match that too,
+ * so a query selecting a column from an unapplied migration is diagnosed as a
+ * partial schema rather than logged as an opaque `{}`.
+ */
+const MISSING_COLUMN_MESSAGE =
+  /column .* does not exist|could not find the .* column|in the schema cache/i
+
 export function isMissingSchema(error: PostgrestError | null | undefined): boolean {
   return !!error && MISSING_TABLE_CODES.has(error.code)
 }
@@ -53,7 +63,17 @@ export function isMissingSchema(error: PostgrestError | null | undefined): boole
  * naming the fix, because the fix is one command.
  */
 export function isPartialSchema(error: PostgrestError | null | undefined): boolean {
-  return !!error && MISSING_COLUMN_CODES.has(error.code)
+  if (!error) return false
+  return MISSING_COLUMN_CODES.has(error.code) || MISSING_COLUMN_MESSAGE.test(error.message ?? '')
+}
+
+/** Best-effort serialisation for logging an error of unknown shape. */
+function safeJson(value: unknown): string {
+  try {
+    return JSON.stringify(value) ?? String(value)
+  } catch {
+    return String(value)
+  }
 }
 
 /**
@@ -73,7 +93,22 @@ function unwrap<T>(
     // overlay serialises a bare error to `{}`, which is what a reader of this
     // log actually got: "[query] การชำระเงิน failed: {}" and nothing to act on.
     const { code, message, details, hint } = result.error
-    console.error(`[query] ${context} failed:`, { code, message, details, hint })
+    // PostgREST's error is `JSON.parse(body)` (postgrest-js PostgrestBuilder) —
+    // when a proxy or a non-PostgREST response comes back, none of the four
+    // fields above exist and spreading them ALSO logs `{}`. Fall back to the
+    // raw shape and the HTTP status so there is always something to act on.
+    const structured = code ?? message ?? details ?? hint
+    const detail = structured != null
+      ? { code, message, details, hint, status: result.status }
+      : { raw: safeJson(result.error), status: result.status }
+    // The fields above cured the "bare error object logs as `{}`" bug, but a
+    // SECOND console.error argument runs into the same wall one level up:
+    // whatever renders these logs back to a reader — the dev overlay, or a
+    // tool relaying its output — only shows the first string argument, and
+    // still prints "failed: {}" no matter what the object argument holds.
+    // Fold it into the string itself so there is exactly one argument and
+    // nowhere left for the payload to get dropped.
+    console.error(`[query] ${context} failed: ${safeJson(detail)}`)
 
     // PostgREST reports status 0 when the request never reached the server, so
     // the "error" is a dead connection, not something the query did wrong. Said

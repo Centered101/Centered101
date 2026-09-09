@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react'
 
-import { ActivityList } from '@/components/work/data/activity-list'
+import { NotificationList } from '@/components/work/domain/notification-list'
+import { getNotifications } from '@/lib/work/queries/notifications'
 import { AppShell } from '@/components/work/layout/app-shell'
 import { SchemaNotice } from '@/components/work/states/schema-notice'
 import { requireAdmin } from '@/lib/work/auth/permissions'
 import { ORG_ROLE_LABELS } from '@/lib/work/format'
-import { getActivity } from '@/lib/work/queries/activity'
 
 /**
  * Admin / developer portal shell.
@@ -26,7 +26,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // Read here rather than inside the bell: the query is `server-only` and RLS
   // scopes it to what this caller may see, so the client component receives a
   // rendered list and an id — never a way to ask for more.
-  const activity = await getActivity({ limit: 8 })
+
+  const notifications = await getNotifications({ limit: 20 })
 
   return (
     <AppShell
@@ -36,8 +37,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       userEmail={staff.email}
       userInitial={staff.initial}
       userAvatarUrl={staff.avatarUrl}
-      notifications={<ActivityList items={activity} />}
-      latestActivityId={activity[0]?.id ?? null}
+      notifications={<NotificationList items={notifications} />}
+      latestActivityId={notifications[0]?.id ?? null}
       userId={staff.userId}
     >
       {staff.schemaMissing && <SchemaNotice />}

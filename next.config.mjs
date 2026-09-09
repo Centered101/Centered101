@@ -57,6 +57,16 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Server Actions default to a 1MB body limit. The wizard's brand-asset
+  // upload (lib/work/services/intake.ts) enforces its own 10MB cap and the
+  // feedback screenshot upload (lib/work/validation/feedback.ts) enforces
+  // 5MB — both would be cut off by Next's default before either check runs.
+  // 12mb leaves headroom over the larger of the two for multipart overhead.
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '12mb',
+    },
+  },
   images: {
     unoptimized: isDev,
     formats: ['image/avif', 'image/webp'],

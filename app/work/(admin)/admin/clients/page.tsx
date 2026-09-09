@@ -1,6 +1,6 @@
 import { Panel, PageHeading } from '@/components/work/data/panel'
 import { EmptyState } from '@/components/work/states'
-import { requireAdmin } from '@/lib/work/auth/permissions'
+import { requireCapability } from '@/lib/work/auth/permissions'
 import { formatDate } from '@/lib/work/format'
 import { getClients } from '@/lib/work/queries/clients'
 
@@ -14,7 +14,7 @@ export const metadata = { title: 'ลูกค้า' }
  * list gives nobody a login.
  */
 export default async function AdminClientsPage() {
-  await requireAdmin()
+  await requireCapability('client:read')
   const clients = await getClients()
 
   return (

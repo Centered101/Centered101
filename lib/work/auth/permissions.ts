@@ -268,6 +268,25 @@ export type ProjectAccess = {
   projectRole: ProjectRole | null
   isStaff: boolean
   canManage: boolean
+  /**
+   * `finance:write` — agreements, invoices, PAYMENTS (payment plans, manual
+   * payments, milestone settlement). Staff-only, always. A self-serve
+   * OWNER's `canManagePricing` below is a deliberately separate, narrower
+   * grant — see requireProjectPricing.
+   */
+  canManageFinance: boolean
+  /**
+   * Pricing (line items, VAT) only — NOT payment plans, NOT payments, NOT
+   * milestone settlement. True for staff finance (mirrors canManageFinance)
+   * AND for a self-serve project's OWNER (docs/PROJECT_COLLABORATION_AUDIT.md
+   * §Payment/Pricing Security) — the one deliberate widening this feature
+   * makes, and it stops exactly at pricing.
+   */
+  canManagePricing: boolean
+  /** Add/remove/re-role project_members. Staff who can manage the project, or a self-serve OWNER — see requireProjectMembers. */
+  canManageMembers: boolean
+  /** True only for the self-serve OWNER role (never true for staff, never true for client_owner/client_member). */
+  isProjectOwner: boolean
 }
 
 /**
@@ -301,13 +320,19 @@ export async function requireProjectAccess(projectId: string): Promise<ProjectAc
   if (error || !project) notFound()
 
   if (context.kind === 'staff') {
+    const canManage = context.can('project:write')
+    const canManageFinance = context.can('finance:write')
     return {
       projectId,
       organizationId: project.organization_id as string,
       userId: context.userId,
       projectRole: null,
       isStaff: true,
-      canManage: context.can('project:write'),
+      canManage,
+      canManageFinance,
+      canManagePricing: canManageFinance,
+      canManageMembers: canManage,
+      isProjectOwner: false,
     }
   }
 
@@ -323,13 +348,32 @@ export async function requireProjectAccess(projectId: string): Promise<ProjectAc
   // deleted between the two reads.
   if (!membership) notFound()
 
+  const role = membership.role as ProjectRole
+  // The self-serve collaboration roles (migration 0025a/b) — a disjoint,
+  // uppercase vocabulary from client_owner/client_member/developer. See
+  // permissions.ts's own module comment and the migration's for why they
+  // share project_role rather than a second enum.
+  const isOwner = role === 'OWNER'
+  const isManager = role === 'MANAGER'
+
   return {
     projectId,
     organizationId: project.organization_id as string,
     userId: context.userId,
-    projectRole: membership.role as ProjectRole,
+    projectRole: role,
     isStaff: false,
-    canManage: false,
+    // client_owner / client_member keep their existing behaviour exactly:
+    // false, unconditionally — this feature does not touch that role's
+    // capabilities. Only the new OWNER/MANAGER roles get canManage.
+    canManage: isOwner || isManager,
+    // Unconditionally false for EVERY client-side role, always — payment
+    // authority never comes from project membership alone (brief §6). This
+    // is the one line that must never change for this feature to stay safe.
+    canManageFinance: false,
+    // The deliberate, narrow widening: OWNER only, pricing only.
+    canManagePricing: isOwner,
+    canManageMembers: isOwner,
+    isProjectOwner: isOwner,
   }
 }
 
@@ -337,6 +381,39 @@ export async function requireProjectAccess(projectId: string): Promise<ProjectAc
 export async function requireProjectManage(projectId: string): Promise<ProjectAccess> {
   const access = await requireProjectAccess(projectId)
   if (!access.canManage) denyAccess('บัญชีของคุณไม่มีสิทธิ์แก้ไขโปรเจกต์นี้')
+  return access
+}
+
+/**
+ * Project access plus the right to change what it costs.
+ *
+ * Stricter than `requireProjectManage`: mirrors `app.can_manage_project_finance`
+ * (managers + accountants), not `project:write` (which developers also hold).
+ * A developer can edit delivery details but must not be able to reprice the
+ * work — the same split the pricing RLS policies enforce underneath.
+ */
+export async function requireProjectFinance(projectId: string): Promise<ProjectAccess> {
+  const access = await requireProjectAccess(projectId)
+  if (!access.canManageFinance) denyAccess('บัญชีของคุณไม่มีสิทธิ์แก้ไขราคาของโปรเจกต์นี้')
+  return access
+}
+
+/**
+ * Project access plus the right to edit PRICING — not payment plans, not
+ * payments, not milestone settlement, which stay behind `requireProjectFinance`
+ * (staff only) untouched. Admits staff finance (same as `requireProjectFinance`)
+ * AND a self-serve project's OWNER. See `ProjectAccess.canManagePricing`.
+ */
+export async function requireProjectPricing(projectId: string): Promise<ProjectAccess> {
+  const access = await requireProjectAccess(projectId)
+  if (!access.canManagePricing) denyAccess('บัญชีของคุณไม่มีสิทธิ์แก้ไขราคาของโปรเจกต์นี้')
+  return access
+}
+
+/** Project access plus the right to invite/remove/re-role project_members. */
+export async function requireProjectMembers(projectId: string): Promise<ProjectAccess> {
+  const access = await requireProjectAccess(projectId)
+  if (!access.canManageMembers) denyAccess('บัญชีของคุณไม่มีสิทธิ์จัดการสมาชิกของโปรเจกต์นี้')
   return access
 }
 

@@ -1,6 +1,7 @@
 import { ExternalLink } from 'lucide-react'
 
 import { Panel, PageHeading, PanelHead } from '@/components/work/data/panel'
+import { LockedState } from '@/components/work/states'
 import { Status } from '@/components/work/data/status'
 import { requireProjectAccess } from '@/lib/work/auth/permissions'
 import {
@@ -11,20 +12,39 @@ import {
 } from '@/lib/work/format'
 import { getDeployments } from '@/lib/work/queries/deployments'
 import { getProjectById } from '@/lib/work/queries/projects'
+import { isResourceUnlocked } from '@/lib/work/queries/unlock'
 
 export const metadata = { title: 'การเผยแพร่' }
 
-/** Production deployments for one project. */
+/** Production deployments for one project. Gated by `isResourceUnlocked(id, 'deployment')` — see preview/page.tsx for the reasoning. */
 export default async function PortalDeploymentPage(
   props: PageProps<'/work/portal/projects/[id]/deployment'>,
 ) {
   const { id } = await props.params
   await requireProjectAccess(id)
 
+  const unlocked = await isResourceUnlocked(id, 'deployment')
+
   const [deployments, project] = await Promise.all([
-    getDeployments({ projectId: id, environment: 'PRODUCTION' }),
+    unlocked ? getDeployments({ projectId: id, environment: 'PRODUCTION' }) : Promise.resolve([]),
     getProjectById(id),
   ])
+
+  if (!unlocked) {
+    return (
+      <>
+        <PageHeading
+          eyebrow="โปรเจกต์"
+          title="การเผยแพร่"
+          description="เวอร์ชันที่ใช้งานจริงและประวัติการเผยแพร่"
+        />
+        <LockedState
+          title="ยังไม่ปลดล็อกการเผยแพร่"
+          description="ข้อมูลการเผยแพร่จะเปิดให้ดูหลังชำระงวดที่กำหนดไว้ตามแผนการชำระเงิน"
+        />
+      </>
+    )
+  }
 
   const live = deployments.find((deployment) => deployment.status === 'READY')
 

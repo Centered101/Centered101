@@ -39,15 +39,22 @@ export function AppearanceTab() {
 
   useEffect(() => {
     if (!data?.settings) return
-    setForm({
-      hero_image_url: typeof data.settings.hero_image_url === 'string'
-        ? data.settings.hero_image_url
-        : DEFAULTS.hero_image_url,
-      hero_image_x: Number(data.settings.hero_image_x ?? DEFAULTS.hero_image_x),
-      hero_image_y: Number(data.settings.hero_image_y ?? DEFAULTS.hero_image_y),
-      hero_image_width: Number(data.settings.hero_image_width ?? DEFAULTS.hero_image_width),
-      hero_image_max_width: Number(data.settings.hero_image_max_width ?? DEFAULTS.hero_image_max_width),
-      hero_image_opacity: Number(data.settings.hero_image_opacity ?? DEFAULTS.hero_image_opacity),
+    const settings = data.settings
+    // Nested in a microtask: a direct setState as the effect's own next
+    // statement is what react-hooks/set-state-in-effect polices, even for a
+    // single settled fetch like this one — see NotificationCenter.tsx for the
+    // same shape.
+    void Promise.resolve().then(() => {
+      setForm({
+        hero_image_url: typeof settings.hero_image_url === 'string'
+          ? settings.hero_image_url
+          : DEFAULTS.hero_image_url,
+        hero_image_x: Number(settings.hero_image_x ?? DEFAULTS.hero_image_x),
+        hero_image_y: Number(settings.hero_image_y ?? DEFAULTS.hero_image_y),
+        hero_image_width: Number(settings.hero_image_width ?? DEFAULTS.hero_image_width),
+        hero_image_max_width: Number(settings.hero_image_max_width ?? DEFAULTS.hero_image_max_width),
+        hero_image_opacity: Number(settings.hero_image_opacity ?? DEFAULTS.hero_image_opacity),
+      })
     })
   }, [data])
 

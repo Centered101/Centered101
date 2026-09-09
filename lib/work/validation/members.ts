@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from './zod'
 
 import { ORG_ROLES } from '@/lib/work/types/enums'
 import { emailSchema } from './auth'

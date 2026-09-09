@@ -56,7 +56,22 @@ function ProductsContent() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchProducts(); }, []);
+  useEffect(() => {
+    let active = true
+    supabase
+      .from('shop_products')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (!active) return
+        if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' })
+        else setProducts((data || []) as ShopProduct[])
+        setLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, []);
 
   const openAdd = () => { setEditingId(null); setFormData(defaultForm); setImageFile(null); setShowForm(true); };
 

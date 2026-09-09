@@ -80,3 +80,66 @@ export async function getMaintenancePlan(projectId: string): Promise<Maintenance
   const plans = await getMaintenancePlans({ projectId })
   return plans[0] ?? null
 }
+
+export type MaintenanceRecord = {
+  id: string
+  planId: string | null
+  planName: string | null
+  title: string
+  description: string | null
+  performedOn: string
+  minutesSpent: number | null
+  performedByName: string | null
+  createdAt: string
+}
+
+type MaintenanceRecordRow = {
+  id: string
+  plan_id: string | null
+  title: string
+  description: string | null
+  performed_on: string
+  minutes_spent: number | null
+  created_at: string
+  maintenance_plans: { name: string } | null
+  performer: { full_name: string | null } | null
+}
+
+/**
+ * What maintenance work was actually PERFORMED (migration 0042).
+ *
+ * Distinct from `getMaintenancePlans`, which is what is BILLED. Clients read
+ * their own history — `maintenance_records_select` is `app.can_read_project`,
+ * so a caller with no access to the project gets an empty list rather than an
+ * error, exactly like every other read here.
+ */
+export async function getMaintenanceRecords(
+  projectId: string,
+  limit = 100,
+): Promise<MaintenanceRecord[]> {
+  const supabase = await createClient()
+
+  const result = await supabase
+    .from('maintenance_records')
+    .select(
+      'id, plan_id, title, description, performed_on, minutes_spent, created_at, ' +
+        'maintenance_plans(name), performer:profiles!maintenance_records_performed_by_fkey(full_name)',
+    )
+    .eq('project_id', projectId)
+    .order('performed_on', { ascending: false })
+    .limit(limit)
+
+  const rows = unwrapOr<MaintenanceRecordRow[]>(result, 'ประวัติงานดูแลรักษา', [])
+
+  return rows.map((row) => ({
+    id: row.id,
+    planId: row.plan_id,
+    planName: row.maintenance_plans?.name ?? null,
+    title: row.title,
+    description: row.description,
+    performedOn: row.performed_on,
+    minutesSpent: row.minutes_spent,
+    performedByName: row.performer?.full_name ?? null,
+    createdAt: row.created_at,
+  }))
+}

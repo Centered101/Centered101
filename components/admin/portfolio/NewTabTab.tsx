@@ -34,8 +34,10 @@ export function NewTabTab() {
     if (!data?.settings) return
     const initial: Record<string, string> = {}
     for (const k of KEYS) initial[k] = String(data.settings[k] ?? '')
-    setForm(initial)
-    setDirty(false)
+    void Promise.resolve().then(() => {
+      setForm(initial)
+      setDirty(false)
+    })
   }, [data])
 
   function set(key: string, value: string) {

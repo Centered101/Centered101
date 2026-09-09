@@ -77,18 +77,19 @@ function sortStoryItems(items: Entry[]) {
   return [...items].sort((a, b) => a.sort_order - b.sort_order || Number(b.year) - Number(a.year))
 }
 
-function getStoryIcon(icon: string | null, type: string) {
-  if (icon && icon in STORY_ICONS) {
-    return STORY_ICONS[icon as keyof typeof STORY_ICONS]
-  }
-  if (type === 'education') return GraduationCap
-  if (type === 'achievement') return Award
-  return Briefcase
-}
-
 function StoryIconPreview({ icon, type, className = 'size-3.5' }: { icon: string | null; type: string; className?: string }) {
-  const Icon = getStoryIcon(icon, type)
-  return <Icon className={className} />
+  // Each branch renders one of a fixed set of already-declared icon
+  // components directly, rather than selecting one through a function call
+  // and rendering the result — the latter reads to the compiler as "a
+  // component created during render" even though every branch here is
+  // actually a stable, module-level component.
+  if (icon && icon in STORY_ICONS) {
+    const Icon = STORY_ICONS[icon as keyof typeof STORY_ICONS]
+    return <Icon className={className} />
+  }
+  if (type === 'education') return <GraduationCap className={className} />
+  if (type === 'achievement') return <Award className={className} />
+  return <Briefcase className={className} />
 }
 
 function EntryForm({
@@ -277,7 +278,7 @@ export function StoryTab() {
   const editingEntry = editing ? story.find((item) => item.id === editing) : null
 
   useEffect(() => {
-    if (!orderDirty) setOrderedStory(sortStoryItems(data?.story ?? []))
+    if (!orderDirty) void Promise.resolve().then(() => setOrderedStory(sortStoryItems(data?.story ?? [])))
   }, [data?.story, orderDirty])
 
   function openAdd() {

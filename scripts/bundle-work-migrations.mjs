@@ -2,7 +2,7 @@
  * Bundles the work migrations into one paste-ready SQL file.
  *
  * WHY THIS EXISTS: this repository holds three Supabase projects (main, shop,
- * work), so the work migrations live in `supabase-work/migrations/` rather
+ * work), so the work migrations live in `supabase/work/migrations/` rather
  * than the `supabase/migrations/` path the Supabase CLI expects. `supabase db
  * push` therefore cannot see them, and the working process has been to paste
  * SQL into the project's SQL editor.
@@ -25,7 +25,7 @@
 import { readdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
-const MIGRATIONS_DIR = path.join(process.cwd(), 'supabase-work', 'migrations')
+const MIGRATIONS_DIR = path.join(process.cwd(), 'supabase', 'work', 'migrations')
 
 function arg(name) {
   const index = process.argv.indexOf(name)
@@ -58,13 +58,35 @@ const parts = [
   '-- =============================================================================',
   '',
   // One transaction: a bundle that stops halfway leaves exactly the
-  // half-applied schema this script exists to prevent.
-  'begin;',
-  '',
+  // half-applied schema this script exists to prevent. (An `ALTER TYPE ADD
+  // VALUE` migration is the one exception — it runs outside the transaction,
+  // see below — because Postgres will not let the new value be used otherwise.)
 ]
+
+// `ALTER TYPE ... ADD VALUE` adds an enum value that Postgres refuses to USE
+// (index predicates, some comparisons) until the adding transaction commits.
+// Such a migration is deliberately split into its own file so it commits
+// before the file that uses the value — a single wrapping transaction would
+// put both in one tx and defeat that. So those files run in autocommit,
+// between transactions, and everything else stays wrapped. `begin;` is
+// emitted lazily so an ADD VALUE file at the very start does not produce a
+// stray empty transaction.
+const ADDS_ENUM_VALUE = /\balter\s+type\b[\s\S]*?\badd\s+value\b/i
+let inTransaction = false
 
 for (const file of files) {
   const sql = await readFile(path.join(MIGRATIONS_DIR, file), 'utf8')
+  const isolate = ADDS_ENUM_VALUE.test(sql)
+
+  if (isolate && inTransaction) {
+    parts.push('commit;', '')
+    inTransaction = false
+  }
+  if (!isolate && !inTransaction) {
+    parts.push('begin;', '')
+    inTransaction = true
+  }
+
   parts.push(
     `-- ▼▼▼ ${file} ▼▼▼`,
     sql.trimEnd(),
@@ -73,7 +95,7 @@ for (const file of files) {
   )
 }
 
-parts.push('commit;', '')
+if (inTransaction) parts.push('commit;', '')
 
 const bundle = parts.join('\n')
 

@@ -67,7 +67,6 @@ function usePublicFetch<T>(url: string) {
 
   useEffect(() => {
     let active = true
-    setLoading(true)
     fetch(url)
       .then((r) => r.json())
       .then((d) => { if (active) { setData(d); setLoading(false) } })

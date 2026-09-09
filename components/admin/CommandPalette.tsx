@@ -105,28 +105,33 @@ export function CommandPalette({ open, onOpenChange }: Props) {
   const [searching, setSearching] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Clearing the query on close lives HERE, in the handler that changes
+  // `open`, rather than in an Effect keyed on `open` — this component never
+  // unmounts (the dialog's own open/close is internal to CommandDialog), so
+  // there is no natural reset point except the transition itself.
+  function handleOpenChange(next: boolean) {
+    if (!next) {
+      setQuery('')
+      setResults([])
+    }
+    onOpenChange(next)
+  }
+
   useEffect(() => {
     function handler(e: KeyboardEvent) {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
-        onOpenChange(!open)
+        handleOpenChange(!open)
       }
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [open, onOpenChange])
-
-  useEffect(() => {
-    if (!open) {
-      setQuery('')
-      setResults([])
-    }
   }, [open])
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     if (query.length < 2) {
-      setResults([])
+      debounceRef.current = setTimeout(() => setResults([]), 0)
       return
     }
     debounceRef.current = setTimeout(async () => {
@@ -167,7 +172,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
   return (
     <CommandDialog
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={handleOpenChange}
       shouldFilter={false}
       title="แถบคำสั่ง"
       description="ค้นหาหน้า คอนเทนต์ หรือเรียกใช้คำสั่งลัด"

@@ -80,7 +80,11 @@ export function Hero({ user, totalStars = 0, organizations = [], isLoading, onRe
   const [messageOpen, setMessageOpen] = useState(false)
   const [formState, setFormState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
-  const [submitCount, setSubmitCount] = useState(0)
+  const [submitCount, setSubmitCount] = useState(() => {
+    if (typeof window === 'undefined') return 0
+    const saved = Number(window.localStorage.getItem('portfolio_contact_submit_count') || 0)
+    return Number.isFinite(saved) ? saved : 0
+  })
   const [turnstileReady, setTurnstileReady] = useState(false)
   const [turnstileFailed, setTurnstileFailed] = useState(false)
   const [turnstileToken, setTurnstileToken] = useState('')
@@ -101,11 +105,6 @@ export function Hero({ user, totalStars = 0, organizations = [], isLoading, onRe
 
   const handleTurnstileReset = useCallback(() => {
     setTurnstileToken('')
-  }, [])
-
-  useEffect(() => {
-    const savedCount = Number(window.localStorage.getItem('portfolio_contact_submit_count') || 0)
-    if (Number.isFinite(savedCount)) setSubmitCount(savedCount)
   }, [])
 
   useEffect(() => {

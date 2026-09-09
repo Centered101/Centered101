@@ -130,9 +130,11 @@ export function AdminTopbar({ onMenuOpen, onCommandOpen, onAIToggle, aiOpen }: P
   const pathname = usePathname()
   const { authInfo, logout } = useAdminAuth()
   const [profileOpen, setProfileOpen] = useState(false)
-  // Resolved after mount to avoid an SSR/client href hydration mismatch.
-  const [siteUrl, setSiteUrl] = useState('/')
-  useEffect(() => { setSiteUrl(getMainSiteUrl()) }, [])
+  // Lazily resolved on the client, where `getMainSiteUrl()` reads
+  // `window.location` — a plain `useState('/')` default would make this
+  // right on the server and stay wrong forever on the client with no effect
+  // to correct it.
+  const [siteUrl] = useState(() => (typeof window !== 'undefined' ? getMainSiteUrl() : '/'))
 
   // Try exact match first, then dynamic patterns for agent memory sub-routes
   function resolveCrumbs(path: string): Breadcrumb[] {

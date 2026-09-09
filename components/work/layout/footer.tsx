@@ -20,6 +20,7 @@ export function Footer() {
         © {new Date().getFullYear()} {LEGAL.entityName}
       </p>
       <nav className="work-footer-links">
+        <Link href="/work/about">เกี่ยวกับ</Link>
         <Link href="/work/privacy-policy">นโยบายความเป็นส่วนตัว</Link>
         <Link href="/work/terms-of-service">ข้อกำหนดการใช้งาน</Link>
         <a href={`mailto:${LEGAL.contactEmail}`}>ติดต่อเรา</a>

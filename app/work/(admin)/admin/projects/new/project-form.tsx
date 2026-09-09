@@ -4,6 +4,7 @@ import { useActionState, useEffect } from 'react'
 import { toast } from 'sonner'
 
 import { SubmitButton } from '@/components/work/forms'
+import { PricingItemsFieldset } from '@/components/work/domain/pricing-items-fieldset'
 import { createProject, type ActionState } from '@/lib/work/services/projects'
 import {
   DELIVERY_METHODS,
@@ -28,7 +29,14 @@ import {
  * instant feedback, and the Zod schema on the server decides. The browser
  * checks are a convenience; only the server's verdict is trusted.
  */
-export function ProjectForm({ clients }: { clients: { id: string; name: string }[] }) {
+export function ProjectForm({
+  clients,
+  canPrice,
+}: {
+  clients: { id: string; name: string }[]
+  /** `finance:write` — only then does adding pricing at creation time succeed against RLS. */
+  canPrice: boolean
+}) {
   const [state, formAction] = useActionState<ActionState, FormData>(createProject, {})
 
   // useActionToast is not used here: this action redirects on success, so
@@ -79,14 +87,6 @@ export function ProjectForm({ clients }: { clients: { id: string; name: string }
       </label>
 
       <label>
-        <span>ราคา (บาท)</span>
-        <input name="totalAmount" required inputMode="decimal" placeholder="30000" />
-        {state.fieldErrors?.totalAmount && (
-          <small className="field-error">{state.fieldErrors.totalAmount}</small>
-        )}
-      </label>
-
-      <label>
         <span>วันเริ่มงาน</span>
         <input name="startDate" type="date" />
       </label>
@@ -125,6 +125,8 @@ export function ProjectForm({ clients }: { clients: { id: string; name: string }
         <input name="maintenanceEnabled" type="checkbox" />
         <span>เปิดใช้แพ็กเกจดูแลรักษา</span>
       </label>
+
+      {canPrice && <PricingItemsFieldset />}
 
       <div className="form-actions">
         <SubmitButton pendingLabel="กำลังสร้าง…">สร้างโปรเจกต์</SubmitButton>

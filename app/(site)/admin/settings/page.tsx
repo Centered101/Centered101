@@ -129,48 +129,80 @@ function IntegrationsPanel() {
   )
 }
 
-export default function SettingsPage() {
-  usePageTitle('ตั้งค่า')
-  const { authInfo, getAdminHeaders } = useAdminAuth()
-  const { data, loading, error, refetch } = useAdminApi<SettingsData>('/api/admin/settings')
+/**
+ * Everything below the fetch.
+ *
+ * Split out of `SettingsPage` so the draft state (general/notifs/appearance/
+ * security) can be INITIALIZED from `data` directly instead of copied in by
+ * an Effect. `SettingsPage` only ever mounts this once `data` exists, with a
+ * `key` derived from it — so a `refetch()` (after save, or a danger-zone
+ * action) remounts this component and its `useState` initializers run again
+ * against the fresh data, which is the same "draft resets to source of
+ * truth" behaviour the old Effect gave, without a synchronous `setState`
+ * inside it. See https://react.dev/learn/you-might-not-need-an-effect#resetting-all-state-when-a-prop-changes.
+ */
+function SettingsForm({
+  data,
+  authInfo,
+  getAdminHeaders,
+  refetch,
+}: {
+  data: SettingsData
+  authInfo: ReturnType<typeof useAdminAuth>['authInfo']
+  getAdminHeaders: ReturnType<typeof useAdminAuth>['getAdminHeaders']
+  refetch: () => void
+}) {
   const { mutate: patchSettings } = useAdminMutation<Record<string, unknown>>('/api/admin/settings', 'PATCH')
   const [tab, setTab] = useState<Tab>('general')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [dangerLoading, setDangerLoading] = useState<string | null>(null)
 
-  // Local editable state derived from DB settings
-  const [general, setGeneral] = useState({
-    site_name: 'Centered101',
-    site_url: 'https://centered101.com',
-    timezone: 'Asia/Bangkok',
-    maintenance_mode: false,
-    homepage_target: 'portfolio',
-    homepage_custom_path: '/',
+  // Local editable state, initialised from the settings this component was
+  // handed — never re-synced by an Effect. A refetch remounts this whole
+  // component (see the `key` in SettingsPage) instead.
+  const s = data.settings
+  const [general, setGeneral] = useState(() => ({
+    site_name: (s.site_name as string) ?? 'Centered101',
+    site_url: (s.site_url as string) ?? 'https://centered101.com',
+    timezone: (s.timezone as string) ?? 'Asia/Bangkok',
+    maintenance_mode: (s.maintenance_mode as boolean) ?? false,
+    homepage_target: (s.homepage_target as string) ?? 'portfolio',
+    homepage_custom_path: (s.homepage_custom_path as string) ?? '/',
+  }))
+  const [notifs, setNotifs] = useState(() => {
+    const n = s.notifications as Record<string, boolean> | undefined
+    return {
+      deploy_success: n?.deploy_success ?? true,
+      deploy_fail: n?.deploy_fail ?? true,
+      security_alerts: n?.security_alerts ?? true,
+      storage_warnings: n?.storage_warnings ?? false,
+      github_stars: n?.github_stars ?? false,
+      weekly_digest: n?.weekly_digest ?? true,
+    }
   })
-  const [notifs, setNotifs] = useState({
-    deploy_success: true,
-    deploy_fail: true,
-    security_alerts: true,
-    storage_warnings: false,
-    github_stars: false,
-    weekly_digest: true,
+  const [appearance, setAppearance] = useState(() => {
+    const a = s.appearance as Record<string, unknown> | undefined
+    return {
+      accent_color: (a?.accent_color as string) ?? '#409EFE',
+      compact_sidebar: (a?.compact_sidebar as boolean) ?? false,
+      reduced_motion: (a?.reduced_motion as boolean) ?? false,
+    }
   })
-  const [appearance, setAppearance] = useState({
-    accent_color: '#409EFE',
-    compact_sidebar: false,
-    reduced_motion: false,
-  })
+  // Profile is hydrated from authInfo (admin_users), not system_settings.
   const [profile, setProfile] = useState({
     display_name: authInfo?.displayName || '',
     email: authInfo?.email || '',
     github_username: authInfo?.githubUsername || '',
   })
-  const [security, setSecurity] = useState({
-    session_timeout: '6 hours',
-    github_oauth: true,
-    ip_allowlist: false,
-    force_https: true,
+  const [security, setSecurity] = useState(() => {
+    const sec = s.security as Record<string, unknown> | undefined
+    return {
+      session_timeout: (sec?.session_timeout as string) ?? '6 hours',
+      github_oauth: (sec?.github_oauth as boolean) ?? true,
+      ip_allowlist: (sec?.ip_allowlist as boolean) ?? false,
+      force_https: (sec?.force_https as boolean) ?? true,
+    }
   })
 
   // Apply appearance to DOM + localStorage whenever values change
@@ -182,49 +214,6 @@ export default function SettingsPage() {
     document.documentElement.classList.toggle('reduce-motion', appearance.reduced_motion)
     window.dispatchEvent(new CustomEvent('admin-appearance-change', { detail: appearance }))
   }, [appearance.compact_sidebar, appearance.reduced_motion, appearance.accent_color])
-
-  // Hydrate from DB once loaded
-  useEffect(() => {
-    if (!data) return
-    const s = data.settings
-    setGeneral({
-      site_name: (s.site_name as string) ?? 'Centered101',
-      site_url: (s.site_url as string) ?? 'https://centered101.com',
-      timezone: (s.timezone as string) ?? 'Asia/Bangkok',
-      maintenance_mode: (s.maintenance_mode as boolean) ?? false,
-      homepage_target: (s.homepage_target as string) ?? 'portfolio',
-      homepage_custom_path: (s.homepage_custom_path as string) ?? '/',
-    })
-    const n = s.notifications as Record<string, boolean> | undefined
-    if (n) {
-      setNotifs({
-        deploy_success: n.deploy_success ?? true,
-        deploy_fail: n.deploy_fail ?? true,
-        security_alerts: n.security_alerts ?? true,
-        storage_warnings: n.storage_warnings ?? false,
-        github_stars: n.github_stars ?? false,
-        weekly_digest: n.weekly_digest ?? true,
-      })
-    }
-    const a = s.appearance as Record<string, unknown> | undefined
-    if (a) {
-      setAppearance({
-        accent_color: (a.accent_color as string) ?? '#409EFE',
-        compact_sidebar: (a.compact_sidebar as boolean) ?? false,
-        reduced_motion: (a.reduced_motion as boolean) ?? false,
-      })
-    }
-    // Profile is hydrated from authInfo (admin_users), not system_settings
-    const sec = s.security as Record<string, unknown> | undefined
-    if (sec) {
-      setSecurity({
-        session_timeout: (sec.session_timeout as string) ?? '6 hours',
-        github_oauth: (sec.github_oauth as boolean) ?? true,
-        ip_allowlist: (sec.ip_allowlist as boolean) ?? false,
-        force_https: (sec.force_https as boolean) ?? true,
-      })
-    }
-  }, [data])
 
   async function save(payload: Record<string, unknown>) {
     setSaving(true)
@@ -284,9 +273,6 @@ export default function SettingsPage() {
       setDangerLoading(null)
     }
   }
-
-  if (loading) return <AdminLoading message="กำลังโหลดการตั้งค่า..." />
-  if (error) return <AdminError error={error} onRetry={refetch} />
 
   const notifLabels: Record<keyof typeof notifs, string> = {
     deploy_success: 'Deploy สำเร็จ',
@@ -600,5 +586,30 @@ export default function SettingsPage() {
         </div>
       </div>
     </AdminPageContainer>
+  )
+}
+
+export default function SettingsPage() {
+  usePageTitle('ตั้งค่า')
+  const { authInfo, getAdminHeaders } = useAdminAuth()
+  const { data, loading, error, refetch } = useAdminApi<SettingsData>('/api/admin/settings')
+
+  if (loading) return <AdminLoading message="กำลังโหลดการตั้งค่า..." />
+  if (error) return <AdminError error={error} onRetry={refetch} />
+  if (!data) return <AdminError error="ไม่พบข้อมูลการตั้งค่า" onRetry={refetch} />
+
+  return (
+    <SettingsForm
+      // Remounts the whole form (and re-initialises its draft state) whenever
+      // the server data actually changes — after save() or a danger-zone
+      // action calls refetch(). Same "draft snaps back to source of truth"
+      // behaviour the old Effect gave, done by letting React's own mount
+      // lifecycle do it instead of a synchronous setState in an Effect.
+      key={JSON.stringify(data.settings)}
+      data={data}
+      authInfo={authInfo}
+      getAdminHeaders={getAdminHeaders}
+      refetch={refetch}
+    />
   )
 }

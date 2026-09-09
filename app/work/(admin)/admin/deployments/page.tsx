@@ -4,7 +4,7 @@ import { ExternalLink } from 'lucide-react'
 import { Panel, PageHeading } from '@/components/work/data/panel'
 import { Status } from '@/components/work/data/status'
 import { EmptyState } from '@/components/work/states'
-import { requireAdmin } from '@/lib/work/auth/permissions'
+import { requireCapability } from '@/lib/work/auth/permissions'
 import {
   DEPLOYMENT_ENVIRONMENT_LABELS,
   DEPLOYMENT_STATUS_LABELS,
@@ -23,7 +23,7 @@ export const metadata = { title: 'การเผยแพร่' }
  * detail page.
  */
 export default async function AdminDeploymentsPage() {
-  await requireAdmin()
+  await requireCapability('project:read')
   const deployments = await getDeployments()
 
   return (

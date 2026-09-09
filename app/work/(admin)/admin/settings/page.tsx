@@ -4,6 +4,7 @@ import { Status } from '@/components/work/data/status'
 import { AccountSecurity } from '@/components/work/account/account-security'
 import { InviteMemberForm } from './invite-member-form'
 import { MemberRemoveButton, MemberRoleSelect } from './member-row-actions'
+import { RenameWorkspaceForm } from './rename-workspace-form'
 import { requireAdmin } from '@/lib/work/auth/permissions'
 import { ORG_ROLE_LABELS, formatDate, initialFor } from '@/lib/work/format'
 import { getOrganizationMembers } from '@/lib/work/queries/organization'
@@ -13,14 +14,14 @@ export const metadata = { title: 'ตั้งค่า' }
 /**
  * Workspace settings.
  *
- * Read-only in this phase. Roles are shown, not edited: changing a role is a
- * manager-only write (`organization_members_update_managers`), and the form to
- * do it belongs with the member-invitation flow rather than being half-built
- * here.
+ * The workspace name is editable by managers (`settings:manage`); everything
+ * else in the ownership panel is identity, shown not edited. Member roles are
+ * changed inline in the team table below.
  */
 export default async function AdminSettingsPage() {
   const staff = await requireAdmin()
   const canManage = staff.can('member:manage')
+  const canManageWorkspace = staff.can('settings:manage')
   const members = await getOrganizationMembers()
 
   return (
@@ -35,7 +36,11 @@ export default async function AdminSettingsPage() {
         <div className="ownership-rows">
           <div>
             <span>ชื่อพื้นที่ทำงาน</span>
-            <strong>{staff.organizationName}</strong>
+            {canManageWorkspace ? (
+              <RenameWorkspaceForm currentName={staff.organizationName} />
+            ) : (
+              <strong>{staff.organizationName}</strong>
+            )}
           </div>
           <div>
             <span>บทบาทของคุณ</span>
@@ -79,7 +84,17 @@ export default async function AdminSettingsPage() {
                         className="avatar member-avatar"
                         size={26}
                       />
-                      <strong>{member.fullName ?? '—'}</strong>
+                      {/* '—' read as "something is broken with this row" —
+                          for a colleague invited but not yet signed in
+                          (inviteMember creates the profiles row up front, see
+                          its comment), it is neither: the email IS their
+                          identity until they set a name, the same fallback
+                          the Avatar two lines up already uses. `||`, not the
+                          Avatar's `??`, so a profile-join edge case with an
+                          empty email string still lands on '—' rather than a
+                          blank name — see project-people.tsx's identical
+                          fallback for the same reasoning. */}
+                      <strong>{member.fullName || member.email || '—'}</strong>
                     </div>
                   </td>
                   <td className="muted">{member.email}</td>

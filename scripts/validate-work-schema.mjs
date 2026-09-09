@@ -19,7 +19,7 @@ import path from 'node:path'
 
 import { PG_ENUM_MAP } from '../lib/work/types/enums.ts'
 
-const MIGRATIONS_DIR = path.join(process.cwd(), 'supabase-work', 'migrations')
+const MIGRATIONS_DIR = path.join(process.cwd(), 'supabase', 'work', 'migrations')
 
 /**
  * Supabase provides auth.users, the auth.uid() helper and the anon /
@@ -156,6 +156,37 @@ async function writeAs(db, userId, sql) {
       return error.message
     }
   })
+}
+
+/**
+ * Like asUser(), but COMMITS instead of rolling back — for the rare case
+ * where a later assertion depends on the write actually having persisted
+ * (e.g. "member uploads an asset, then admin reads it back"). asUser()'s
+ * always-rollback is deliberate for permission checks; using it here would
+ * silently lose the row and make the next assertion fail for the wrong
+ * reason.
+ */
+async function writeAsCommit(db, userId, sql) {
+  try {
+    await asUserCommit(db, userId, () => db.query(sql))
+    return null
+  } catch (error) {
+    return error.message
+  }
+}
+
+async function asUserCommit(db, userId, fn) {
+  await db.exec('begin')
+  await db.exec(`set local role authenticated`)
+  await db.exec(`set local app.test_user_id = '${userId}'`)
+  try {
+    const result = await fn()
+    await db.exec('commit')
+    return result
+  } catch (error) {
+    await db.exec('rollback').catch(() => {})
+    throw error
+  }
 }
 
 async function main() {
@@ -621,20 +652,33 @@ async function main() {
       0,
   )
 
-  // Draft documents must not reach the portal.
+  // Draft documents must not reach the portal. Since migration 0039 a
+  // document must ALSO be explicitly CLIENT_VISIBLE — status alone no longer
+  // grants access, so the issued invoice below says so outright.
   await db.exec(`
     insert into documents (organization_id, project_id, type, status, title, amount)
     values ('${seed.org_id}', '${seed.project_a}', 'INVOICE', 'DRAFT', 'ร่างใบแจ้งหนี้', 900000);
-    insert into documents (organization_id, project_id, type, status, title, amount, document_number, issued_at)
-    values ('${seed.org_id}', '${seed.project_a}', 'INVOICE', 'ISSUED', 'ใบแจ้งหนี้', 900000, 'INV-2026-001', now());
+    insert into documents (organization_id, project_id, type, status, title, amount, document_number, issued_at, visibility)
+    values ('${seed.org_id}', '${seed.project_a}', 'INVOICE', 'ISSUED', 'ใบแจ้งหนี้', 900000, 'INV-2026-001', now(), 'CLIENT_VISIBLE');
+    insert into documents (organization_id, project_id, type, status, title, amount, document_number, issued_at, visibility)
+    values ('${seed.org_id}', '${seed.project_a}', 'DESIGN', 'ISSUED', 'สถาปัตยกรรมภายใน', 0, 'DOC-2026-INT', now(), 'INTERNAL');
   `)
   check(
-    'client sees issued documents but not drafts',
+    'client sees issued client-visible documents but not drafts',
     (await countAs(db, ids.client_a_id, `select count(*)::int as count from documents`)) === 1,
   )
+  // The property migration 0039 exists for: ISSUED is no longer enough.
   check(
-    'agency staff see drafts too',
-    (await countAs(db, ids.admin_id, `select count(*)::int as count from documents`)) === 2,
+    'client cannot see an INTERNAL document even when it is ISSUED',
+    (await countAs(
+      db,
+      ids.client_a_id,
+      `select count(*)::int as count from documents where visibility = 'INTERNAL'`,
+    )) === 0,
+  )
+  check(
+    'agency staff see drafts and internal documents too',
+    (await countAs(db, ids.admin_id, `select count(*)::int as count from documents`)) === 3,
   )
 
   err = await writeAs(
@@ -802,8 +846,7 @@ async function main() {
   check('the documents storage bucket is private', bucket?.public === false)
 
   // ---------------------------------------------------------------------------
-  console.log('
-[1mFeedback[0m')
+  console.log('\n[1mFeedback[0m')
 
   // Anyone signed in may file, staff and clients alike — that is the widget's
   // whole premise, so it is the first thing proved.
@@ -823,7 +866,7 @@ async function main() {
     `insert into feedback (organization_id, profile_id, kind, message)
      values ('${seed.org_id}', '${ids.admin_id}', 'IDEA', 'สวมรอย')`,
   )
-  check('feedback cannot be filed in someone else's name', err !== null)
+  check("feedback cannot be filed in someone else's name", err !== null)
 
   // An account with no membership and no project has no organization to file
   // against — which must not stop them reporting that the app is broken.
@@ -899,7 +942,162 @@ async function main() {
   ).rows[0]
   check('the feedback storage bucket is private', feedbackBucket?.public === false)
 
-  // ---------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------
+  console.log('\n[1mClient intake wizard[0m')
+
+  // Project A is still DRAFT (never submitted above) — exactly the state the
+  // wizard writes into. The owner (client A) can save intake fields on their
+  // own draft; a non-owner (client B) touching the same row by UUID is the
+  // IDOR case the brief calls out explicitly.
+  // The wizard is OWNER-gated (self-serve `owner_id`/project_members role
+  // 'OWNER'), which is distinct from the legacy staff-assigned 'client_owner'
+  // role project A's seed member row above holds. Set owner_id so the
+  // existing sync trigger (migration 0025) derives a real OWNER row — the
+  // same state a self-serve `createOwnProject()` project would already be
+  // in, and the only state the wizard's own RLS policies act on.
+  await asUserCommit(db, ids.admin_id, () =>
+    db.query(`update projects set owner_id = '${ids.client_a_id}' where id = '${seed.project_a}'`),
+  )
+  check(
+    'project A is still DRAFT (nothing above submitted it)',
+    (
+      await db.query(`select status from projects where id = '${seed.project_a}'`)
+    ).rows[0].status === 'DRAFT',
+  )
+
+  const saveRequirements = await writeAsCommit(
+    db,
+    ids.client_a_id,
+    `update projects set requirements = '{"goals":"ระบบจองคิว"}'::jsonb,
+       requested_priority = 'HIGH', requested_duration = '2 เดือน',
+       requested_budget_preferred = 500000, requested_currency = 'THB'
+     where id = '${seed.project_a}'`,
+  )
+  check('the owner can save intake fields on their own draft project', saveRequirements === null, saveRequirements ?? '')
+
+  check(
+    'intake fields persisted as written',
+    (
+      await db.query(
+        `select requested_priority, requested_budget_preferred from projects where id = '${seed.project_a}'`,
+      )
+    ).rows[0].requested_priority === 'HIGH',
+  )
+
+  // IDOR: client B holds no membership on project A, so the exact same
+  // statement — same UUID, same columns — must touch zero rows for them,
+  // not merely "look" denied.
+  check(
+    "client B cannot touch client A's intake fields (IDOR)",
+    (await affectedAs(
+      db,
+      ids.client_b_id,
+      `update projects set requested_priority = 'URGENT' where id = '${seed.project_a}'`,
+    )) === 0,
+  )
+  check(
+    'an outsider with no membership at all cannot touch it either',
+    (await affectedAs(
+      db,
+      ids.outsider_id,
+      `update projects set requested_priority = 'URGENT' where id = '${seed.project_a}'`,
+    )) === 0,
+  )
+
+  // Submission: intake_confirmed_at is the durable record that the
+  // confirmation checkbox was actually checked (submitProject() sets both
+  // together). status = SUBMITTED is the app-level transition; here we only
+  // prove the DB will hold that state and that it is owner-writable.
+  const submit = await writeAsCommit(
+    db,
+    ids.client_a_id,
+    `update projects set status = 'SUBMITTED', submitted_at = now(), intake_confirmed_at = now()
+     where id = '${seed.project_a}' and status = 'DRAFT'`,
+  )
+  check('the owner can submit their own draft', submit === null, submit ?? '')
+  check(
+    'submission recorded intake_confirmed_at',
+    (
+      await db.query(`select intake_confirmed_at is not null as c from projects where id = '${seed.project_a}'`)
+    ).rows[0].c === true,
+  )
+
+  // Duplicate submit: the exact same statement, run again, now matches
+  // status = 'DRAFT' for nobody (it is SUBMITTED already) — the DB-level
+  // backstop behind submitProject()'s own status-transition guard.
+  check(
+    'a second identical submit affects zero rows (duplicate-submit backstop)',
+    (await affectedAs(
+      db,
+      ids.client_a_id,
+      `update projects set status = 'SUBMITTED', submitted_at = now()
+       where id = '${seed.project_a}' and status = 'DRAFT'`,
+    )) === 0,
+  )
+
+  check(
+    'agency staff can see the submitted intake fields',
+    (
+      await db.query(`select requested_priority from projects where id = '${seed.project_a}'`)
+    ).rows[0].requested_priority === 'HIGH',
+  )
+
+  // ---- project_assets: upload, cross-client isolation, staff review --------
+  const assetId = await asUserCommit(db, ids.client_a_id, async () => {
+    const r = await db.query(
+      `insert into project_assets (project_id, kind, name, external_url, uploaded_by)
+       values ('${seed.project_a}', 'LOGO', 'โลโก้บริษัท', 'https://example.com/logo.png', '${ids.client_a_id}')
+       returning id`,
+    )
+    return r.rows[0].id
+  })
+  check('the project owner can upload (link) a brand asset', !!assetId)
+
+  check(
+    'the uploader sees their own asset',
+    (await countAs(
+      db,
+      ids.client_a_id,
+      `select count(*)::int as count from project_assets where id = '${assetId}'`,
+    )) === 1,
+  )
+  check(
+    "an unrelated client cannot see another project's asset",
+    (await countAs(
+      db,
+      ids.client_b_id,
+      `select count(*)::int as count from project_assets where id = '${assetId}'`,
+    )) === 0,
+  )
+  check(
+    'a client cannot upload an asset attributed to someone else',
+    (await writeAs(
+      db,
+      ids.client_a_id,
+      `insert into project_assets (project_id, kind, name, external_url, uploaded_by)
+       values ('${seed.project_a}', 'LOGO', 'สวมรอย', 'https://example.com/x.png', '${ids.admin_id}')`,
+    )) !== null,
+  )
+  check(
+    'a client cannot review (approve) their own asset',
+    (await affectedAs(
+      db,
+      ids.client_a_id,
+      `update project_assets set review_status = 'APPROVED', reviewed_by = '${ids.client_a_id}', reviewed_at = now()
+       where id = '${assetId}'`,
+    )) === 0,
+  )
+  check(
+    'agency staff can review the asset',
+    (await affectedAs(
+      db,
+      ids.admin_id,
+      `update project_assets set review_status = 'APPROVED', reviewed_by = '${ids.admin_id}', reviewed_at = now()
+       where id = '${assetId}'`,
+    )) === 1,
+  )
+
+// ---------------------------------------------------------------------------
   console.log(`\n[1mResult[0m  ${passed} passed, ${failed} failed\n`)
   if (failed > 0) {
     console.log('Failures:')

@@ -1,35 +1,38 @@
-import { Panel, PageHeading } from '@/components/work/data/panel'
-import { ProjectsTable } from '@/components/work/data/projects-table'
+import Link from 'next/link'
+import { Plus } from 'lucide-react'
+
+import { PageHeading } from '@/components/work/data/panel'
+import { MyProjectsGrid } from '@/components/work/domain/my-projects-grid'
 import { requireClient } from '@/lib/work/auth/permissions'
-import { getClientProjects } from '@/lib/work/queries/projects'
+import { getMyProjectsWithCollaboration } from '@/lib/work/queries/projects'
 
 export const metadata = { title: 'โปรเจกต์' }
 
 /**
- * The client's own projects.
- *
- * The list is whatever `project_members` says it is. Another client's project
- * cannot appear here, and typing its UUID into the detail route does not
- * reach it either — both are the same RLS policy, not two separate checks.
+ * The client's own projects — both agency-managed ones (a client_owner/
+ * client_member row) and self-serve ones the caller owns or was invited
+ * onto (an OWNER/MANAGER/MEMBER/VIEWER row, migration 0025). Same RLS policy
+ * either way (`projects_select_visible` is role-blind on project_members),
+ * so another client's project cannot appear here regardless of which kind
+ * it is, and typing its UUID into the detail route does not reach it either.
  */
 export default async function PortalProjectsPage() {
   await requireClient()
-  const projects = await getClientProjects()
+  const projects = await getMyProjectsWithCollaboration()
 
   return (
     <>
       <PageHeading
         title="โปรเจกต์ของคุณ"
         description={`ทั้งหมด ${projects.length} โปรเจกต์`}
+        action={
+          <Link href="/work/portal/projects/new" className="primary btn-sm">
+            <Plus size={15} /> สร้างโปรเจกต์
+          </Link>
+        }
       />
 
-      <Panel className="projects-panel">
-        <ProjectsTable
-          projects={projects}
-          basePath="/work/portal/projects"
-          emptyDescription="เมื่อทีมงานเพิ่มคุณเข้าโปรเจกต์แล้ว รายการจะแสดงที่นี่"
-        />
-      </Panel>
+      <MyProjectsGrid projects={projects} />
     </>
   )
 }

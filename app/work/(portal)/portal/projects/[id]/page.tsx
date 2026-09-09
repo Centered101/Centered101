@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Clock3, Code2, ShieldCheck } from 'lucide-react'
 
@@ -12,7 +13,6 @@ import {
   SOURCE_OWNERSHIP_LABELS,
   formatDate,
   formatMoney,
-  idTone,
   projectStatusTone,
 } from '@/lib/work/format'
 import { getProjectPaymentSummary } from '@/lib/work/queries/payments'
@@ -21,7 +21,16 @@ import {
   getProjectFeatures,
   getProjectMembers,
 } from '@/lib/work/queries/projects'
+import { getPricingItems, getPricingTotals } from '@/lib/work/queries/pricing'
+import { getLatestInformationRequest } from '@/lib/work/queries/activity'
+import { computeWorkProgress, getWorkMilestones } from '@/lib/work/queries/work-milestones'
+import { WorkTimeline } from '@/components/work/domain/work-timeline'
+import { PricingPanel } from '@/components/work/domain/pricing-panel'
+import { getAgreement } from '@/lib/work/queries/agreements'
+import { AgreementConfirmPanel } from '@/components/work/domain/agreement-panel'
 import { ProjectPeople } from '@/components/work/data/project-people'
+import { NeedsInformationBanner } from './needs-information-banner'
+import { SubmitProjectForm } from './submit-project-form'
 
 export const metadata = { title: 'โปรเจกต์' }
 
@@ -37,16 +46,32 @@ export default async function PortalProjectPage(
   props: PageProps<'/work/portal/projects/[id]'>,
 ) {
   const { id } = await props.params
-  await requireProjectAccess(id)
+  const access = await requireProjectAccess(id)
 
   const project = await getProjectById(id)
   if (!project) notFound()
 
-  const [features, payments, members] = await Promise.all([
-    getProjectFeatures(id),
-    getProjectPaymentSummary(id),
-    getProjectMembers(id),
-  ])
+  const [
+    features,
+    payments,
+    members,
+    pricingItems,
+    pricingTotals,
+    agreement,
+    workMilestones,
+    infoRequestNote,
+  ] = await Promise.all([
+      getProjectFeatures(id),
+      getProjectPaymentSummary(id),
+      getProjectMembers(id),
+      getPricingItems(id),
+      getPricingTotals(id),
+      getAgreement(id),
+      getWorkMilestones(id),
+      project.status === 'NEEDS_INFORMATION' ? getLatestInformationRequest(id) : Promise.resolve(null),
+    ])
+
+  const workProgress = computeWorkProgress(workMilestones)
 
   return (
     <>
@@ -61,23 +86,22 @@ export default async function PortalProjectPage(
         }
       />
 
+      {project.status === 'DRAFT' && access.isProjectOwner && <SubmitProjectForm projectId={project.id} />}
+      {project.status === 'NEEDS_INFORMATION' && access.isProjectOwner && (
+        <NeedsInformationBanner projectId={project.id} note={infoRequestNote} />
+      )}
+
       <section className="client-main">
         <Panel className="project-hero">
-          <div className="hero-top">
-            <div className={`project-icon ${idTone(project.id)} large`}>
-              <Code2 size={22} />
-            </div>
-            <div>
-              <p className="eyebrow">{project.projectCode}</p>
-              <h2>{project.name}</h2>
-              <p className="muted">
-                กำหนดส่งมอบ {formatDate(project.expectedDelivery)}
-              </p>
-            </div>
-            <Status tone={projectStatusTone(project.status)}>
-              {PROJECT_STATUS_LABELS[project.status]}
-            </Status>
-          </div>
+          {/* The code, the name and the status badge are already in the
+              PageHeading a few pixels above. Repeating all three here put the
+              same strings on screen twice, one card apart; what this card is
+              for is the numbers underneath. */}
+          <PanelHead
+            title="ภาพรวมโปรเจกต์"
+            description={`กำหนดส่งมอบ ${formatDate(project.expectedDelivery)}`}
+            action={<Code2 className="panel-symbol" size={21} />}
+          />
           <div className="big-progress">
             <div>
               <span>ความคืบหน้าโปรเจกต์</span>
@@ -107,12 +131,57 @@ export default async function PortalProjectPage(
         </Panel>
 
         <Panel className="timeline-panel">
-          <PanelHead title="ไทม์ไลน์โปรเจกต์" description="ติดตามทุกขั้นตอนจนเปิดใช้งาน" />
+          <PanelHead title="ขอบเขตงาน" description="สิ่งที่ตกลงว่าจะส่งมอบ" />
           <Timeline items={features} />
         </Panel>
       </section>
 
+      {/* A summary of the EXECUTION timeline, with the full view (and the
+          review controls) on its own tab. Work progress is derived from work
+          milestones and is a different figure from payment progress above —
+          both are shown, neither is reconciled into the other. */}
+      <Panel className="projects-panel">
+        <PanelHead
+          title="ไทม์ไลน์งาน"
+          description={`ความคืบหน้างาน ${workProgress.percent}% (${workProgress.completed}/${workProgress.total} ไมล์สโตน)`}
+          action={
+            <Link className="text-btn" href={`/work/portal/projects/${id}/timeline`}>
+              ดูไทม์ไลน์ทั้งหมด
+            </Link>
+          }
+        />
+        {workProgress.awaitingReview.length > 0 && (
+          <p className="checkout-notice">
+            มีงาน {workProgress.awaitingReview.length} รายการรอให้คุณตรวจรับ
+          </p>
+        )}
+        <WorkTimeline
+          milestones={workMilestones}
+          currency={project.currency}
+          emptyMessage="ทีมงานยังไม่ได้กำหนดไทม์ไลน์งาน"
+        />
+      </Panel>
+
       <ProjectPeople project={project} members={members} />
+
+      {/*
+        A client sees the same itemised breakdown a staff member does —
+        `pricing_select` (migration 0007) carries no staff-only restriction,
+        this is exactly what the portal is for. `canManageFinance` here is
+        `access.canManagePricing` — true for a self-serve project's OWNER
+        (the one deliberate widening migration 0025 makes, RLS-backed by
+        `pricing_insert_owner`/`_update_owner`/`_delete_owner`), false for
+        every other client-side role including client_owner/client_member,
+        matching the RLS policies underneath exactly.
+      */}
+      <PricingPanel
+        projectId={project.id}
+        items={pricingItems}
+        totals={pricingTotals}
+        canManageFinance={access.canManagePricing}
+      />
+
+      {agreement?.currentVersion && <AgreementConfirmPanel projectId={project.id} agreement={agreement} />}
 
       <section className="bottom-grid">
         <Panel className="ownership">

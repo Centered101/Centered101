@@ -344,10 +344,6 @@ export default function StoragePage() {
     return { totalBytes, totalFiles, totalFolders, publicBuckets }
   }, [buckets])
 
-  useEffect(() => {
-    if (!selectedBucket && buckets[0]?.name) setSelectedBucket(buckets[0].name)
-  }, [buckets, selectedBucket])
-
   async function refreshAll() {
     await refetch()
     await refetchFiles()

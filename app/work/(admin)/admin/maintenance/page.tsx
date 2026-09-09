@@ -4,7 +4,7 @@ import { Panel, PageHeading } from '@/components/work/data/panel'
 import { StatCard } from '@/components/work/data/stat-card'
 import { Status } from '@/components/work/data/status'
 import { EmptyState } from '@/components/work/states'
-import { requireAdmin } from '@/lib/work/auth/permissions'
+import { requireCapability } from '@/lib/work/auth/permissions'
 import {
   BILLING_CYCLE_LABELS,
   MAINTENANCE_STATUS_LABELS,
@@ -18,7 +18,7 @@ export const metadata = { title: 'การดูแลรักษา' }
 
 /** Maintenance retainers across every project. */
 export default async function AdminMaintenancePage() {
-  await requireAdmin()
+  await requireCapability('finance:read')
   const plans = await getMaintenancePlans()
 
   const active = plans.filter((plan) => plan.status === 'ACTIVE')

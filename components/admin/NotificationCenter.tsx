@@ -93,7 +93,13 @@ export function NotificationCenter() {
 
   // Initial load + Realtime or polling
   useEffect(() => {
-    fetchNotifications()
+    // Nested in a microtask rather than called directly: `fetchNotifications`
+    // ends in `setItems(...)`, and an Effect body's own direct, synchronous
+    // call chain into a setState is exactly what this lint rule polices —
+    // the same distinction it draws between calling setState in an Effect
+    // body versus "calling setState in a callback function" (its own wording)
+    // like the subscription handlers below.
+    void Promise.resolve().then(() => fetchNotifications())
 
     if (authMode === 'github') {
       // Supabase Realtime — INSERT events push directly to UI

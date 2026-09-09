@@ -135,8 +135,10 @@ function ProjectCard({
   }, [active])
 
   useEffect(() => {
-    setPosterReady(false)
-    setShouldLoadPoster(false)
+    void Promise.resolve().then(() => {
+      setPosterReady(false)
+      setShouldLoadPoster(false)
+    })
     if (!project.poster_url) return
 
     const timer = window.setTimeout(() => setShouldLoadPoster(true), 180)
@@ -479,8 +481,10 @@ function ProjectLogoLink({
   }, [active])
 
   useEffect(() => {
-    setPosterReady(false)
-    setShouldLoadPoster(false)
+    void Promise.resolve().then(() => {
+      setPosterReady(false)
+      setShouldLoadPoster(false)
+    })
     if (!project.poster_url) return
 
     const timer = window.setTimeout(() => setShouldLoadPoster(true), 180)

@@ -27,8 +27,16 @@ const PUBLIC_PREFIXES = [
   '/work/forgot-password',
   '/work/auth',
   '/work/share',
+  '/work/about',
   '/work/privacy-policy',
   '/work/terms-of-service',
+  // The payment provider's callback. Stripe carries no session cookie, so the
+  // guard would answer its POST with a 307 to /login — which Stripe records as
+  // a delivery failure and retries forever, while a real payment sits
+  // unrecorded. It is not unauthenticated: the route verifies the request's
+  // signature against STRIPE_WEBHOOK_SECRET before reading a byte of the body,
+  // which is a stronger check than a session cookie.
+  '/work/api/payments/webhook',
 ]
 
 /**
@@ -49,8 +57,19 @@ const PUBLIC_PREFIXES = [
  */
 const STATIC_FILE = /\.[a-z0-9]+$/i
 
+/**
+ * Public as an EXACT path only — the subtree beneath stays guarded.
+ *
+ * `/work` is the signed-out landing page (app/work/page.tsx): what the
+ * workspace is, with a link to the login form. It cannot go in
+ * PUBLIC_PREFIXES, because that list also opens `p + '/'` — and `/work/` is
+ * every route in the app.
+ */
+const PUBLIC_EXACT = new Set(['/work'])
+
 function isPublic(targetPath: string): boolean {
   if (STATIC_FILE.test(targetPath)) return true
+  if (PUBLIC_EXACT.has(targetPath)) return true
   return PUBLIC_PREFIXES.some((p) => targetPath === p || targetPath.startsWith(p + '/'))
 }
 

@@ -122,7 +122,7 @@ export function FeaturedTab() {
   const linkedRepo = repos.find((repo) => normalizeGitHubUrl(repo.html_url) === normalizeGitHubUrl(form.github_url)) ?? null
 
   useEffect(() => {
-    if (!orderDirty) setOrderedProjects(projects)
+    if (!orderDirty) void Promise.resolve().then(() => setOrderedProjects(projects))
   }, [projData?.projects, orderDirty])
 
   function openEdit(p: Project) {

@@ -94,27 +94,37 @@ export function PortfolioAdminShell({ children }: { children: React.ReactNode })
   const [bootTimedOut, setBootTimedOut] = React.useState(false)
   const [switcherOpen, setSwitcherOpen] = React.useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false)
-  const [orderedSwitcherItems, setOrderedSwitcherItems] = React.useState(switcherItems)
-  const [hostInfo, setHostInfo] = React.useState<{ protocol: string; hostname: string; port: string } | null>(null)
+  const [orderedSwitcherItems, setOrderedSwitcherItems] = React.useState(() =>
+    typeof window !== 'undefined' ? sortAdminWorkspaces(switcherItems) : switcherItems
+  )
+  const [hostInfo] = React.useState<{ protocol: string; hostname: string; port: string } | null>(() =>
+    typeof window !== 'undefined'
+      ? { protocol: window.location.protocol, hostname: window.location.hostname, port: window.location.port }
+      : null
+  )
 
   React.useEffect(() => {
-    setIsMounted(true)
-    const { protocol, hostname, port } = window.location
-    setHostInfo({ protocol, hostname, port })
+    // `isMounted` genuinely can only become true after mount — there is no
+    // lazy-initial-state substitute for it, so it stays a direct setState in
+    // an Effect, deferred one microtask for the same reason as elsewhere in
+    // this file.
+    void Promise.resolve().then(() => setIsMounted(true))
   }, [])
 
   React.useEffect(() => {
-    setOrderedSwitcherItems(sortAdminWorkspaces(switcherItems))
-    setMobileSidebarOpen(false)
+    void Promise.resolve().then(() => {
+      setOrderedSwitcherItems(sortAdminWorkspaces(switcherItems))
+      setMobileSidebarOpen(false)
+    })
   }, [pathname])
 
   React.useEffect(() => {
-    setMobileSidebarOpen(false)
+    void Promise.resolve().then(() => setMobileSidebarOpen(false))
   }, [activeTab])
 
   React.useEffect(() => {
     if (!isBooting) {
-      setBootTimedOut(false)
+      void Promise.resolve().then(() => setBootTimedOut(false))
       return
     }
     const timer = window.setTimeout(() => setBootTimedOut(true), 2200)

@@ -1,6 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import Link from 'next/link'
 import { Menu } from 'lucide-react'
 
 import { FeedbackMenu } from './feedback-menu'
@@ -35,33 +36,43 @@ import { NotificationBell } from './notification-bell'
  */
 export function Topbar({
   breadcrumb,
+  breadcrumbHref,
+  homeHref,
   onOpenMobileNav,
   notifications,
   latestActivityId,
   userId,
-  helpHref,
+  changeRequestsHref,
 }: {
   breadcrumb: string
+  /** Where the current crumb points — its own page, so it also acts as a reload. */
+  breadcrumbHref: string
+  /** The portal's landing page, behind the "พื้นที่ทำงาน" crumb. */
+  homeHref: string
   onOpenMobileNav: () => void
   /** The activity feed, rendered on the server — see NotificationBell. */
   notifications: ReactNode
   latestActivityId: number | null
   userId: string
-  /** Where "ขอความช่วยเหลือแทน" goes — differs per portal, so it is passed in. */
-  helpHref: string
+  /** Where the help screen's change-request row goes — differs per portal. */
+  changeRequestsHref: string
 }) {
   return (
     <header className="topbar">
       <button className="icon-btn menu-btn" onClick={onOpenMobileNav} aria-label="เปิดเมนู">
         <Menu size={20} />
       </button>
-      <div className="breadcrumbs">
-        <span>พื้นที่ทำงาน</span>
-        <span>/</span>
-        <strong>{breadcrumb}</strong>
-      </div>
+      <nav className="breadcrumbs" aria-label="เส้นทางนำทาง">
+        <Link className="crumb crumb-root" href={homeHref}>
+          พื้นที่ทำงาน
+        </Link>
+        <span aria-hidden="true">/</span>
+        <Link className="crumb crumb-current" href={breadcrumbHref} aria-current="page">
+          {breadcrumb}
+        </Link>
+      </nav>
       <div className="top-actions">
-        <FeedbackMenu helpHref={helpHref} />
+        <FeedbackMenu changeRequestsHref={changeRequestsHref} />
         <NotificationBell userId={userId} latestId={latestActivityId}>
           {notifications}
         </NotificationBell>

@@ -86,26 +86,18 @@ function saveConversation(conv: Conversation) {
 
 export function AIChatSidebar({ onClose }: { onClose: () => void }) {
   const { getAdminHeaders, authInfo } = useAdminAuth()
-  const [provider, setProvider] = useState<Provider>('gemini')
-  const [model, setModel] = useState('gemini-2.0-flash')
-  const [messages, setMessages] = useState<Message[]>([])
-  const [convId, setConvId] = useState<string | null>(null)
+  // Loaded once, lazily, from shared storage — not via an Effect, since
+  // `loadConversations()` is a synchronous read and there is nothing to
+  // subscribe to.
+  const [latestConv] = useState<Conversation | null>(() => loadConversations()[0] ?? null)
+  const [provider, setProvider] = useState<Provider>(() => latestConv?.provider ?? 'gemini')
+  const [model, setModel] = useState(() => latestConv?.model ?? 'gemini-2.0-flash')
+  const [messages, setMessages] = useState<Message[]>(() => latestConv?.messages ?? [])
+  const [convId, setConvId] = useState<string | null>(() => latestConv?.id ?? null)
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
   const [showModelPicker, setShowModelPicker] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
-
-  // On open: load latest conversation from shared storage
-  useEffect(() => {
-    const convs = loadConversations()
-    if (convs.length > 0) {
-      const latest = convs[0]
-      setConvId(latest.id)
-      setProvider(latest.provider)
-      setModel(latest.model)
-      setMessages(latest.messages)
-    }
-  }, [])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })

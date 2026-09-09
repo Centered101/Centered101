@@ -91,11 +91,11 @@ export default function AIPage() {
   usePageTitle('ผู้ช่วย AI')
   const { getAdminHeaders, authInfo } = useAdminAuth()
 
-  const [conversations, setConversations] = useState<Conversation[]>([])
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const [provider, setProvider] = useState<Provider>('gemini')
-  const [model, setModel] = useState('gemini-2.0-flash')
-  const [messages, setMessages] = useState<Message[]>([])
+  const [conversations, setConversations] = useState<Conversation[]>(() => loadConversations())
+  const [activeId, setActiveId] = useState<string | null>(() => conversations[0]?.id ?? null)
+  const [provider, setProvider] = useState<Provider>(() => conversations[0]?.provider ?? 'gemini')
+  const [model, setModel] = useState(() => conversations[0]?.model ?? 'gemini-2.0-flash')
+  const [messages, setMessages] = useState<Message[]>(() => conversations[0]?.messages ?? [])
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
   const [showModelPicker, setShowModelPicker] = useState(false)
@@ -105,16 +105,6 @@ export default function AIPage() {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const convs = loadConversations()
-    setConversations(convs)
-    if (convs.length > 0) {
-      const latest = convs[0]
-      setActiveId(latest.id)
-      setProvider(latest.provider)
-      setModel(latest.model)
-      setMessages(latest.messages)
-    }
-
     // Live-sync when sidebar saves a conversation to localStorage
     function onStorage(e: StorageEvent) {
       if (e.key !== STORAGE_KEY) return

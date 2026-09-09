@@ -110,8 +110,10 @@ function IconVariantOption({
 
   useEffect(() => {
     let cancelled = false
-    setUnsupported(false)
-    setLoaded(false)
+    void Promise.resolve().then(() => {
+      setUnsupported(false)
+      setLoaded(false)
+    })
 
     async function checkVariant() {
       try {
@@ -210,12 +212,12 @@ function ToolForm({
   )
 
   useEffect(() => {
-    setSupportedVariants([])
+    void Promise.resolve().then(() => setSupportedVariants([]))
   }, [slug])
 
   useEffect(() => {
     if (!slug || supportedVariants.length === 0 || supportedVariants.includes(variant)) return
-    setIcon(slug, supportedVariants[0])
+    void Promise.resolve().then(() => setIcon(slug, supportedVariants[0]))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, variant, supportedVariants])
 
@@ -513,7 +515,7 @@ export function ToolsTab() {
   }, null)
 
   useEffect(() => {
-    if (!orderDirty) setOrderedTools(tools)
+    if (!orderDirty) void Promise.resolve().then(() => setOrderedTools(tools))
   }, [data?.tools, orderDirty, tools])
 
   async function save(payload: ToolDraft & { id?: string }) {

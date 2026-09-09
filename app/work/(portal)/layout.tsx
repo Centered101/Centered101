@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react'
 
-import { ActivityList } from '@/components/work/data/activity-list'
+import { NotificationList } from '@/components/work/domain/notification-list'
 import { AppShell } from '@/components/work/layout/app-shell'
 import { SchemaNotice } from '@/components/work/states/schema-notice'
 import { requireClient } from '@/lib/work/auth/permissions'
-import { getActivity } from '@/lib/work/queries/activity'
+import { getNotifications } from '@/lib/work/queries/notifications'
+import { getMyProjectSwitcherList } from '@/lib/work/queries/projects'
 
 /**
  * Client portal shell.
@@ -24,9 +25,14 @@ import { getActivity } from '@/lib/work/queries/activity'
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   const client = await requireClient()
 
-  // Scoped by RLS to the client's own projects, exactly as every other read in
-  // this portal is — the bell cannot become a window into other clients' work.
-  const activity = await getActivity({ limit: 8 })
+  // Scoped by RLS to this user, exactly as every other read in this portal is.
+  // The bell is now the person's OWN notifications rather than the project
+  // activity feed: `notifications_select_own` is `recipient_id = auth.uid()`,
+  // so it cannot become a window into a colleague's inbox either.
+  const [notifications, projects] = await Promise.all([
+    getNotifications({ limit: 20 }),
+    getMyProjectSwitcherList(),
+  ])
 
   return (
     <AppShell
@@ -38,9 +44,10 @@ export default async function PortalLayout({ children }: { children: ReactNode }
       userEmail={client.email}
       userInitial={client.initial}
       userAvatarUrl={client.avatarUrl}
-      notifications={<ActivityList items={activity} portal="portal" />}
-      latestActivityId={activity[0]?.id ?? null}
+      notifications={<NotificationList items={notifications} portal="portal" />}
+      latestActivityId={notifications[0]?.id ?? null}
       userId={client.userId}
+      projects={projects}
     >
       {client.schemaMissing && <SchemaNotice />}
       {children}

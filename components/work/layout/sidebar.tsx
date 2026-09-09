@@ -3,12 +3,12 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LogOut, X } from 'lucide-react'
 
-import { Avatar } from '@/components/work/data/avatar'
-import { signOut } from '@/lib/work/auth/actions'
-import { APP_NAME } from '@/lib/work/branding'
 import { isNavItemActive, type NavItem } from '@/lib/work/nav'
+import { APP_NAME } from '@/lib/work/branding'
+import type { ProjectSwitcherItem } from '@/lib/work/queries/projects'
+import { AccountMenu } from './account-menu'
+import { ProjectSwitcher } from './project-switcher'
 
 /**
  * Sidebar.
@@ -21,14 +21,18 @@ export function Sidebar({
   items,
   workspaceRole,
   accountHref,
+  accountLabel,
   userName,
   userEmail,
   userInitial,
   userAvatarUrl,
   mobileOpen,
   onClose,
+  projects,
 }: {
   items: NavItem[]
+  /** Portal only — the client's own projects for the switcher. Undefined on the admin side. */
+  projects?: ProjectSwitcherItem[]
   /**
    * What this workspace is, in one line under the brand — "ผู้ดูแลระบบ
    * สูงสุด", "ลูกค้า". Null renders nothing.
@@ -48,6 +52,8 @@ export function Sidebar({
   workspaceRole: string | null
   /** Destination for the identity card at the foot of the sidebar. */
   accountHref: string
+  /** What that destination is called inside the account menu — see AccountMenu. */
+  accountLabel: string
   userName: string
   userEmail: string
   userInitial: string
@@ -76,10 +82,8 @@ export function Sidebar({
           <span>{APP_NAME}</span>
           {workspaceRole && <small>พื้นที่ทำงาน{workspaceRole}</small>}
         </div>
-        <button onClick={onClose} className="mobile-close" aria-label="ปิดเมนู">
-          <X size={18} />
-        </button>
       </div>
+      {projects && <ProjectSwitcher projects={projects} />}
       <nav>
         {items.map(({ label, href, icon: Icon }) => (
           <Link
@@ -100,29 +104,16 @@ export function Sidebar({
           bounced straight back out by requireAdmin(). Navigation belongs in
           lib/work/nav.ts, where each portal declares its own. */}
       <div className="sidebar-bottom">
-        {/* A link, not a decoration: the card already names the account, so
-            it is where people reach for it. */}
-        <Link
-          href={accountHref}
-          className="profile"
-          onClick={onClose}
-          aria-current={isNavItemActive(pathname, accountHref) ? 'page' : undefined}
-        >
-          <Avatar src={userAvatarUrl} initial={userInitial} name={userName} />
-          <div>
-            <strong>{userName}</strong>
-            <small>{userEmail}</small>
-          </div>
-        </Link>
-        {/* Sign-out is a form, not a link: it mutates session state, so it
-            must be a POST to a Server Action rather than something a
-            prefetch or a crawler can trigger by following a URL. */}
-        <form action={signOut}>
-          <button type="submit" className="sidebar-logout">
-            <LogOut size={16} />
-            ออกจากระบบ
-          </button>
-        </form>
+        <AccountMenu
+          accountHref={accountHref}
+          accountLabel={accountLabel}
+          userName={userName}
+          userEmail={userEmail}
+          userInitial={userInitial}
+          userAvatarUrl={userAvatarUrl}
+          isAccountPage={isNavItemActive(pathname, accountHref)}
+          onNavigate={onClose}
+        />
       </div>
     </aside>
   )

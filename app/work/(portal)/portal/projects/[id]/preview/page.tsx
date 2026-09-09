@@ -1,6 +1,7 @@
 import { ExternalLink } from 'lucide-react'
 
 import { Panel, PageHeading } from '@/components/work/data/panel'
+import { LockedState } from '@/components/work/states'
 import { Status } from '@/components/work/data/status'
 import { requireProjectAccess } from '@/lib/work/auth/permissions'
 import {
@@ -10,6 +11,7 @@ import {
   formatDateTime,
 } from '@/lib/work/format'
 import { getDeployments } from '@/lib/work/queries/deployments'
+import { isResourceUnlocked } from '@/lib/work/queries/unlock'
 
 export const metadata = { title: 'ตัวอย่างงาน' }
 
@@ -19,6 +21,11 @@ export const metadata = { title: 'ตัวอย่างงาน' }
  * Reads `project_deployments` where environment is PREVIEW or STAGING. Every
  * URL shown is one an admin actually saved — there is no placeholder link and
  * no example.vercel.app anywhere in this page.
+ *
+ * Gated by `isResourceUnlocked(id, 'preview')` — a milestone-paid check, not
+ * an access check. `requireProjectAccess` already proved this is the
+ * caller's project; this only decides whether the tab's CONTENT shows yet,
+ * so it renders `LockedState` rather than notFound() when it says no.
  */
 export default async function PortalPreviewPage(
   props: PageProps<'/work/portal/projects/[id]/preview'>,
@@ -26,10 +33,11 @@ export default async function PortalPreviewPage(
   const { id } = await props.params
   await requireProjectAccess(id)
 
-  const deployments = await getDeployments({
-    projectId: id,
-    environment: ['PREVIEW', 'STAGING'],
-  })
+  const unlocked = await isResourceUnlocked(id, 'preview')
+
+  const deployments = unlocked
+    ? await getDeployments({ projectId: id, environment: ['PREVIEW', 'STAGING'] })
+    : []
 
   return (
     <>
@@ -39,6 +47,12 @@ export default async function PortalPreviewPage(
         description="เวอร์ชันตัวอย่างที่ทีมงานเผยแพร่ให้ตรวจสอบ"
       />
 
+      {!unlocked ? (
+        <LockedState
+          title="ยังไม่ปลดล็อกตัวอย่างงาน"
+          description="ตัวอย่างงานจะเปิดให้ดูหลังชำระงวดที่กำหนดไว้ตามแผนการชำระเงิน"
+        />
+      ) : (
       <Panel className="projects-panel">
         {deployments.length === 0 ? (
           <p className="muted empty-inline">ยังไม่มีตัวอย่างงานให้ตรวจสอบ</p>
@@ -96,6 +110,7 @@ export default async function PortalPreviewPage(
           </div>
         )}
       </Panel>
+      )}
     </>
   )
 }

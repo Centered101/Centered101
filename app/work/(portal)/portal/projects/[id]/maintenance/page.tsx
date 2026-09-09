@@ -7,9 +7,10 @@ import {
   BILLING_CYCLE_LABELS,
   MAINTENANCE_STATUS_LABELS,
   formatDate,
+  formatMinutes,
   formatMoney,
 } from '@/lib/work/format'
-import { getMaintenancePlan } from '@/lib/work/queries/maintenance'
+import { getMaintenancePlan, getMaintenanceRecords } from '@/lib/work/queries/maintenance'
 
 export const metadata = { title: 'การดูแลรักษา' }
 
@@ -20,7 +21,10 @@ export default async function PortalMaintenancePage(
   const { id } = await props.params
   await requireProjectAccess(id)
 
-  const plan = await getMaintenancePlan(id)
+  const [plan, records] = await Promise.all([
+    getMaintenancePlan(id),
+    getMaintenanceRecords(id),
+  ])
 
   return (
     <>
@@ -65,6 +69,47 @@ export default async function PortalMaintenancePage(
           <p className="muted empty-inline">หากสนใจแพ็กเกจดูแลรักษา กรุณาติดต่อทีมงาน</p>
         </Panel>
       )}
+
+      {/* What the fee actually bought. Read-only: maintenance_records writes
+          are `app.can_manage_project`, so there is nothing here a client could
+          submit even if the page offered it. */}
+      <Panel className="projects-panel">
+        <PanelHead title="ประวัติงานที่ทำ" description="งานดูแลรักษาที่ทีมงานดำเนินการให้" />
+        {records.length === 0 ? (
+          <p className="muted empty-inline">ยังไม่มีบันทึกงานดูแลรักษา</p>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>วันที่</th>
+                  <th>งาน</th>
+                  <th>เวลาที่ใช้</th>
+                  <th>โดย</th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.map((record) => (
+                  <tr key={record.id}>
+                    <td className="muted">{formatDate(record.performedOn)}</td>
+                    <td>
+                      <strong>{record.title}</strong>
+                      {record.description && (
+                        <>
+                          <br />
+                          <small className="muted">{record.description}</small>
+                        </>
+                      )}
+                    </td>
+                    <td className="muted">{formatMinutes(record.minutesSpent)}</td>
+                    <td className="muted">{record.performedByName ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
     </>
   )
 }

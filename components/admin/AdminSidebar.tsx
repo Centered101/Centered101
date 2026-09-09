@@ -132,8 +132,14 @@ export function AdminSidebar({ authInfo, authMode, adminUsername, onNavClick }: 
   const { data: assetsData } = useAdminApi<AssetsData>('/api/admin/assets')
   const usedStorageGB = (assetsData?.storageByBucket ?? []).reduce((s, b) => s + b.usedGB, 0)
   const [switcherOpen, setSwitcherOpen] = React.useState(false)
-  const [orderedSwitcherItems, setOrderedSwitcherItems] = React.useState(switcherItems)
-  const [hostInfo, setHostInfo] = React.useState<{ protocol: string; hostname: string; port: string } | null>(null)
+  const [orderedSwitcherItems, setOrderedSwitcherItems] = React.useState(() =>
+    typeof window !== 'undefined' ? sortAdminWorkspaces(switcherItems) : switcherItems
+  )
+  const [hostInfo] = React.useState<{ protocol: string; hostname: string; port: string } | null>(() =>
+    typeof window !== 'undefined'
+      ? { protocol: window.location.protocol, hostname: window.location.hostname, port: window.location.port }
+      : null
+  )
 
   const [compact, setCompact] = React.useState(() =>
     typeof window !== 'undefined' && localStorage.getItem('admin_compact_sidebar') === 'true'
@@ -193,11 +199,6 @@ export function AdminSidebar({ authInfo, authMode, adminUsername, onNavClick }: 
     return () => window.removeEventListener('admin-appearance-change', onAppearance)
   }, [])
 
-  React.useEffect(() => {
-    const { protocol, hostname, port } = window.location
-    setHostInfo({ protocol, hostname, port })
-    setOrderedSwitcherItems(sortAdminWorkspaces(switcherItems))
-  }, [pathname])
 
   function accentBg(opacity: number) {
     const r = parseInt(accent.slice(1, 3), 16)

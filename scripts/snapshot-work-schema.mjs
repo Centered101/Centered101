@@ -1,19 +1,19 @@
 /**
- * Writes supabase-work/schema.sql and supabase-work/storage.sql from the
+ * Writes supabase/work/schema.sql and supabase/work/storage.sql from the
  * migrations.
  *
  *   npm run work:db:snapshot
  *
  * WHY BOTH EXIST, AND WHICH ONE IS THE TRUTH.
  *
- * The other two projects in this repo (supabase/, supabase-shop/) keep one
+ * The other two projects in this repo (supabase/site/, supabase/shop/) keep one
  * schema.sql, one storage.sql and one seed.sql. That works because they are
  * applied to an empty database.
  *
  * This project cannot work that way: its database is already live, and a
  * single schema.sql can only ever be applied to an empty one. Changing a
  * deployed schema needs incremental, ordered, forward-only steps — which is
- * what supabase-work/migrations/ is. It is also what `npm run work:db:validate`
+ * what supabase/work/migrations/ is. It is also what `npm run work:db:validate`
  * applies in order to run its 86 RLS and business-rule tests, so collapsing
  * them would delete the only automated check this schema has.
  *
@@ -28,7 +28,7 @@
 import { readdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
-const ROOT = path.join(process.cwd(), 'supabase-work')
+const ROOT = path.join(process.cwd(), 'supabase', 'work')
 const MIGRATIONS = path.join(ROOT, 'migrations')
 
 /**
@@ -47,7 +47,7 @@ function header(title, note, files) {
     `-- Centered101's Work — ${title}`,
     '--',
     '-- GENERATED FILE. DO NOT EDIT.',
-    '--   Source of truth: supabase-work/migrations/',
+    '--   Source of truth: supabase/work/migrations/',
     '--   Regenerate with: npm run work:db:snapshot',
     '--',
     `-- ${note}`,
@@ -62,7 +62,7 @@ function header(title, note, files) {
 const all = (await readdir(MIGRATIONS)).filter((f) => f.endsWith('.sql')).sort()
 
 if (all.length === 0) {
-  console.error('No migrations found in supabase-work/migrations/.')
+  console.error('No migrations found in supabase/work/migrations/.')
   process.exit(1)
 }
 

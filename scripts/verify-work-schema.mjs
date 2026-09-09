@@ -24,7 +24,7 @@ import { pg_trgm } from '@electric-sql/pglite/contrib/pg_trgm'
 import { readdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
-const MIGRATIONS = path.join(process.cwd(), 'supabase-work', 'migrations')
+const MIGRATIONS = path.join(process.cwd(), 'supabase', 'work', 'migrations')
 const OUT = path.join(process.cwd(), 'verify-work-schema.sql')
 
 // Just enough of Supabase for the migrations to apply. Mirrors the shim in
@@ -248,7 +248,7 @@ const sql = `-- ================================================================
 -- Centered101's Work — is this database up to date?
 --
 -- GENERATED FILE. DO NOT EDIT.
---   Source of truth: supabase-work/migrations/ (${files.length} migrations)
+--   Source of truth: supabase/work/migrations/ (${files.length} migrations)
 --   Regenerate with: npm run work:db:verify
 --
 -- READ-ONLY. Safe to run any number of times, on any database.

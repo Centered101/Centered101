@@ -24,6 +24,12 @@ const ROLE_LABELS: Record<ProjectMember['role'], string> = {
   client_owner: 'เจ้าของฝั่งลูกค้า',
   client_member: 'ทีมงานฝั่งลูกค้า',
   developer: 'นักพัฒนา',
+  // Self-serve collaboration roles (migration 0025a) — a project_members row
+  // can now hold one of these too, for a client-created project.
+  OWNER: 'เจ้าของโปรเจกต์',
+  MANAGER: 'ผู้จัดการ',
+  MEMBER: 'สมาชิก',
+  VIEWER: 'ผู้ดูเท่านั้น',
 }
 
 export function ProjectPeople({
@@ -80,7 +86,13 @@ export function ProjectPeople({
               {members.map((member) => (
                 <tr key={member.id}>
                   <td>
-                    <strong>{member.fullName ?? '—'}</strong>
+                    {/* Falls back to the email, same as the org-wide members
+                        table (app/work/(admin)/admin/settings/page.tsx) —
+                        someone who hasn't set a name yet still has an
+                        identity here, not a dash. `||`, not `??`, to also
+                        catch the profile-join edge case the email column
+                        next to it already guards against. */}
+                    <strong>{member.fullName || member.email || '—'}</strong>
                   </td>
                   <td className="muted">{member.email || '—'}</td>
                   <td>

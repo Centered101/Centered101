@@ -70,19 +70,6 @@ export function EditProjectForm({ project }: { project: ProjectDetail }) {
       </label>
 
       <label>
-        <span>ราคา (บาท)</span>
-        <input
-          name="totalAmount"
-          required
-          inputMode="decimal"
-          defaultValue={(project.totalAmount / 100).toString()}
-        />
-        {state.fieldErrors?.totalAmount && (
-          <small className="field-error">{state.fieldErrors.totalAmount}</small>
-        )}
-      </label>
-
-      <label>
         <span>กำหนดส่งมอบ</span>
         <input name="expectedDelivery" type="date" defaultValue={project.expectedDelivery ?? ''} />
       </label>
@@ -108,6 +95,10 @@ export function EditProjectForm({ project }: { project: ProjectDetail }) {
           ))}
         </select>
       </label>
+
+      <p className="muted full">
+        ราคารวมคำนวณจากรายการราคาด้านล่างโดยอัตโนมัติ — แก้ไขได้ที่นั่น
+      </p>
 
       <div className="form-actions">
         <SubmitButton pendingLabel="กำลังบันทึก…">บันทึกการเปลี่ยนแปลง</SubmitButton>

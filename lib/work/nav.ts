@@ -6,6 +6,7 @@ import {
   Globe2,
   LayoutDashboard,
   LifeBuoy,
+  Mail,
   MessageSquareWarning,
   Receipt,
   Settings,
@@ -33,6 +34,7 @@ export type NavItem = {
  */
 export const adminNav: NavItem[] = [
   { label: 'ภาพรวม', href: '/work/admin/dashboard', icon: LayoutDashboard },
+  { label: 'คำขอโปรเจกต์', href: '/work/admin/inbox', icon: Mail },
   { label: 'ลูกค้า', href: '/work/admin/clients', icon: Users },
   { label: 'โปรเจกต์', href: '/work/admin/projects', icon: FolderKanban },
   { label: 'การชำระเงิน', href: '/work/admin/payments', icon: CreditCard },
@@ -72,9 +74,16 @@ export const accountHref: Record<'admin' | 'portal', string> = {
   portal: '/work/portal/profile',
 }
 
+/** What to call `accountHref`'s destination inside the account menu (AccountMenu) — "การตั้งค่า" for admin, "โปรไฟล์" for a client, matching the page each actually lands on. */
+export const accountLabel: Record<'admin' | 'portal', string> = {
+  admin: 'การตั้งค่า',
+  portal: 'โปรไฟล์',
+}
+
 export const portalNav: NavItem[] = [
   { label: 'ภาพรวม', href: '/work/portal', icon: LayoutDashboard },
   { label: 'โปรเจกต์', href: '/work/portal/projects', icon: FolderKanban },
+  { label: 'คำเชิญ', href: '/work/portal/invitations', icon: Mail },
   { label: 'โปรไฟล์', href: '/work/portal/profile', icon: UserRound },
 ]
 
@@ -85,13 +94,39 @@ export const portalNav: NavItem[] = [
  */
 export const portalProjectTabs = [
   { label: 'ภาพรวม', segment: '' },
-  { label: 'ตัวอย่างงาน', segment: 'preview' },
+  // "ไทม์ไลน์" is WORK (project execution); "ไมล์สโตน" below is the PAYMENT
+  // schedule. Two tabs on purpose — they are different entities answering
+  // different questions (docs/PROJECT_TIMELINE.md §1).
+  { label: 'ไทม์ไลน์', segment: 'timeline' },
+  { label: 'ราคา', segment: 'pricing' },
   { label: 'การชำระเงิน', segment: 'payments' },
+  { label: 'ไมล์สโตนชำระเงิน', segment: 'milestones' },
+  { label: 'ตัวอย่างงาน', segment: 'preview' },
   { label: 'เอกสาร', segment: 'documents' },
   { label: 'การเผยแพร่', segment: 'deployment' },
   { label: 'ซอร์สโค้ด', segment: 'source-code' },
+  { label: 'การส่งมอบ', segment: 'delivery' },
   { label: 'การดูแลรักษา', segment: 'maintenance' },
   { label: 'คำขอเปลี่ยนแปลง', segment: 'change-requests' },
+  { label: 'สมาชิก', segment: 'members' },
+] as const
+
+/**
+ * Per-project tabs on the ADMIN side. Same idea as `portalProjectTabs`, a
+ * different set of destinations: staff see the whole project (delivery,
+ * publishing, the activity log, the report) where a client sees their slice
+ * of it. `review` and the intake `wizard` are entered from elsewhere and are
+ * deliberately absent — a tab strip is the routine map, not every route.
+ */
+export const adminProjectTabs = [
+  { label: 'ภาพรวม', segment: '' },
+  { label: 'เอกสารและแบรนด์', segment: 'documents' },
+  { label: 'การเผยแพร่', segment: 'publishing' },
+  { label: 'การส่งมอบ', segment: 'delivery' },
+  { label: 'คำขอเปลี่ยนแปลง', segment: 'change-requests' },
+  { label: 'การดูแลรักษา', segment: 'maintenance' },
+  { label: 'สรุปโปรเจกต์', segment: 'report' },
+  { label: 'กิจกรรม', segment: 'activity' },
 ] as const
 
 /** Resolves the deepest matching nav item, so nested routes stay highlighted. */

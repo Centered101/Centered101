@@ -4,8 +4,10 @@ import { createClient } from '@/lib/work/supabase/server'
 import type {
   MilestoneStatus,
   PaymentMethod,
+  PaymentPlanStatus,
   PaymentPlanType,
   PaymentStatus,
+  UnlockableResource,
 } from '@/lib/work/types/enums'
 import { sumBy, unwrapOr } from './internal'
 
@@ -31,6 +33,10 @@ export type PaymentListItem = {
   method: PaymentMethod | null
   paidAt: string | null
   createdAt: string
+  /** 'stripe' | 'manual' | 'mock' — which path the money came through. */
+  provider: string | null
+  /** For a manual payment, the transfer slip / receipt number the payer supplied. */
+  reference: string | null
 }
 
 type PaymentRow = {
@@ -43,12 +49,15 @@ type PaymentRow = {
   method: PaymentMethod | null
   paid_at: string | null
   created_at: string
+  provider: string | null
+  provider_payment_id: string | null
   projects: { name: string; clients: { name: string } | null } | null
   payment_milestones: { name: string } | null
 }
 
 const PAYMENT_COLUMNS =
   'id, project_id, milestone_id, amount, currency, status, method, paid_at, created_at, ' +
+  'provider, provider_payment_id, ' +
   'projects(name, clients!projects_client_id_fkey(name)), payment_milestones(name)'
 
 function toPayment(row: PaymentRow): PaymentListItem {
@@ -65,6 +74,8 @@ function toPayment(row: PaymentRow): PaymentListItem {
     method: row.method,
     paidAt: row.paid_at,
     createdAt: row.created_at,
+    provider: row.provider,
+    reference: row.provider_payment_id,
   }
 }
 
@@ -100,6 +111,10 @@ export type MilestoneListItem = {
   dueDate: string | null
   status: MilestoneStatus
   paidAt: string | null
+  /** Resource keys this milestone unlocks once PAID — see lib/work/queries/unlock.ts. */
+  unlockRules: UnlockableResource[]
+  /** The ฿250-minimum milestone whose PAID status unblocks project start (migration 0034). */
+  isStartPayment: boolean
 }
 
 type MilestoneRow = {
@@ -113,13 +128,15 @@ type MilestoneRow = {
   status: MilestoneStatus
   percentage_bp: number | null
   paid_at: string | null
+  unlock_rules: UnlockableResource[] | null
+  is_start_payment: boolean
   payment_plans: { currency: string } | null
   projects: { name: string; clients: { name: string } | null } | null
 }
 
 const MILESTONE_COLUMNS =
   'id, project_id, sequence, name, description, amount, due_date, status, percentage_bp, ' +
-  'paid_at, payment_plans!payment_milestones_plan_id_fkey(currency), ' +
+  'paid_at, unlock_rules, is_start_payment, payment_plans!payment_milestones_plan_id_fkey(currency), ' +
   'projects(name, clients!projects_client_id_fkey(name))'
 
 function toMilestone(row: MilestoneRow): MilestoneListItem {
@@ -137,6 +154,8 @@ function toMilestone(row: MilestoneRow): MilestoneListItem {
     dueDate: row.due_date,
     status: row.status,
     paidAt: row.paid_at,
+    unlockRules: row.unlock_rules ?? [],
+    isStartPayment: row.is_start_payment ?? false,
   }
 }
 
@@ -158,14 +177,49 @@ export async function getMilestones(
   return rows.map(toMilestone)
 }
 
+export type MilestoneCounts = { paid: number; total: number }
+
+/**
+ * Milestone paid/total counts for a set of projects, in one query — for the
+ * "My Projects" card grid's "2/3 milestones paid" line
+ * (docs/PROJECT_WORKSPACE_IMPLEMENTATION.md Phase 1). Same batched shape as
+ * `paidByProject`/`getMemberCounts`: one round trip, RLS-scoped like every
+ * other read here.
+ */
+export async function getMilestoneCounts(projectIds: string[]): Promise<Map<string, MilestoneCounts>> {
+  if (projectIds.length === 0) return new Map()
+
+  const supabase = await createClient()
+  const result = await supabase
+    .from('payment_milestones')
+    .select('project_id, status')
+    .in('project_id', projectIds)
+    .neq('status', 'CANCELLED')
+
+  const rows = unwrapOr<{ project_id: string; status: MilestoneStatus }[]>(result, 'ไมล์สโตน', [])
+  const counts = new Map<string, MilestoneCounts>()
+  for (const row of rows) {
+    const entry = counts.get(row.project_id) ?? { paid: 0, total: 0 }
+    entry.total += 1
+    if (row.status === 'PAID') entry.paid += 1
+    counts.set(row.project_id, entry)
+  }
+  return counts
+}
+
 export type PaymentPlan = {
   id: string
   type: PaymentPlanType
   totalAmount: number
   currency: string
+  status: PaymentPlanStatus
+  version: number
+  acceptedBy: string | null
+  acceptedAt: string | null
 }
 
 export type ProjectPaymentSummary = {
+  /** The current LIVE plan (DRAFT/PROPOSED/ACCEPTED) — never a superseded/declined one. */
   plan: PaymentPlan | null
   milestones: MilestoneListItem[]
   payments: PaymentListItem[]
@@ -175,6 +229,10 @@ export type ProjectPaymentSummary = {
   currency: string
   /** Earliest milestone still owed — what the portal calls "next payment". */
   nextDue: MilestoneListItem | null
+  /** The ฿250-floor milestone, if the plan has one (migration 0034). */
+  startMilestone: MilestoneListItem | null
+  /** True once the start milestone has actually settled — the ฿250 gate is clear. */
+  startPaymentMet: boolean
 }
 
 /**
@@ -189,12 +247,18 @@ export async function getProjectPaymentSummary(
   const supabase = await createClient()
 
   // All three reads are independent — awaiting the plan first cost a round
-  // trip of latency for nothing.
+  // trip of latency for nothing. `.order + .limit(1)` before `.maybeSingle()`
+  // is load-bearing here: a project can have SUPERSEDED/DECLINED history
+  // rows alongside its one live plan (migration 0034), so an unbounded
+  // `.maybeSingle()` would throw the moment a plan is ever re-versioned.
   const [planResult, milestones, payments] = await Promise.all([
     supabase
       .from('payment_plans')
-      .select('id, type, total_amount, currency')
+      .select('id, type, total_amount, currency, status, version, accepted_by, accepted_at')
       .eq('project_id', projectId)
+      .not('status', 'in', '(SUPERSEDED,DECLINED)')
+      .order('version', { ascending: false })
+      .limit(1)
       .maybeSingle(),
     getMilestones({ projectId }),
     getPayments({ projectId }),
@@ -205,6 +269,10 @@ export async function getProjectPaymentSummary(
     type: PaymentPlanType
     total_amount: number
     currency: string
+    status: PaymentPlanStatus
+    version: number
+    accepted_by: string | null
+    accepted_at: string | null
   } | null>(planResult, 'แผนการชำระเงิน', null)
 
   const paid = sumBy(
@@ -223,6 +291,8 @@ export async function getProjectPaymentSummary(
     milestones.find((m) => m.status === 'PENDING') ??
     null
 
+  const startMilestone = milestones.find((m) => m.isStartPayment) ?? null
+
   return {
     plan: planRow
       ? {
@@ -230,10 +300,16 @@ export async function getProjectPaymentSummary(
           type: planRow.type,
           totalAmount: planRow.total_amount,
           currency: planRow.currency,
+          status: planRow.status,
+          version: planRow.version,
+          acceptedBy: planRow.accepted_by,
+          acceptedAt: planRow.accepted_at,
         }
       : null,
     milestones,
     payments,
+    startMilestone,
+    startPaymentMet: startMilestone?.status === 'PAID',
     total,
     paid,
     remaining: Math.max(0, total - paid),

@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from './zod'
 
 import {
   DELIVERY_METHODS,
@@ -6,6 +6,10 @@ import {
   PROJECT_TYPES,
   SOURCE_CODE_OWNERSHIPS,
 } from '@/lib/work/types/enums'
+import { draftPricingItemsSchema } from './pricing'
+import { bahtToSatang } from './money'
+
+export { bahtToSatang }
 
 /**
  * Project input schemas.
@@ -15,19 +19,6 @@ import {
  * a value that would be rejected by the database is rejected here first with a
  * readable message instead of a 400 from PostgREST.
  */
-
-/**
- * Money arrives from a form as baht ("30,000" or "30000.50") and is stored as
- * satang. Doing the conversion in the schema means no action, and no
- * component, ever handles a half-converted amount.
- */
-export const bahtToSatang = z
-  .string()
-  .trim()
-  .min(1, 'กรุณากรอกราคา')
-  .transform((value) => value.replace(/[,\s฿]/g, ''))
-  .refine((value) => /^\d+(\.\d{1,2})?$/.test(value), 'ราคาต้องเป็นตัวเลข')
-  .transform((value) => Math.round(Number(value) * 100))
 
 const optionalDate = z
   .string()
@@ -52,10 +43,15 @@ export const createProjectSchema = z
     type: z.enum(PROJECT_TYPES),
     startDate: optionalDate,
     expectedDelivery: optionalDate,
-    totalAmount: bahtToSatang,
+    // No totalAmount here: it is derived from project_pricing_items (a
+    // database trigger keeps it in sync — see migration 0019) and starts at
+    // ฿0 for a project created with no pricing yet.
     deliveryMethod: z.enum(DELIVERY_METHODS),
     sourceCodeOwnership: z.enum(SOURCE_CODE_OWNERSHIPS),
     maintenanceEnabled: z.boolean(),
+    // Optional draft pricing rows from the create form's inline editor — see
+    // draftPricingItemsSchema. An empty list is valid.
+    pricingItems: draftPricingItemsSchema,
   })
   // Mirrors the projects_dates_ordered CHECK constraint, so the user sees a
   // field error rather than a database rejection.
@@ -79,7 +75,7 @@ export const updateProjectSchema = z
     status: z.enum(PROJECT_STATUSES),
     progress: z.coerce.number().int().min(0, 'ต้องอยู่ระหว่าง 0–100').max(100, 'ต้องอยู่ระหว่าง 0–100'),
     expectedDelivery: optionalDate,
-    totalAmount: bahtToSatang,
+    // No totalAmount here either — see the note on createProjectSchema above.
     deliveryMethod: z.enum(DELIVERY_METHODS),
     sourceCodeOwnership: z.enum(SOURCE_CODE_OWNERSHIPS),
   })

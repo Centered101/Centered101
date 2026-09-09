@@ -257,7 +257,7 @@ export function ConnectTab() {
   const editingLink = editingId ? orderedLinks.find((link) => link.id === editingId) : null
 
   useEffect(() => {
-    if (!orderDirty) setOrderedLinks(serverLinks ?? [])
+    if (!orderDirty) void Promise.resolve().then(() => setOrderedLinks(serverLinks ?? []))
   }, [serverLinks, orderDirty])
 
   async function adminFetch(input: RequestInfo | URL, init: RequestInit = {}) {

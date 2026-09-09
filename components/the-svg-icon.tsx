@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
 
 export type IconVariant = 'default' | 'mono' | 'light' | 'dark' | 'wordmark' | 'wm-light' | 'wm-dark'
@@ -72,10 +72,20 @@ export function TheSvgIcon({ label, slug, variant, className, style }: TheSvgIco
   const wantVariant = variant ?? parsed.variant
 
   // 0 = requested variant · 1 = fall back to "default" · 2 = give up → initials
+  //
+  // Reset during RENDER when the icon identity changes, not in an Effect —
+  // this is react.dev's own documented escape hatch for "adjusting state
+  // when a prop changes" (comparing against state, not a ref, is what makes
+  // it safe to call synchronously here: React discards this render and
+  // re-runs the function immediately when the comparison state itself
+  // changes, so it never commits a stale `stage`).
   const [stage, setStage] = useState(0)
-  useEffect(() => {
-    setStage(0)
-  }, [resolvedSlug, wantVariant])
+  const iconIdentity = `${resolvedSlug}::${wantVariant}`
+  const [lastIdentity, setLastIdentity] = useState(iconIdentity)
+  if (lastIdentity !== iconIdentity) {
+    setLastIdentity(iconIdentity)
+    if (stage !== 0) setStage(0)
+  }
 
   const activeVariant: IconVariant = stage === 0 ? wantVariant : 'default'
   const showFallback = !resolvedSlug || stage >= 2

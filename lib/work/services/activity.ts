@@ -1,6 +1,9 @@
 import 'server-only'
 
+import { getUser } from '@/lib/work/auth/session'
 import { createClient } from '@/lib/work/supabase/server'
+import type { ActivityAction } from '@/lib/work/types/activity-actions'
+import { fanOutNotifications } from './notifications'
 
 /**
  * Audit writing.
@@ -20,7 +23,9 @@ import { createClient } from '@/lib/work/supabase/server'
  */
 export async function logActivity(input: {
   organizationId: string
-  action: string
+  /** Union, not string: an action with no label in ACTIVITY_ACTIONS is a
+      compile error rather than a raw dotted verb in someone's feed. */
+  action: ActivityAction
   entityType: string
   entityId?: string | null
   projectId?: string | null
@@ -37,6 +42,25 @@ export async function logActivity(input: {
       p_metadata: input.metadata ?? {},
     })
     if (error) console.error('[activity] failed to log', input.action, error)
+
+    // ONE integration point for notifications (Phase 9), here rather than a
+    // notify() call in each of the ~40 service functions that log. A fan-out
+    // that must be remembered at every call site is one that gets forgotten at
+    // some of them, and the routing table then stops describing reality.
+    //
+    // Runs AFTER the audit write and never blocks it: most actions route to
+    // nobody and return immediately, and fanOutNotifications swallows its own
+    // failures for the same reason this function does.
+    const user = await getUser()
+    await fanOutNotifications({
+      organizationId: input.organizationId,
+      projectId: input.projectId ?? null,
+      action: input.action,
+      entityType: input.entityType,
+      entityId: input.entityId ?? null,
+      metadata: input.metadata,
+      actorId: user?.id ?? null,
+    })
   } catch (error) {
     console.error('[activity] failed to log', input.action, error)
   }

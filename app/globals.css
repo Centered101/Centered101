@@ -180,6 +180,14 @@
   padding-bottom: max(1rem, var(--safe-bottom));
 }
 
+/* The marketing site's ground colour used to ride on <body class="bg-background">
+   in the root layout. That layout is now shared with /work (which paints its
+   own light theme), so the dark ground lives here — this stylesheet only
+   loads under app/(site). */
+html {
+  background: var(--background);
+}
+
 html,
 * {
   scrollbar-width: none;

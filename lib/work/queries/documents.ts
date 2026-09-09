@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/work/supabase/server'
-import type { DocumentStatus, DocumentType } from '@/lib/work/types/enums'
+import type { DocumentStatus, DocumentType, DocumentVisibility } from '@/lib/work/types/enums'
 import { unwrapOr } from './internal'
 
 /**
@@ -30,6 +30,12 @@ export type DocumentListItem = {
   projectId: string | null
   projectName: string | null
   clientName: string | null
+  /** Who may read it (migration 0039). Never inferred from `status`. */
+  visibility: DocumentVisibility
+  archivedAt: string | null
+  /** The document this one replaced, if any — the history chain. */
+  supersedesId: string | null
+  uploadedByName: string | null
   hasFile: boolean
   fileSize: number | null
   mimeType: string | null
@@ -47,17 +53,23 @@ type DocumentRow = {
   issued_at: string | null
   due_date: string | null
   project_id: string | null
+  visibility: DocumentVisibility
+  archived_at: string | null
+  supersedes_id: string | null
   storage_path: string | null
   file_size: number | null
   mime_type: string | null
   created_at: string
   projects: { name: string } | null
   clients: { name: string } | null
+  uploader: { full_name: string | null; email: string | null } | null
 }
 
 const DOCUMENT_COLUMNS =
   'id, type, status, document_number, title, amount, currency, issued_at, due_date, ' +
-  'project_id, storage_path, file_size, mime_type, created_at, projects(name), clients(name)'
+  'project_id, visibility, archived_at, supersedes_id, storage_path, file_size, mime_type, ' +
+  'created_at, projects(name), clients(name), ' +
+  'uploader:profiles!documents_created_by_fkey(full_name, email)'
 
 function toDocument(row: DocumentRow): DocumentListItem {
   return {
@@ -73,6 +85,10 @@ function toDocument(row: DocumentRow): DocumentListItem {
     projectId: row.project_id,
     projectName: row.projects?.name ?? null,
     clientName: row.clients?.name ?? null,
+    visibility: row.visibility,
+    archivedAt: row.archived_at,
+    supersedesId: row.supersedes_id,
+    uploadedByName: row.uploader?.full_name ?? row.uploader?.email ?? null,
     // The path itself stays server-side; the UI only needs to know whether
     // there is anything to download.
     hasFile: !!row.storage_path,
@@ -82,8 +98,22 @@ function toDocument(row: DocumentRow): DocumentListItem {
   }
 }
 
+/**
+ * Documents visible to the caller.
+ *
+ * `includeArchived` defaults to FALSE, so archived documents drop out of every
+ * existing caller without any of them changing. It is a convenience only —
+ * for a client, RLS already excludes archived rows outright (migration 0039),
+ * so passing `true` cannot widen what a client sees. It exists for the staff
+ * history view.
+ */
 export async function getDocuments(
-  options: { projectId?: string; type?: DocumentType; limit?: number } = {},
+  options: {
+    projectId?: string
+    type?: DocumentType
+    limit?: number
+    includeArchived?: boolean
+  } = {},
 ): Promise<DocumentListItem[]> {
   const supabase = await createClient()
 
@@ -94,6 +124,7 @@ export async function getDocuments(
 
   if (options.projectId) query = query.eq('project_id', options.projectId)
   if (options.type) query = query.eq('type', options.type)
+  if (!options.includeArchived) query = query.is('archived_at', null)
   if (options.limit) query = query.limit(options.limit)
 
   const rows = unwrapOr<DocumentRow[]>(await query, 'เอกสาร', [])

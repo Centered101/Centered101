@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { FormEvent, useEffect, useRef, useState } from 'react'
+import { FormEvent, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import {
@@ -248,7 +248,7 @@ function NewTabLoginGate() {
 
   useEffect(() => {
     const err = new URLSearchParams(window.location.search).get('auth_error')
-    if (err) setAuthError(decodeURIComponent(err))
+    if (err) void Promise.resolve().then(() => setAuthError(decodeURIComponent(err)))
   }, [])
 
   async function onSubmit(e: FormEvent) {
@@ -394,19 +394,33 @@ function NewTabContent() {
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(t) }, [])
 
   // Online
-  const [isOnline, setIsOnline] = useState(true)
-  useEffect(() => {
-    setIsOnline(navigator.onLine)
-    const on = () => setIsOnline(true); const off = () => setIsOnline(false)
-    window.addEventListener('online', on); window.addEventListener('offline', off)
-    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
-  }, [])
+  // `navigator.onLine` is an external store, not React state to sync into an
+  // Effect — useSyncExternalStore reads it directly and re-renders on the
+  // browser's own online/offline events.
+  const isOnline = useSyncExternalStore(
+    (onChange) => {
+      window.addEventListener('online', onChange)
+      window.addEventListener('offline', onChange)
+      return () => {
+        window.removeEventListener('online', onChange)
+        window.removeEventListener('offline', onChange)
+      }
+    },
+    () => navigator.onLine,
+    () => true,
+  )
 
   // Weather
   const [weather, setWeather] = useState<WeatherData | null>(null)
   useEffect(() => {
     const c = sessionStorage.getItem('nt_wx')
-    if (c) { const d: WeatherData = JSON.parse(c); if (Date.now() - d.ts < 600000) { setWeather(d); return } }
+    if (c) {
+      const d: WeatherData = JSON.parse(c)
+      if (Date.now() - d.ts < 600000) {
+        void Promise.resolve().then(() => setWeather(d))
+        return
+      }
+    }
     fetch('https://ipapi.co/json/').then(r => r.json()).then(loc =>
       fetch(`https://wttr.in/${encodeURIComponent(loc.city || loc.country_name)}?format=j1`)
     ).then(r => r.json()).then(wx => {
@@ -448,9 +462,8 @@ function NewTabContent() {
   }
 
   // Notes
-  const [notes, setNotes] = useState('')
+  const [notes, setNotes] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('nt_notes') || '' : ''))
   const [noteSaved, setNoteSaved] = useState(false)
-  useEffect(() => { setNotes(localStorage.getItem('nt_notes') || '') }, [])
   function saveNotes() {
     localStorage.setItem('nt_notes', notes); setNoteSaved(true)
     toast.success('Notes saved'); setTimeout(() => setNoteSaved(false), 2500)

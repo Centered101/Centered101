@@ -44,8 +44,22 @@ export async function getOrigin(): Promise<string> {
  * code against the wrong Supabase project.
  */
 export async function getCallbackUrl(next = ''): Promise<string> {
+  const query = next ? `?next=${encodeURIComponent(next)}` : ''
+  return getWorkUrl(`/auth/callback${query}`)
+}
+
+/**
+ * Absolute URL of a workspace path, for somewhere outside the app to send the
+ * browser back to — a Stripe Checkout return, an email link.
+ *
+ * Carries the same host-dependent `/work` prefix as the auth callback, and for
+ * the same reason: on the apex host the workspace lives under /work, and a
+ * return URL without the prefix lands on the marketing site.
+ *
+ * @param path workspace-relative, starting with a slash, e.g. `/portal`
+ */
+export async function getWorkUrl(path: string): Promise<string> {
   const origin = await getOrigin()
   const prefix = /:\/\/work\./i.test(origin) ? '' : '/work'
-  const query = next ? `?next=${encodeURIComponent(next)}` : ''
-  return `${origin}${prefix}/auth/callback${query}`
+  return `${origin}${prefix}${path}`
 }

@@ -52,6 +52,8 @@ export function RevenueChart({
     plugins: {
       tooltip: {
         backgroundColor: '#0f172a',
+        borderColor: PAID,
+        borderWidth: 1,
         padding: 10,
         cornerRadius: 8,
         titleFont: { size: 11, weight: 'bold' },

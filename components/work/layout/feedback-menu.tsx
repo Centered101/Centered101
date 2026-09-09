@@ -4,22 +4,34 @@ import { useActionState, useEffect, useRef, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ArrowLeft, ImagePlus, Lightbulb, MessageSquare, TriangleAlert, X } from 'lucide-react'
+import {
+  ArrowLeft,
+  Camera,
+  ChevronRight,
+  ClipboardList,
+  ImagePlus,
+  Lightbulb,
+  Mail,
+  MessageSquare,
+  ScrollText,
+  ShieldCheck,
+  TriangleAlert,
+  Upload,
+  X,
+} from 'lucide-react'
 
 import { useActionToast } from '@/components/work/forms'
+import { LEGAL } from '@/lib/work/legal'
 import { submitFeedback } from '@/lib/work/services/feedback'
 import type { ActionState } from '@/lib/work/services/projects'
-import {
-  FEEDBACK_MESSAGE_MAX,
-  describeImageRejection,
-} from '@/lib/work/validation/feedback'
+import { FEEDBACK_MESSAGE_MAX, describeImageRejection } from '@/lib/work/validation/feedback'
 import type { FeedbackKind } from '@/lib/work/types/enums'
 
 /**
  * The feedback control in the topbar.
  *
- * Modelled on Supabase's widget, which gets two things right and is worth
- * copying for both:
+ * Modelled on Supabase's widget, which gets three things right and is worth
+ * copying for all of them:
  *
  *   1. IT ASKS "issue or idea" FIRST. One question, before the textarea, and
  *      it is the only piece of triage the person typing can answer better than
@@ -30,6 +42,12 @@ import type { FeedbackKind } from '@/lib/work/types/enums'
  *      it is written while the thing is on screen; a link to a form somewhere
  *      else collects the reports people care enough about to retype, which is
  *      not the same set.
+ *
+ *   3. IT OFFERS HELP AS A SIBLING, not as a rejection. Half of what arrives
+ *      in a feedback box is really "I am stuck" — so the panel flips to a list
+ *      of places that can actually answer that, and flips back. Both
+ *      directions matter: someone who opened help and found nothing must not
+ *      have to hunt for the feedback button again.
  *
  * What is NOT copied is the look. This is a light workspace on #409EFE with
  * 18px corners, so the two choices are cards in the workspace's own palette
@@ -69,15 +87,23 @@ const KINDS: {
   },
 ]
 
-export function FeedbackMenu({ helpHref }: { helpHref: string }) {
+/** Which of the three screens the panel is showing. */
+type Screen = 'choose' | 'write' | 'help'
+
+export function FeedbackMenu({ changeRequestsHref }: { changeRequestsHref: string }) {
   const [open, setOpen] = useState(false)
-  // Null is the first screen — the choice. Picking a kind is what opens the
-  // textarea, so the panel never shows a box before it knows what goes in it.
+  // 'choose' is the resting screen. Picking a kind is what opens the textarea,
+  // so the panel never shows a box before it knows what goes in it.
+  const [screen, setScreen] = useState<Screen>('choose')
   const [kind, setKind] = useState<FeedbackKind | null>(null)
+  const [attachOpen, setAttachOpen] = useState(false)
   const [attachment, setAttachment] = useState<File | null>(null)
   const [attachmentError, setAttachmentError] = useState<string | null>(null)
+  // True only for the frame or two while the page is being photographed.
+  const [capturing, setCapturing] = useState(false)
 
   const rootRef = useRef<HTMLDivElement>(null)
+  const attachRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -89,6 +115,7 @@ export function FeedbackMenu({ helpHref }: { helpHref: string }) {
   // so the next report does not start inside the last one.
   useActionToast(state, () => {
     setOpen(false)
+    setScreen('choose')
     setKind(null)
     setAttachment(null)
     setAttachmentError(null)
@@ -97,14 +124,25 @@ export function FeedbackMenu({ helpHref }: { helpHref: string }) {
   // Same dismissal contract as the notification bell next door: an outside
   // click or Escape closes it, so it behaves like a menu rather than a panel
   // you have to hit the button again to get rid of.
+  //
+  // The attach menu is a menu inside that menu, so it takes the click and the
+  // Escape first. Closing both at once would make one keypress undo two
+  // decisions, and the second one is the expensive one to retype.
   useEffect(() => {
     if (!open) return
 
     function onPointerDown(event: MouseEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
+      const target = event.target as Node
+      if (!rootRef.current?.contains(target)) {
+        setOpen(false)
+        return
+      }
+      if (attachRef.current && !attachRef.current.contains(target)) setAttachOpen(false)
     }
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setOpen(false)
+      if (event.key !== 'Escape') return
+      if (attachOpen) setAttachOpen(false)
+      else setOpen(false)
     }
 
     document.addEventListener('mousedown', onPointerDown)
@@ -113,48 +151,123 @@ export function FeedbackMenu({ helpHref }: { helpHref: string }) {
       document.removeEventListener('mousedown', onPointerDown)
       document.removeEventListener('keydown', onKeyDown)
     }
-  }, [open])
+  }, [open, attachOpen])
 
   // Choosing a kind is a click; typing the report is the point. Moving focus
   // saves the second click that every one of these widgets otherwise costs.
   useEffect(() => {
-    if (kind) textareaRef.current?.focus()
-  }, [kind])
+    if (screen === 'write') textareaRef.current?.focus()
+  }, [screen])
 
-  const selected = KINDS.find((option) => option.value === kind) ?? null
+  const selected = KINDS.find((option) => option.value === kind) ?? KINDS[0]
 
-  function pickAttachment(file: File | null) {
-    if (!file) {
-      setAttachment(null)
-      setAttachmentError(null)
-      return
-    }
-    // Checked here AND on the server (services/feedback.ts). This copy exists
-    // to say no before a 5 MB upload starts, not to be the rule.
+  /**
+   * Accepts a file into the form, whether it was chosen or photographed.
+   *
+   * The <input> is what the form actually submits, so a captured image has to
+   * be written INTO it rather than held beside it in state — a `File` in a
+   * useState is not a form field and would never reach the action.
+   */
+  function attach(file: File) {
     const rejection = describeImageRejection(file)
     setAttachmentError(rejection)
-    setAttachment(rejection ? null : file)
+
+    if (rejection) {
+      setAttachment(null)
+      if (fileRef.current) fileRef.current.value = ''
+      return
+    }
+
+    if (fileRef.current) {
+      const transfer = new DataTransfer()
+      transfer.items.add(file)
+      fileRef.current.files = transfer.files
+    }
+    setAttachment(file)
   }
 
   function clearAttachment() {
     setAttachment(null)
     setAttachmentError(null)
-    // The input keeps its own FileList, which is what the form actually
-    // submits — clearing the state without clearing the element would send a
-    // file the user thinks they removed.
+    // The input keeps its own FileList, which is what the form submits —
+    // clearing the state alone would send a file the user thinks they removed.
     if (fileRef.current) fileRef.current.value = ''
   }
 
-  function toggle() {
+  /**
+   * Photographs the page the user is looking at.
+   *
+   * RENDERED FROM THE DOM, not from a screen-capture stream. `getDisplayMedia`
+   * would be dependency-free, but it asks the operating system for permission
+   * and then asks the user to pick a window — three decisions to attach one
+   * image, and nothing at all on a phone. Painting the DOM to a canvas asks for
+   * nothing and produces the same picture.
+   *
+   * html2canvas-pro is loaded ON DEMAND. It is a large library that most people
+   * will never trigger, and a static import would put it in the bundle of every
+   * page in the workspace.
+   *
+   * VIEWPORT ONLY. A full-document capture of a long invoice table is several
+   * megabytes of content nobody was looking at; what matters is what was on
+   * screen when they reached for the button.
+   *
+   * The panel hides itself first — a screenshot of the feedback form is not a
+   * screenshot of the problem.
+   */
+  async function captureScreen() {
+    setAttachOpen(false)
+    setAttachmentError(null)
+    setCapturing(true)
+
+    try {
+      // Two frames: one for React to commit the hidden panel, one for the
+      // browser to paint it. Capturing after a single frame photographs the
+      // panel that is on its way out.
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(resolve))
+      })
+
+      const { default: html2canvas } = await import('html2canvas-pro')
+      const canvas = await html2canvas(document.body, {
+        backgroundColor: null,
+        // Capped at 2: a 3x phone screen triples the file size for detail
+        // nobody reads in a bug report.
+        scale: Math.min(window.devicePixelRatio || 1, 2),
+        x: window.scrollX,
+        y: window.scrollY,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        logging: false,
+      })
+
+      const blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob(resolve, 'image/png')
+      })
+
+      if (!blob) throw new Error('canvas produced no blob')
+
+      attach(new File([blob], `screenshot-${Date.now()}.png`, { type: 'image/png' }))
+    } catch (error) {
+      // A capture that fails must not cost the message that was already typed,
+      // so this reports beside the attach button and leaves the form alone.
+      console.error('[feedback] screen capture failed:', error)
+      setAttachmentError('จับภาพหน้าจอไม่สำเร็จ ลองอัปโหลดรูปแทนได้')
+    } finally {
+      setCapturing(false)
+    }
+  }
+
+  function openPanel() {
     setOpen((wasOpen) => !wasOpen)
+    setAttachOpen(false)
   }
 
   return (
-    <div className="feedback" ref={rootRef}>
+    <div className={`feedback${capturing ? ' feedback-capturing' : ''}`} ref={rootRef}>
       <button
         type="button"
         className="feedback-trigger"
-        onClick={toggle}
+        onClick={openPanel}
         aria-expanded={open}
         aria-haspopup="dialog"
       >
@@ -162,9 +275,11 @@ export function FeedbackMenu({ helpHref }: { helpHref: string }) {
         <span>ความคิดเห็น</span>
       </button>
 
+      {open && <div className="feedback-backdrop" onClick={() => setOpen(false)} aria-hidden="true" />}
+
       {open && (
         <div className="feedback-panel" role="dialog" aria-label="ส่งความคิดเห็น">
-          {!selected ? (
+          {screen === 'choose' && (
             <>
               <div className="feedback-head">
                 <strong>อยากบอกอะไรกับเราบ้าง?</strong>
@@ -176,7 +291,10 @@ export function FeedbackMenu({ helpHref }: { helpHref: string }) {
                     key={option.value}
                     type="button"
                     className={`feedback-choice ${option.tone}`}
-                    onClick={() => setKind(option.value)}
+                    onClick={() => {
+                      setKind(option.value)
+                      setScreen('write')
+                    }}
                   >
                     <option.icon size={20} />
                     <strong>{option.label}</strong>
@@ -184,8 +302,17 @@ export function FeedbackMenu({ helpHref }: { helpHref: string }) {
                   </button>
                 ))}
               </div>
+              <button
+                type="button"
+                className="feedback-switch"
+                onClick={() => setScreen('help')}
+              >
+                ขอความช่วยเหลือแทน
+              </button>
             </>
-          ) : (
+          )}
+
+          {screen === 'write' && (
             <form className="feedback-form" action={formAction}>
               {/* The three fields the browser is trusted with. Everything else
                   on the row — author, email, user agent — is read on the
@@ -197,7 +324,7 @@ export function FeedbackMenu({ helpHref }: { helpHref: string }) {
                 <button
                   type="button"
                   className="feedback-back"
-                  onClick={() => setKind(null)}
+                  onClick={() => setScreen('choose')}
                   aria-label="เลือกประเภทใหม่"
                 >
                   <ArrowLeft size={14} />
@@ -227,14 +354,19 @@ export function FeedbackMenu({ helpHref }: { helpHref: string }) {
               {attachmentError && <p className="field-error">{attachmentError}</p>}
 
               <div className="feedback-actions">
-                <Link href={helpHref} className="feedback-help" onClick={() => setOpen(false)}>
+                <button
+                  type="button"
+                  className="feedback-switch"
+                  onClick={() => setScreen('help')}
+                >
                   ขอความช่วยเหลือแทน
-                </Link>
+                </button>
 
                 <div className="feedback-send">
                   {/* Hidden rather than styled: a file input cannot be made to
-                      look like the rest of this panel in any browser, and the
-                      label below is a real control for keyboard users. */}
+                      look like the rest of this panel in any browser. It stays
+                      a real, focusable field — the attach button below opens a
+                      menu, and "อัปโหลดรูปภาพ" clicks this. */}
                   <input
                     ref={fileRef}
                     type="file"
@@ -242,23 +374,152 @@ export function FeedbackMenu({ helpHref }: { helpHref: string }) {
                     accept="image/png,image/jpeg,image/webp,image/gif"
                     className="feedback-file"
                     id="feedback-screenshot"
-                    onChange={(event) => pickAttachment(event.target.files?.[0] ?? null)}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0]
+                      if (file) attach(file)
+                    }}
                   />
-                  <label
-                    htmlFor="feedback-screenshot"
-                    className="icon-btn feedback-attach"
-                    title="แนบภาพหน้าจอ"
-                  >
-                    <ImagePlus size={15} />
-                  </label>
-                  <FeedbackSubmit />
+
+                  <div className="feedback-attach-wrap" ref={attachRef}>
+                    <button
+                      type="button"
+                      className="icon-btn feedback-attach"
+                      onClick={() => setAttachOpen((menuOpen) => !menuOpen)}
+                      aria-expanded={attachOpen}
+                      aria-haspopup="menu"
+                      aria-label="แนบภาพหน้าจอ"
+                      disabled={capturing}
+                    >
+                      <ImagePlus size={15} />
+                    </button>
+
+                    {attachOpen && (
+                      <div className="feedback-attach-menu" role="menu">
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setAttachOpen(false)
+                            fileRef.current?.click()
+                          }}
+                        >
+                          <Upload size={14} />
+                          อัปโหลดรูปภาพ
+                        </button>
+                        <button type="button" role="menuitem" onClick={captureScreen}>
+                          <Camera size={14} />
+                          จับภาพหน้าจอ
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <FeedbackSubmit capturing={capturing} />
                 </div>
               </div>
             </form>
           )}
+
+          {screen === 'help' && <HelpScreen changeRequestsHref={changeRequestsHref} onBack={() => setScreen('choose')} onClose={() => setOpen(false)} />}
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * The help screen.
+ *
+ * EVERY ROW GOES SOMEWHERE THAT EXISTS. Supabase's version lists docs, status
+ * and a Discord, because Supabase has those; this workspace has a change
+ * request queue, an inbox and two legal documents, and listing a "เอกสารคู่มือ"
+ * row that leads nowhere would be worse than listing nothing — it turns one
+ * stuck person into one stuck person who now distrusts the menu.
+ *
+ * The exit back to feedback is a button, not a close: someone who came looking
+ * for an answer and did not find one is exactly the person with something
+ * worth reporting.
+ */
+function HelpScreen({
+  changeRequestsHref,
+  onBack,
+  onClose,
+}: {
+  changeRequestsHref: string
+  onBack: () => void
+  onClose: () => void
+}) {
+  const links: {
+    href: string
+    label: string
+    hint: string
+    icon: typeof ClipboardList
+    external?: boolean
+  }[] = [
+    {
+      href: changeRequestsHref,
+      label: 'คำขอเปลี่ยนแปลง',
+      hint: 'ขอแก้ไขหรือเพิ่มงานในโปรเจกต์ พร้อมใบเสนอราคา',
+      icon: ClipboardList,
+    },
+    {
+      href: `mailto:${LEGAL.contactEmail}`,
+      label: 'อีเมลทีมงาน',
+      hint: LEGAL.contactEmail,
+      icon: Mail,
+      external: true,
+    },
+    {
+      href: '/work/terms-of-service',
+      label: 'ข้อกำหนดการใช้งาน',
+      hint: 'ขอบเขตบริการ การชำระเงิน และการส่งมอบงาน',
+      icon: ScrollText,
+    },
+    {
+      href: '/work/privacy-policy',
+      label: 'นโยบายความเป็นส่วนตัว',
+      hint: 'ข้อมูลที่เก็บ ใครเห็นได้บ้าง และการขอลบข้อมูล',
+      icon: ShieldCheck,
+    },
+  ]
+
+  return (
+    <>
+      <div className="feedback-head feedback-head-row">
+        <button type="button" className="feedback-back" onClick={onBack} aria-label="ย้อนกลับ">
+          <ArrowLeft size={14} />
+        </button>
+        <strong>ต้องการความช่วยเหลือ?</strong>
+      </div>
+
+      <nav className="feedback-links">
+        {links.map((link) =>
+          link.external ? (
+            <a key={link.href} href={link.href} onClick={onClose}>
+              <link.icon size={16} />
+              <span>
+                <strong>{link.label}</strong>
+                <small>{link.hint}</small>
+              </span>
+              <ChevronRight size={14} />
+            </a>
+          ) : (
+            <Link key={link.href} href={link.href} onClick={onClose}>
+              <link.icon size={16} />
+              <span>
+                <strong>{link.label}</strong>
+                <small>{link.hint}</small>
+              </span>
+              <ChevronRight size={14} />
+            </Link>
+          ),
+        )}
+      </nav>
+
+      <button type="button" className="feedback-switch feedback-switch-block" onClick={onBack}>
+        ส่งความคิดเห็นแทน
+      </button>
+    </>
   )
 }
 
@@ -269,14 +530,18 @@ export function FeedbackMenu({ helpHref }: { helpHref: string }) {
  * FeedbackMenu it would report idle forever, because the hook looks at the
  * nearest form ANCESTOR and the component rendering a form is not inside it.
  *
- * Not `SubmitButton` from components/work/forms: that one renders the app's
+ * Not `SubmitButton` from components/forms: that one renders the app's
  * full-width form buttons, and this sits in a toolbar next to an icon.
+ *
+ * Disabled during a capture as well as during a submit: the screenshot is not
+ * in the form yet while the canvas is being painted, and sending in that
+ * moment loses it silently.
  */
-function FeedbackSubmit() {
+function FeedbackSubmit({ capturing }: { capturing: boolean }) {
   const { pending } = useFormStatus()
   return (
-    <button type="submit" className="feedback-submit" disabled={pending}>
-      {pending ? 'กำลังส่ง...' : 'ส่ง'}
+    <button type="submit" className="feedback-submit" disabled={pending || capturing}>
+      {pending ? 'กำลังส่ง...' : capturing ? 'กำลังจับภาพ...' : 'ส่ง'}
     </button>
   )
 }

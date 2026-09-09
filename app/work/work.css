@@ -26,6 +26,12 @@
 /* Every /work route is inside .work-root, shell or not. */
 .work-root {
   color-scheme: light;
+
+  /* Thai sets marks above AND below the line, so the Latin-ish 1.4-1.5
+     leading this stylesheet inherited let ไม้โท on one line touch สระสูง on
+     the next. Set once here and inherited; headings tighten it back
+     individually below, where the marks have room anyway. */
+  line-height: 1.6;
   --background: #f7fbff;
   --foreground: #1f2937;
   --card: #ffffff;
@@ -50,6 +56,26 @@
   --popover-foreground: #1f2937;
   --input: #dbeeff;
   --ring: #409efe;
+
+  /* TYPE SCALE. This stylesheet arrived from the prototype with 127 of its
+     169 `font-size` declarations at 12px or below and 49 of them at 10px or
+     below. That is too small for Thai script generally (the font below was
+     Noto Sans Thai when this was written, now Kanit — the constraint is the
+     script, not the specific face): it stacks สระ and วรรณยุกต์ above and below the
+     consonant, and below ~12px those marks collapse into the letterform — the
+     difference between เสีย and เสี่ย stops being legible at a glance. Every size
+     below is one step up from what it replaces; the ramp is named rather than
+     inlined so the next size added has somewhere to land instead of becoming
+     a 149th raw pixel value. */
+  --text-2xs: 11px; /* was 9px  — micro labels, chart ticks */
+  --text-xs: 12px; /* was 10px — eyebrows, table headers, badges */
+  --text-sm: 13px; /* was 11px — secondary body, nav, table cells */
+  --text-base: 14px; /* was 12px — body copy, buttons, muted text */
+  --text-md: 15px; /* was 13px — emphasised body, field values */
+
+  /* Sizes above 15px are one-off headings rather than a crowded ramp, so they
+     stay as literal pixels at their call sites — each bumped by the same
+     step. */
 }
 
 /* Tailwind v4 reads utilities from /* Brand color: #409EFE */
@@ -97,7 +123,7 @@ body {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-thai), Arial, Helvetica, sans-serif;
+  font-family: var(--font-kanit), Arial, Helvetica, sans-serif;
 }
 button {
   font: inherit;
@@ -114,7 +140,7 @@ button {
    picked twice and several never were — the audit's D10 flash was only the
    visible half of that cost. One palette, defined once above. */
 .sidebar {
-  width: 248px;
+  width: 264px;
   flex: none;
   min-height: 100vh;
   align-self: stretch;
@@ -131,9 +157,14 @@ button {
   align-items: center;
   gap: 10px;
   padding: 0 11px 25px;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 750;
   letter-spacing: -0.03em;
+  /* The workspace's wordmark only — everywhere else in /work stays on
+     var(--font-kanit) from body. Falls back to Kanit, not Arial, if
+     Sansation somehow fails to load, so a slow font swap never drops all
+     the way to a system face for the one piece of text that IS the brand. */
+  font-family: var(--font-sansation), var(--font-kanit), Arial, sans-serif;
 }
 /* Title plus the workspace line beneath it. The auth screens use .brand with
    a bare <span>, so this wrapper only exists in the sidebar and nothing about
@@ -142,8 +173,16 @@ button {
   display: grid;
   min-width: 0;
 }
+/* The sidebar is a fixed 264px, tight enough that "Centered101's Work" was
+   wrapping onto a second line. Kept to one line like everywhere else this
+   name appears, truncating rather than wrapping if it ever runs long. */
+.brand-text span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .brand-text small {
-  font-size: 10px;
+  font-size: var(--text-xs);
   font-weight: 500;
   letter-spacing: 0;
   color: var(--muted-foreground);
@@ -169,26 +208,119 @@ button {
   height: 28px;
   object-fit: contain;
 }
-.mobile-close {
-  display: none;
-  margin-left: auto;
-  background: none;
-  border: 0;
-  color: var(--muted-foreground);
-}
 /* .workspace is gone with the chip it styled: the organization name, its
    avatar tile and a chevron that promised a switcher nobody built. What it
    actually told you — which workspace this is — is a line under the brand now
-   (.brand-text small). */
-.profile strong,
+   (.brand-text small). The switcher itself now exists as .project-switcher,
+   below — a real one, not a chevron with nothing behind it. */
+.project-switcher {
+  padding: 0 11px 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* Was upper-cased with wide letter-spacing — a small-caps "section eyebrow"
+   look copied from an English UI kit, on a label now written in Thai. Thai
+   has no case (text-transform: uppercase was already a no-op on it) and
+   does not carry that letter-spacing well — stacked สระ/วรรณยุกต์ want to sit
+   close to their consonant. Nothing else in either sidebar uses this
+   treatment (adminNav/portalNav are both a flat list, no section headers),
+   so it read as its own, unrelated design rather than part of this one. */
+.project-switcher-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--muted-foreground);
+}
+.project-switcher-label a {
+  color: inherit;
+  text-decoration: none;
+}
+.project-switcher-label a:hover {
+  color: var(--primary);
+}
+.project-switcher-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 168px;
+  overflow-y: auto;
+}
+.project-switcher-list a {
+  font-size: var(--text-base);
+  color: var(--foreground);
+  text-decoration: none;
+  padding: 6px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.project-switcher-list a:hover {
+  background: #eef7ff;
+  color: var(--primary);
+}
+.project-switcher-list a.active {
+  background: #eef7ff;
+  color: var(--primary);
+  font-weight: 600;
+}
+.project-switcher-create {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  text-decoration: none;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+.project-switcher-create:hover {
+  color: var(--primary);
+  background: #eef7ff;
+}
+/* The name/email block, between the avatar and the chevron — needs its own
+   minimum width reset (flex items don't shrink below content size by
+   default), now that there's a fixed-width icon after it that name/email
+   text could otherwise push out of the card entirely. */
+.profile > div {
+  min-width: 0;
+  flex: 1;
+}
+/* The name wraps onto up to 2 lines instead of truncating to one — a real
+   name with a space in it (most of them) was cutting off after ~10
+   characters ("PHONGPHON…") on the sidebar's actual width, which reads as
+   broken rather than merely tight. The email stays single-line: it has no
+   natural break point to wrap at, so mid-address ellipsis is the more
+   legible failure of the two. */
+.profile strong {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--text-base);
+  /* -webkit-box (needed for the line-clamp above) does not shrink to its
+     parent's width the way a normal block does — left alone, it can size
+     itself to the name's UNWRAPPED width and push .profile wider than the
+     sidebar, which is what put a horizontal scrollbar under the account
+     card for a longer name ("CTR EE N FF9") but not a short one
+     ("Centered101"). width: 100% pins it to the flex column's own width
+     (already reset to shrink via .profile > div's min-width: 0, above);
+     overflow-wrap is the same belt-and-suspenders a truly unbreakable token
+     would still need. */
+  width: 100%;
+  overflow-wrap: break-word;
+}
 .profile small {
   display: block;
-}
-.profile strong {
-  font-size: 12px;
-}
-.profile small {
-  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-xs);
   color: var(--muted-foreground);
   margin-top: 3px;
 }
@@ -200,8 +332,15 @@ button {
   border-radius: 8px;
   background: #e8f3ff;
   color: #409efe;
-  font-size: 11px;
+  font-size: var(--text-sm);
   font-weight: bold;
+  /* .avatar-photo (the <Image> variant, below) already had this — the
+     plain-letter fallback never did. In a flex row under space pressure
+     (.profile, now that its text column claims space with flex: 1) the
+     browser shrinks a flex item's WIDTH by default before its explicit
+     `height` gives way, which is exactly what stretched this into a
+     narrow vertical rectangle instead of the square it's meant to be. */
+  flex: none;
 }
 .avatar.small {
   width: 29px;
@@ -222,7 +361,7 @@ button {
   display: flex;
   align-items: center;
   gap: 11px;
-  font-size: 12px;
+  font-size: var(--text-base);
 }
 .sidebar nav button:hover,
 .sidebar-bottom button:hover,
@@ -236,24 +375,36 @@ button {
   color: #c56a12;
   border-radius: 10px;
   padding: 2px 6px;
-  font-size: 10px;
+  font-size: var(--text-xs);
 }
 .sidebar-bottom {
   margin-top: auto;
   display: grid;
   gap: 3px;
 }
+/* Anchors .account-panel (below), the same way .bell anchors .bell-panel. */
+.account-menu {
+  position: relative;
+}
+/* Now a <button> (AccountMenu), not a <Link> — the identity is still always
+   visible, but it opens a menu instead of navigating on its own. Reset to a
+   plain block: nothing here should look like a form control. */
 .profile {
-  margin-top: 13px;
+  width: 100%;
+  border: 0;
   border-top: 1px solid var(--border);
+  background: transparent;
+  margin-top: 13px;
   padding: 16px 9px 0;
   display: flex;
   align-items: center;
   gap: 9px;
+  text-align: left;
 }
 .profile svg {
   margin-left: auto;
   color: var(--muted-foreground);
+  flex: none;
 }
 .main {
   min-width: 0;
@@ -275,12 +426,35 @@ button {
 }
 .breadcrumbs {
   display: flex;
+  align-items: center;
   gap: 10px;
   color: var(--muted-foreground);
-  font-size: 12px;
+  font-size: var(--text-base);
 }
-.breadcrumbs strong {
+/* Both crumbs navigate, so they are links — but a breadcrumb that looks like
+   a link everywhere reads as chrome noise. Colour stays inherited, and hover
+   picks up the same blue-tinted chip treatment as the topbar's buttons
+   (.icon-btn, .feedback-trigger) instead of an underline, so it reads as
+   "clickable control" rather than "text link". */
+.breadcrumbs .crumb {
+  color: inherit;
+  text-decoration: none;
+  border-radius: 6px;
+  margin: -4px -6px;
+  padding: 4px 6px;
+  transition: color 0.15s, background 0.15s;
+}
+.breadcrumbs .crumb:hover {
+  color: var(--primary);
+  background: var(--accent);
+}
+.breadcrumbs .crumb:focus-visible {
+  outline: 2px solid var(--ring, var(--foreground));
+  outline-offset: 2px;
+}
+.breadcrumbs .crumb-current {
   color: var(--foreground);
+  font-weight: 600;
 }
 .top-actions {
   display: flex;
@@ -297,6 +471,15 @@ button {
   display: grid;
   place-items: center;
   position: relative;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+/* Same treatment as .feedback-trigger's hover, so the bell sitting right next
+   to the feedback pill reacts the same way instead of doing nothing. */
+.icon-btn:hover,
+.icon-btn[aria-expanded='true'] {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--accent);
 }
 .menu-btn {
   display: none;
@@ -316,22 +499,38 @@ button {
   align-items: flex-end;
   margin-bottom: 27px;
 }
+/* The status badge(s) and the archive button passed as `action` had no
+   layout of their own — a bare div, so they stacked as block elements with
+   zero space between them. */
+.project-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
 .eyebrow {
-  font-size: 10px;
+  font-size: var(--text-xs);
   letter-spacing: 0.12em;
   color: var(--primary);
   font-weight: 700;
   margin: 0 0 9px;
 }
 .page-heading h1 {
-  font-size: 25px;
+  font-size: 27px;
+  line-height: 1.25;
   letter-spacing: -0.04em;
   margin: 0 0 7px;
 }
+/* The description under the title is free text (a project's own blurb, a
+   client name). Left unbounded it ran the full content width on a wide
+   screen; hold it to a readable measure so it wraps like a paragraph. */
+.page-heading .muted {
+  max-width: 68ch;
+}
 .muted {
   color: var(--muted-foreground);
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: var(--text-base);
+  line-height: 1.6;
   margin: 0;
 }
 .primary,
@@ -342,14 +541,30 @@ button {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--text-base);
   padding: 10px 14px;
 }
 .primary {
   border: 1px solid var(--primary);
   background: var(--primary);
   color: #fff;
-  font-weight: 650;
+  /* 650, not the 600 this actually renders as, was fine under the old
+     variable-weight Noto Sans Thai (any value 1-1000 interpolates exactly).
+     Kanit ships fixed 400/500/600/700/900 faces (layout.tsx), and CSS's
+     font-matching algorithm resolves an unavailable weight above 500 to the
+     NEXT HEAVIER face first (CSS Fonts Module 4 §5.2) — so every "650" in
+     this file was quietly rendering as full 700 bold, one step heavier than
+     designed, everywhere from buttons to totals to legal-doc emphasis.
+     Written as the 600 it actually is now. */
+  font-weight: 600;
+}
+/* Armed state for a `.primary` button that doubles as an unsaved-changes
+   guard (the wizard's brand/asset step) — same orange used for every other
+   "needs attention before you can move on" cue (.status-orange, .work-timeline-item.warn),
+   just filled instead of outlined since this button is solid to begin with. */
+.primary.armed {
+  border-color: #df8627;
+  background: #df8627;
 }
 .outline {
   border: 1px solid var(--border);
@@ -365,11 +580,71 @@ button {
 .full {
   width: 100%;
 }
+/* `.form-actions` is the button row ~30 forms across both portals use, but it
+   only ever had rules scoped under .work-form / .invite-form / .plan-decision /
+   .auth-form. Anywhere else — the DRAFT submit banner, the wizard's inline
+   forms, the agreement and payment-plan panels — it was a bare block div, so
+   its buttons stacked vertically and the `justifyContent` those call sites pass
+   inline had no `display: flex` to act on. The base row lives here; the four
+   scoped rules further down still win on specificity, so .auth-form's
+   deliberate `display: block` is untouched. */
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 2px;
+}
+/* auto-fit, not a fixed 5: these rows carry 2, 4 or 5 cards depending on the
+   page, and a hard count left dead columns on every page but the dashboard —
+   which is also what the "hide the last card" hack below was compensating
+   for. Reflowing by width needs neither. */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 13px;
   margin-bottom: 18px;
+}
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 13px;
+}
+.project-card {
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.project-card h3 {
+  margin: 0;
+  font-size: 17px;
+}
+.project-card h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+.project-card h3 a:hover {
+  text-decoration: underline;
+}
+.project-card .project-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--text-md);
+  color: var(--muted-foreground);
+}
+.project-card .project-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
 }
 .stat-card,
 .panel {
@@ -414,12 +689,12 @@ button {
 }
 .stat-copy p {
   color: var(--muted-foreground);
-  font-size: 11px;
+  font-size: var(--text-sm);
   margin: 1px 0 7px;
 }
 .stat-copy strong {
   display: block;
-  font-size: 20px;
+  font-size: 22px;
   letter-spacing: -0.04em;
 }
 .stat-change {
@@ -427,12 +702,8 @@ button {
   align-items: center;
   gap: 3px;
   color: #27a26f;
-  font-size: 10px;
+  font-size: var(--text-xs);
   margin-top: 5px;
-}
-.more {
-  margin-left: auto;
-  color: var(--muted-foreground);
 }
 .dashboard-grid {
   display: grid;
@@ -458,7 +729,8 @@ button {
   gap: 15px;
 }
 .panel h2 {
-  font-size: 14px;
+  font-size: 16px;
+  line-height: 1.4;
   margin: 0 0 5px;
   letter-spacing: -0.02em;
 }
@@ -473,8 +745,8 @@ button {
   border: 0;
   background: transparent;
   color: var(--muted-foreground);
-  font-size: 10px;
-  padding: 6px 8px;
+  font-size: var(--text-xs);
+  padding: 7px 11px;
   border-radius: 5px;
 }
 .range-tabs button.selected {
@@ -486,7 +758,7 @@ button {
   display: flex;
   align-items: center;
   gap: 14px;
-  font-size: 10px;
+  font-size: var(--text-xs);
   color: var(--muted-foreground);
   margin: 27px 0 7px;
 }
@@ -510,12 +782,12 @@ button {
 .chart-key strong {
   margin-left: auto;
   color: var(--foreground);
-  font-size: 14px;
+  font-size: 16px;
 }
 .chart-key small {
   font-weight: normal;
   color: var(--muted-foreground);
-  font-size: 10px;
+  font-size: var(--text-xs);
   margin-left: 4px;
 }
 .chart-wrap {
@@ -578,19 +850,43 @@ button {
   display: block;
 }
 .activity-list p strong {
-  font-size: 11px;
+  font-size: var(--text-sm);
 }
 .activity-list p small {
   color: var(--muted-foreground);
-  font-size: 10px;
+  font-size: var(--text-xs);
   margin-top: 4px;
 }
 .activity-list time {
   color: var(--muted-foreground);
-  font-size: 10px;
+  font-size: var(--text-xs);
 }
 .projects-panel {
   padding-bottom: 8px;
+}
+.pricing-totals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 6px 18px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-size: var(--text-base);
+  color: var(--muted-foreground);
+}
+.pricing-totals span,
+.pricing-totals strong {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+.pricing-totals strong {
+  color: var(--foreground);
+  font-size: var(--text-md);
+  font-weight: 600;
 }
 .table-wrap {
   overflow-x: auto;
@@ -598,20 +894,20 @@ button {
 }
 table {
   width: 100%;
-  min-width: 820px;
+  min-width: 900px;
   border-collapse: collapse;
-  font-size: 11px;
+  font-size: var(--text-sm);
 }
 th {
   text-align: left;
   color: var(--muted-foreground);
-  font-size: 10px;
+  font-size: var(--text-xs);
   font-weight: 500;
-  padding: 0 10px 11px;
+  padding: 0 12px 12px;
 }
 td {
   border-top: 1px solid var(--border);
-  padding: 13px 10px;
+  padding: 14px 12px;
   white-space: nowrap;
 }
 .project-name {
@@ -624,11 +920,11 @@ td {
   display: block;
 }
 .project-name strong {
-  font-size: 11px;
+  font-size: var(--text-sm);
 }
 .project-name small {
   color: var(--muted-foreground);
-  font-size: 9px;
+  font-size: var(--text-2xs);
   margin-top: 3px;
 }
 .project-icon {
@@ -637,6 +933,23 @@ td {
   border-radius: 8px;
   display: grid;
   place-items: center;
+}
+/* One row of the brand/reference asset table (client wizard and admin
+   review, see AssetThumbnail) — a real thumbnail for an image, a type icon
+   otherwise. Square and small: this is "which file is this at a glance",
+   not a preview pane. */
+.asset-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  object-fit: cover;
+  display: block;
+}
+.asset-thumb-icon {
+  display: grid;
+  place-items: center;
+  background: var(--muted);
+  color: var(--muted-foreground);
 }
 .project-icon.blue {
   background: #e5f2ff;
@@ -658,15 +971,15 @@ td {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 8px;
+  padding: 5px 10px;
   border-radius: 20px;
   background: #e5f2ff;
   color: #218ce8;
-  font-size: 10px;
+  font-size: var(--text-xs);
 }
 .status-dot {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: currentColor;
 }
@@ -702,7 +1015,7 @@ td {
 }
 .progress-cell small {
   color: var(--muted-foreground);
-  font-size: 10px;
+  font-size: var(--text-xs);
 }
 .payment-paid,
 .green-text {
@@ -727,7 +1040,8 @@ td {
   height: 45px;
 }
 .hero-top h2 {
-  font-size: 19px;
+  font-size: 21px;
+  line-height: 1.3;
   margin: 0 0 5px;
 }
 .hero-top .status {
@@ -741,12 +1055,12 @@ td {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
-  font-size: 11px;
+  font-size: var(--text-sm);
   color: var(--muted-foreground);
 }
 .big-progress strong {
   color: var(--foreground);
-  font-size: 17px;
+  font-size: 19px;
 }
 .big-progress .progress {
   width: 100%;
@@ -755,7 +1069,7 @@ td {
 .big-progress small {
   color: var(--muted-foreground);
   display: block;
-  font-size: 10px;
+  font-size: var(--text-xs);
   margin-top: 9px;
 }
 .hero-details {
@@ -771,11 +1085,11 @@ td {
 }
 .hero-details div span {
   color: var(--muted-foreground);
-  font-size: 10px;
+  font-size: var(--text-xs);
   margin-bottom: 6px;
 }
 .hero-details div strong {
-  font-size: 14px;
+  font-size: 16px;
 }
 .hero-details .primary {
   margin-left: auto;
@@ -807,7 +1121,7 @@ td {
   border: 1px solid var(--border);
   display: grid;
   place-items: center;
-  font-size: 9px;
+  font-size: var(--text-2xs);
   color: var(--muted-foreground);
   background: var(--card);
   z-index: 1;
@@ -829,11 +1143,11 @@ td {
   display: block;
 }
 .timeline-item strong {
-  font-size: 11px;
+  font-size: var(--text-sm);
 }
 .timeline-item span {
   color: var(--muted-foreground);
-  font-size: 10px;
+  font-size: var(--text-xs);
   margin-top: 4px;
 }
 .timeline-item.done span {
@@ -859,11 +1173,11 @@ td {
 }
 .ownership-rows span {
   color: var(--muted-foreground);
-  font-size: 10px;
+  font-size: var(--text-xs);
   margin-bottom: 6px;
 }
 .ownership-rows strong {
-  font-size: 11px;
+  font-size: var(--text-sm);
 }
 .repo {
   display: flex !important;
@@ -875,19 +1189,19 @@ td {
   margin: 25px 0 16px;
 }
 .maintenance-price strong {
-  font-size: 25px;
+  font-size: 27px;
   letter-spacing: -0.04em;
 }
 .maintenance-price span {
   color: var(--muted-foreground);
-  font-size: 11px;
+  font-size: var(--text-sm);
 }
 .next-billing {
   display: flex;
   gap: 8px;
   align-items: center;
   color: var(--muted-foreground);
-  font-size: 10px;
+  font-size: var(--text-xs);
   margin-bottom: 18px;
 }
 .next-billing strong {
@@ -901,7 +1215,7 @@ td {
   margin-bottom: 20px;
 }
 .service-tags span {
-  font-size: 10px;
+  font-size: var(--text-xs);
   padding: 6px 8px;
   background: var(--muted);
   border-radius: 6px;
@@ -940,14 +1254,14 @@ td {
 }
 .modal-kicker {
   color: #269b6c;
-  font-size: 10px;
+  font-size: var(--text-xs);
   display: flex;
   gap: 6px;
   align-items: center;
   margin-bottom: 13px;
 }
 .payment-modal h2 {
-  font-size: 20px;
+  font-size: 22px;
   margin: 0 0 6px;
 }
 .checkout-summary {
@@ -963,20 +1277,20 @@ td {
   display: block;
 }
 .checkout-summary span {
-  font-size: 11px;
+  font-size: var(--text-sm);
   font-weight: bold;
 }
 .checkout-summary strong {
-  font-size: 21px;
+  font-size: 23px;
   margin: 7px 0;
 }
 .checkout-summary small {
-  font-size: 10px;
+  font-size: var(--text-xs);
   color: var(--muted-foreground);
 }
 .field-label {
   display: block;
-  font-size: 10px;
+  font-size: var(--text-xs);
   color: var(--muted-foreground);
   margin-bottom: 8px;
 }
@@ -988,7 +1302,7 @@ td {
   align-items: center;
   gap: 10px;
   margin-bottom: 8px;
-  font-size: 11px;
+  font-size: var(--text-sm);
 }
 .method.selected {
   border-color: var(--primary);
@@ -1003,7 +1317,7 @@ td {
 }
 .method small {
   color: var(--muted-foreground);
-  font-size: 9px;
+  font-size: var(--text-2xs);
   margin-top: 3px;
 }
 .method > svg:last-child {
@@ -1022,7 +1336,7 @@ td {
 .secure-note {
   text-align: center;
   color: var(--muted-foreground);
-  font-size: 9px;
+  font-size: var(--text-2xs);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1058,11 +1372,11 @@ td {
   display: block;
 }
 .toast strong {
-  font-size: 11px;
+  font-size: var(--text-sm);
 }
 .toast small {
   color: var(--muted-foreground);
-  font-size: 10px;
+  font-size: var(--text-xs);
   margin-top: 4px;
 }
 .toast button {
@@ -1072,12 +1386,6 @@ td {
   margin-left: auto;
 }
 @media (max-width: 1050px) {
-  .stats-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  .stats-grid .stat-card:last-child {
-    display: none;
-  }
   .topbar,
   .content {
     padding-left: 24px;
@@ -1100,8 +1408,13 @@ td {
   .sidebar.mobile-open {
     left: 0;
   }
-  .mobile-close {
-    display: block;
+  /* Tapping outside the open drawer closes it — the X button this replaced
+     only ever did the same thing, one tap further away. */
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+    background: #0f172a4d;
   }
   .topbar {
     height: 60px;
@@ -1118,22 +1431,27 @@ td {
     margin-right: auto;
     margin-left: 10px;
   }
-  .breadcrumbs span {
+  .breadcrumbs span,
+  .breadcrumbs .crumb-root {
     display: none;
   }
-  .breadcrumbs strong {
+  .breadcrumbs .crumb-current {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
   .top-actions {
-    gap: 6px;
+    /* Matches .breadcrumbs' margin-left below so the gap around the
+       breadcrumb reads as one consistent rhythm instead of a wide gap on
+       one side and a cramped 6px between the two buttons on the other. */
+    gap: 10px;
   }
   .content {
-    padding: 20px 12px 32px;
+    padding: 14px 12px 32px;
     overflow: hidden;
   }
   .page-heading {
+    flex-direction: column;
     align-items: stretch;
     gap: 14px;
     margin-bottom: 20px;
@@ -1142,11 +1460,11 @@ td {
     min-width: 0;
   }
   .page-heading h1 {
-    font-size: 20px;
+    font-size: 22px;
     line-height: 1.35;
   }
   .page-heading .muted {
-    font-size: 11px;
+    font-size: var(--text-sm);
   }
   .page-heading > .primary {
     flex: none;
@@ -1161,9 +1479,6 @@ td {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     margin-bottom: 12px;
-  }
-  .stats-grid .stat-card:last-child {
-    display: flex;
   }
   .stat-card {
     min-height: 100px;
@@ -1183,10 +1498,10 @@ td {
     white-space: nowrap;
   }
   .stat-copy strong {
-    font-size: 17px;
+    font-size: 19px;
   }
   .stat-change {
-    font-size: 10px;
+    font-size: var(--text-xs);
   }
   .dashboard-grid,
   .client-main,
@@ -1203,27 +1518,24 @@ td {
     align-items: flex-start;
   }
   .panel-head h2 {
-    font-size: 14px;
+    font-size: 16px;
   }
   .panel-head .muted {
-    font-size: 10px;
+    font-size: var(--text-xs);
   }
   .range-tabs {
     flex: none;
   }
   .range-tabs button {
-    padding: 5px 6px;
-    font-size: 9px;
-  }
-  .range-tabs button:nth-child(-n + 2) {
-    display: none;
+    padding: 6px 8px;
+    font-size: var(--text-2xs);
   }
   .chart-key {
     gap: 8px;
     flex-wrap: wrap;
   }
   .chart-key strong {
-    font-size: 12px;
+    font-size: var(--text-base);
     margin-left: auto;
   }
   /* No min-width + horizontal scroll any more: the CSS bars needed 480px to
@@ -1248,7 +1560,7 @@ td {
     min-width: 0;
   }
   .hero-top h2 {
-    font-size: 16px;
+    font-size: 18px;
   }
   .hero-top .status {
     margin-left: auto;
@@ -1296,10 +1608,10 @@ td {
     padding: 10px;
   }
   .stat-copy strong {
-    font-size: 15px;
+    font-size: 17px;
   }
   .page-heading h1 {
-    font-size: 18px;
+    font-size: 20px;
   }
 }
 
@@ -1328,7 +1640,7 @@ a {
   display: flex;
   align-items: center;
   gap: 11px;
-  font-size: 12px;
+  font-size: var(--text-base);
 }
 .sidebar nav a:hover,
 .sidebar-bottom a:hover,
@@ -1342,6 +1654,7 @@ a {
 .project-tabs {
   display: flex;
   flex-wrap: wrap;
+  row-gap: 3px;
   width: fit-content;
   max-width: 100%;
   margin-bottom: 22px;
@@ -1350,8 +1663,8 @@ a {
   border: 0;
   background: transparent;
   color: var(--muted-foreground);
-  font-size: 10px;
-  padding: 6px 8px;
+  font-size: var(--text-xs);
+  padding: 7px 11px;
   border-radius: 5px;
   white-space: nowrap;
 }
@@ -1378,7 +1691,7 @@ a.text-btn {
 }
 .payment-error {
   color: #db6767;
-  font-size: 11px;
+  font-size: var(--text-sm);
   margin: 10px 0 0;
 }
 
@@ -1389,9 +1702,17 @@ a.text-btn {
   text-align: center;
   gap: 10px;
   padding: 48px 24px;
+  width: min(460px, 100%);
+  /* This card is reused inline (e.g. the empty state inside a normal, wide
+     .panel) as well as on the full standalone error/not-found pages. The
+     standalone pages centre it via their wrapper's `justify-items: center`,
+     but an inline panel has no such wrapper — without its own auto margins
+     the capped width just left it hugging the left edge with dead space
+     beside it. */
+  margin-inline: auto;
 }
 .state-panel h2 {
-  font-size: 15px;
+  font-size: 17px;
   margin: 4px 0 0;
 }
 .state-panel .muted {
@@ -1406,9 +1727,9 @@ a.text-btn {
  * starts under it. minmax() rather than a flat 100dvh so a card taller than
  * the viewport grows its row instead of overflowing.
  *
- * align-items only — no justify-items. The auth cards are 400px and want
- * centering on both axes; these panels are full-width by design, so touching
- * the horizontal axis would shrink them to their content.
+ * justify-items: center matches the auth screens — the card (`.state-panel`,
+ * capped at 460px via `width: min()`) sits centered on both axes instead of
+ * stretching to the full 1500px shell width.
  */
 .standalone-state {
   padding: 34px 38px 48px;
@@ -1417,6 +1738,7 @@ a.text-btn {
   display: grid;
   grid-template-rows: minmax(100dvh, auto) auto;
   align-items: center;
+  justify-items: center;
 }
 
 /* ---- Auth and share screens (outside the app shell) ---- */
@@ -1448,13 +1770,21 @@ a.text-btn {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 15px;
-  padding: 32px 28px;
+  padding: 32px 20px;
+}
+@media (max-width: 480px) {
+  .auth-screen {
+    padding: 14px;
+  }
+  .auth-card {
+    padding: 22px 18px;
+  }
 }
 .auth-brand {
   padding: 0 0 20px;
 }
 .auth-card h1 {
-  font-size: 21px;
+  font-size: 23px;
   letter-spacing: -0.03em;
   margin: 0 0 6px;
 }
@@ -1472,7 +1802,7 @@ a.text-btn {
   border-radius: 9px;
   padding: 11px 12px;
   font: inherit;
-  font-size: 12px;
+  font-size: var(--text-base);
   margin-bottom: 2px;
 }
 .auth-form input:focus-visible {
@@ -1484,7 +1814,7 @@ a.text-btn {
 }
 .auth-notice {
   color: #df8627;
-  font-size: 11px;
+  font-size: var(--text-sm);
   margin: 14px 0 0;
   line-height: 1.5;
 }
@@ -1500,7 +1830,7 @@ a.text-btn {
 }
 .auth-tabs button {
   flex: 1;
-  font-size: 11px;
+  font-size: var(--text-sm);
   padding: 7px 6px;
 }
 
@@ -1510,7 +1840,7 @@ a.text-btn {
   gap: 10px;
   margin: 18px 0 14px;
   color: var(--muted-foreground);
-  font-size: 10px;
+  font-size: var(--text-xs);
 }
 .auth-divider::before,
 .auth-divider::after {
@@ -1527,29 +1857,10 @@ a.text-btn {
   color: #db6767;
   line-height: 1.5;
   margin: 4px 0 0;
-  font-size: 10px;
+  font-size: var(--text-xs);
 }
 .auth-form input[aria-invalid='true'] {
   border-color: #db6767;
-}
-
-/* Sign-out control in the sidebar profile row. */
-.profile form {
-  margin-left: auto;
-  display: flex;
-}
-.profile-signout {
-  border: 0;
-  background: transparent;
-  color: var(--muted-foreground);
-  display: grid;
-  place-items: center;
-  padding: 4px;
-  border-radius: 6px;
-}
-.profile-signout:hover {
-  color: var(--primary);
-  background: var(--muted);
 }
 
 /* Unmigrated-schema warning banner. */
@@ -1561,7 +1872,7 @@ a.text-btn {
   border-color: #f0d0a8;
 }
 .schema-notice h2 {
-  font-size: 14px;
+  font-size: 16px;
   margin: 0 0 5px;
 }
 .schema-notice-code {
@@ -1569,7 +1880,7 @@ a.text-btn {
   padding: 11px 12px;
   background: var(--muted);
   border-radius: 8px;
-  font-size: 10px;
+  font-size: var(--text-xs);
   line-height: 1.7;
   overflow-x: auto;
   white-space: pre;
@@ -1590,20 +1901,29 @@ a.text-btn {
   margin: 14px 0 14px 14px;
   border: 1px solid var(--border);
   border-radius: 22px;
-  padding: 20px 12px 14px;
+  padding: 20px 8px 14px;
 
   /* Stay put while the page scrolls, instead of scrolling away. */
   position: sticky;
   top: 14px;
   align-self: flex-start;
-  height: calc(100vh - 28px);
+  /* dvh, not vh: on a phone or tablet browser, 100vh is the height with the
+     address bar HIDDEN, not the height actually on screen — so the sidebar
+     was consistently a browser-chrome's-worth too tall, and the account card
+     at its foot (.sidebar-bottom, pushed down by margin-top: auto) rendered
+     below the real fold with no visible cue that scrolling the sidebar
+     itself would reveal it. dvh tracks the real, current viewport as chrome
+     shows and hides. Same fix .auth-screen/.standalone-state already use
+     (see their comments) — just a hard height here instead of a grid row,
+     since this element needs one for its own overflow-y: auto to make sense. */
+  height: calc(100dvh - 28px);
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
 .brand {
-  padding: 0 10px 18px;
+  padding: 0 6px 18px;
 }
 
 .sidebar nav {
@@ -1634,13 +1954,13 @@ a.text-btn {
 
 /* Circular count badge. */
 .nav-count {
-  min-width: 20px;
-  height: 20px;
+  min-width: 22px;
+  height: 22px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   padding: 0 5px;
-  font-size: 10px;
+  font-size: var(--text-xs);
   font-weight: 700;
 }
 /* !important is needed here only to beat the equally-!important brand
@@ -1651,36 +1971,111 @@ a.text-btn {
   color: var(--primary) !important;
 }
 
-/* Profile becomes a tinted card instead of a bordered row. */
+/* Profile becomes a tinted card instead of a bordered row. Kept minimal here
+   — margin-top only — because .profile is a <button> now (AccountMenu), and
+   .sidebar-bottom button (above) already outranks a bare .profile on
+   specificity for background/padding/gap the same way .sidebar-bottom a
+   used to for the anchor version. The rest of this rule lives on
+   button.profile, further down, for exactly that reason — see its comment. */
 .profile {
   margin-top: 12px;
   border-top: 0;
-  background: var(--muted);
-  border-radius: 14px;
-  padding: 11px 12px;
-  gap: 10px;
 }
 
-/* Full-width sign-out, visually separated from navigation: it is an exit,
-   not another destination. */
-.sidebar-logout {
-  width: 100%;
-  margin-top: 10px;
-  border: 0;
+/* The account menu (AccountMenu) — opens UPWARD, not down like .bell-panel:
+   its trigger sits at the bottom of a sticky sidebar, so a panel opening
+   downward would run off the viewport far more often than one opening up.
+   Same width as the sidebar column itself (left/right: 0, not a fixed
+   width) — a narrower floating menu here would look like it belonged to
+   the page behind it rather than to the card it comes out of. */
+.account-panel {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 13px;
+  padding: 6px;
+  box-shadow: 0 18px 48px -24px rgba(15, 23, 42, 0.38);
+  display: grid;
+  gap: 2px;
+}
+.account-panel-head {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 9px;
-  font-size: 12px;
-  font-weight: 650;
-  background: #1f2937;
-  color: #fff;
-  transition: background 0.15s;
+  padding: 9px 10px 12px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
 }
-.sidebar-logout:hover {
-  background: #111a26;
+/* Flex items default to a content-based minimum width, which is what would
+   otherwise stop text-overflow: ellipsis below from ever kicking in. */
+.account-panel-head > div {
+  min-width: 0;
+  flex: 1;
+}
+/* Same split as .profile (the trigger button) — the name wraps rather than
+   truncating to one line, the email still ellipsizes since it has no space
+   to wrap at. */
+.account-panel-head strong {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--text-base);
+  /* Same fix as .profile strong, same reason — see its comment. */
+  width: 100%;
+  overflow-wrap: break-word;
+}
+.account-panel-head small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  margin-top: 2px;
+}
+/* Element-qualified (an <a> for "โปรไฟล์"/"การตั้งค่า", a <button> for
+   sign-out) to match — not just meet — the specificity of the generic
+   `.sidebar-bottom a` / `.sidebar-bottom button` rules both items sit inside
+   (same fight `button.profile` above documents); placed after both in the
+   file, so it wins on source order once specificity is tied. Without this,
+   the generic rules' `color: var(--muted-foreground)` (and, on hover,
+   `color: var(--primary)`) would win instead, on specificity alone. */
+a.account-panel-item,
+button.account-panel-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  border-radius: 9px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--text-base);
+  color: var(--foreground);
+  text-align: left;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+a.account-panel-item:hover,
+button.account-panel-item:hover {
+  background: var(--muted);
+}
+/* Its own row, not another destination — matches the red hover convention
+   .row-action already uses for a leaving/removing action. Always a
+   <button> (the sign-out form's submit), so one selector is enough — but
+   still element-qualified, for the same reason as above: it has to outrank
+   `.account-panel-item`'s own color, not just this file's default one. */
+button.account-panel-signout {
+  color: #db6767;
+}
+button.account-panel-signout:hover {
+  background: #fdecec;
+  color: #c04a4a;
 }
 
 /* =========================================================================
@@ -1709,13 +2104,18 @@ a.text-btn {
 }
 
 /* Masks the 14px band above the stuck card. Without it the page's own content
-   is visible through the gap between the viewport edge and the topbar. */
+   is visible through the gap between the viewport edge and the topbar.
+   `bottom: 100%` resolves against .topbar's PADDING box (the containing
+   block for an absolutely positioned child excludes the border), so it lands
+   1px inside the border-top rather than above it and was painting over it.
+   The `+ 1px` moves the mask above the border instead of onto it, matching
+   how left/right already reach 1px past the border. */
 .topbar::before {
   content: '';
   position: absolute;
   left: -1px;
   right: -1px;
-  bottom: 100%;
+  bottom: calc(100% + 1px);
   height: 14px;
   background: var(--background);
 }
@@ -1727,7 +2127,21 @@ a.text-btn {
     position: fixed;
     top: 0;
     margin: 0;
-    height: 100vh;
+    /* dvh — see the base .sidebar rule's comment. Matters even more as a
+       fixed-position drawer than as a sticky one: this is the exact case
+       (phone/tablet Safari, address bar showing) the account card at the
+       foot of the sidebar was reported "sunk" below the fold in. */
+    height: 100dvh;
+    /* dvh alone was not the whole fix, on iOS specifically: Safari's
+       COMPACT address bar (iOS 15+) floats as a pill drawn on top of the
+       page rather than reserving its own strip of the viewport, so the
+       visual viewport dvh reports does not shrink for it — the account
+       card at the foot of this drawer sat exactly behind that pill.
+       `env(safe-area-inset-bottom)` is what Safari actually publishes to
+       account for it (needs `viewport-fit: cover` on the viewport meta,
+       see layout.tsx); falls back to 0 anywhere without it, which is why
+       the base 14px bottom padding is kept as the addend, not replaced. */
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
     border-radius: 0 22px 22px 0;
     border-left: 0;
   }
@@ -1809,6 +2223,36 @@ a.text-btn {
   gap: 7px;
 }
 
+/* Inline rename for the workspace name — sits in the ownership panel where a
+   plain <strong> used to be, so it stays on one line: field then button. */
+.workspace-name-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.workspace-name-form input {
+  flex: 1 1 200px;
+  min-width: 0;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
+  border-radius: 8px;
+  padding: 6px 9px;
+  font: inherit;
+  font-size: var(--text-sm);
+}
+.workspace-name-form input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.workspace-name-form input[aria-invalid='true'] {
+  border-color: var(--destructive);
+}
+.workspace-name-form .field-error {
+  flex-basis: 100%;
+}
+
 /* Inline role selector. Sized down from .work-form's inputs so the row keeps
    a table's rhythm rather than a form's. */
 .member-role-form select {
@@ -1818,7 +2262,7 @@ a.text-btn {
   border-radius: 8px;
   padding: 5px 8px;
   font: inherit;
-  font-size: 11px;
+  font-size: var(--text-sm);
   max-width: 160px;
 }
 .member-role-form select:focus-visible {
@@ -1846,7 +2290,7 @@ td.row-actions {
   border-radius: 8px;
   padding: 5px 9px;
   font: inherit;
-  font-size: 11px;
+  font-size: var(--text-sm);
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
@@ -1858,7 +2302,7 @@ td.row-actions {
   border-color: #db6767;
   background: #fdecec;
   color: #c04a4a;
-  font-weight: 650;
+  font-weight: 600; /* was 650 — see .primary's comment */
 }
 .row-action:disabled {
   opacity: 0.6;
@@ -1874,7 +2318,7 @@ td.row-actions {
 .member-avatar {
   width: 26px;
   height: 26px;
-  font-size: 10px;
+  font-size: var(--text-xs);
   flex: none;
 }
 
@@ -1892,12 +2336,14 @@ td.row-actions {
   flex: none;
 }
 
-/* The identity card at the foot of the sidebar is a link to the account page.
-   The generic `.sidebar-bottom a` rules above would otherwise strip its tint
-   and mute the name, so the card's own look is restated here — later in the
-   file, at equal specificity, so it wins on source order. */
-a.profile {
-  text-decoration: none;
+/* The identity card at the foot of the sidebar opens the account menu
+   (AccountMenu) now — a <button>, not a link straight to the account page.
+   The generic `.sidebar-bottom button` rule (near the top of this file) would
+   otherwise strip its tint and mute the name the same way `.sidebar-bottom a`
+   used to for the anchor version this replaced, so the card's own look is
+   restated here — later in the file, at equal specificity, so it wins on
+   source order. */
+button.profile {
   color: inherit;
   background: var(--muted);
   border-radius: 14px;
@@ -1905,18 +2351,23 @@ a.profile {
   gap: 10px;
   transition: background 0.15s, color 0.15s;
 }
-a.profile strong {
+button.profile strong {
   color: var(--foreground);
 }
-a.profile:hover,
-a.profile[aria-current='page'] {
+/* [aria-current='page'] — the account page is open right now, same as any
+   nav item. [aria-expanded='true'] — the menu itself is open. Either one
+   reads as "this row is the active one" the same way. */
+button.profile:hover,
+button.profile[aria-current='page'],
+button.profile[aria-expanded='true'] {
   background: #eef7ff;
 }
-a.profile:hover strong,
-a.profile[aria-current='page'] strong {
+button.profile:hover strong,
+button.profile[aria-current='page'] strong,
+button.profile[aria-expanded='true'] strong {
   color: var(--primary);
 }
-a.profile:focus-visible {
+button.profile:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
@@ -1959,12 +2410,12 @@ a.profile:focus-visible {
 
 .bell-panel-head strong {
   display: block;
-  font-size: 13px;
+  font-size: var(--text-md);
   letter-spacing: -0.02em;
 }
 .bell-panel-head small {
   display: block;
-  font-size: 10px;
+  font-size: var(--text-xs);
   margin-top: 3px;
 }
 
@@ -1973,6 +2424,7 @@ a.profile:focus-visible {
 .bell-panel-body {
   max-height: min(60vh, 380px);
   overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior: contain;
 }
 
@@ -1981,6 +2433,15 @@ a.profile:focus-visible {
 .bell-panel-body .activity-list {
   margin-top: 14px;
   gap: 14px;
+}
+/* The rows' hover state normally bleeds 8px past the list on both sides (see
+   .activity-list .activity-link) so it reaches the card's own edge. Inside
+   the dropdown the right edge is the scrollbar, not the card border — bleeding
+   into it left the hover rectangle's corner clipped square and the time label
+   crammed against the thumb. Dropping the right-side bleed pulls both back by
+   8px, clear of the scrollbar. */
+.bell-panel-body .activity-list .activity-link {
+  margin-right: 0;
 }
 .bell-panel-body .empty-inline {
   margin: 14px 0 0;
@@ -2015,11 +2476,11 @@ a.profile:focus-visible {
   gap: 7px;
   height: 34px;
   padding: 0 13px;
-  border-radius: 999px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--card);
   color: var(--muted-foreground);
-  font-size: 12px;
+  font-size: var(--text-base);
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 .feedback-trigger:hover,
@@ -2041,15 +2502,19 @@ a.profile:focus-visible {
   padding: 16px;
   box-shadow: 0 18px 48px -24px rgba(15, 23, 42, 0.38);
 }
+/* Only shown once the bottom-sheet layout below turns it into a real overlay. */
+.feedback-backdrop {
+  display: none;
+}
 
 .feedback-head strong {
   display: block;
-  font-size: 13px;
+  font-size: var(--text-md);
   letter-spacing: -0.02em;
 }
 .feedback-head small {
   display: block;
-  font-size: 10px;
+  font-size: var(--text-xs);
   margin-top: 3px;
 }
 
@@ -2100,10 +2565,10 @@ a.profile:focus-visible {
   background: var(--accent);
 }
 .feedback-choice strong {
-  font-size: 13px;
+  font-size: var(--text-md);
 }
 .feedback-choice small {
-  font-size: 10px;
+  font-size: var(--text-xs);
   color: var(--muted-foreground);
 }
 /* The only two colours in this panel that are not the brand blue. An issue is
@@ -2127,7 +2592,7 @@ a.profile:focus-visible {
   background: var(--muted);
   color: var(--foreground);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--text-base);
   line-height: 1.6;
   /* Vertical only: the panel has a fixed width, and a textarea dragged wider
      than its card is the one resize handle nobody wants. */
@@ -2152,7 +2617,7 @@ a.profile:focus-visible {
   border-radius: 10px;
   background: var(--accent);
   color: var(--primary);
-  font-size: 11px;
+  font-size: var(--text-sm);
 }
 .feedback-attachment span {
   flex: 1;
@@ -2177,13 +2642,42 @@ a.profile:focus-visible {
   gap: 10px;
   margin-top: 14px;
 }
-.feedback-help {
-  font-size: 11px;
+/* "ขอความช่วยเหลือแทน" and "ส่งความคิดเห็นแทน" — the two doors between the
+   panel's screens. Styled as text, not as buttons: they are the way out of a
+   screen, and a second filled button next to Send would compete with it. */
+.feedback-switch {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: var(--text-sm);
   color: var(--muted-foreground);
   text-decoration: none;
+  text-align: left;
 }
-.feedback-help:hover {
+.feedback-switch:hover {
   color: var(--primary);
+}
+/* On the first and last screens there is no Send to sit beside, so it takes
+   the full width under the content instead. */
+.feedback-switch-block {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  text-align: center;
+  background: var(--card);
+}
+.feedback-switch-block:hover {
+  border-color: var(--primary);
+}
+/* The choose screen keeps it as plain text under the two cards. */
+.feedback-choices + .feedback-switch {
+  display: block;
+  margin-top: 12px;
+  text-align: center;
+  width: 100%;
 }
 .feedback-send {
   display: flex;
@@ -2214,11 +2708,100 @@ a.profile:focus-visible {
   border: 1px solid var(--primary);
   background: var(--primary);
   color: var(--primary-foreground);
-  font-size: 12px;
+  font-size: var(--text-base);
 }
 .feedback-submit:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+/* The attach menu: upload a file, or photograph the page. Opens UPWARD —
+   the button already sits at the bottom of a dropdown, and a menu growing
+   downward from there lands off the bottom of a laptop screen. */
+.feedback-attach-wrap {
+  position: relative;
+}
+.feedback-attach-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  z-index: 2;
+  width: max-content;
+  min-width: 168px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: 0 16px 40px -22px rgba(15, 23, 42, 0.4);
+}
+.feedback-attach-menu button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--foreground);
+  font-size: var(--text-base);
+  text-align: left;
+}
+.feedback-attach-menu button:hover {
+  background: var(--accent);
+  color: var(--primary);
+}
+
+/* While the page is being photographed the whole widget steps out of frame.
+   `visibility`, not `display`: removing the panel from layout would reflow the
+   page a frame before the capture and photograph a topbar mid-jump. */
+.feedback-capturing {
+  visibility: hidden;
+}
+
+/* The help screen's destinations. A row is an icon, two lines of text and a
+   chevron — the same anatomy as the notification feed's entries, because both
+   answer "where does this take me?". */
+.feedback-links {
+  display: grid;
+  gap: 2px;
+  margin-top: 12px;
+}
+.feedback-links a {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px;
+  border-radius: 12px;
+  color: var(--foreground);
+  text-decoration: none;
+}
+.feedback-links a:hover {
+  background: var(--muted);
+}
+.feedback-links a > svg:first-child {
+  flex: none;
+  color: var(--primary);
+}
+.feedback-links a > span {
+  flex: 1;
+  min-width: 0;
+}
+.feedback-links strong {
+  display: block;
+  font-size: var(--text-base);
+  letter-spacing: -0.01em;
+}
+.feedback-links small {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--muted-foreground);
+}
+.feedback-links a > svg:last-child {
+  flex: none;
+  color: var(--muted-foreground);
 }
 
 @media (max-width: 700px) {
@@ -2233,11 +2816,29 @@ a.profile:focus-visible {
     justify-content: center;
     border-radius: 8px;
   }
-  /* Anchored to the bar's right edge, the panel would hang off the narrowest
-     phones — the same correction the bell panel makes. */
+  /* A dropdown anchored under a topbar button doesn't work at phone widths —
+     it either hangs off the edge or, with a form this tall, runs off the
+     bottom of the screen. Below the panel becomes a bottom sheet instead:
+     pinned to the viewport edges, sliding up from the bottom, with its own
+     scroll for content taller than the screen. */
   .feedback-panel {
-    right: -6px;
-    width: min(340px, calc(100vw - 32px));
+    position: fixed;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -18px 48px -24px rgba(15, 23, 42, 0.38);
+  }
+  .feedback-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 19;
+    background: #0f172a4d;
   }
 }
 
@@ -2253,7 +2854,7 @@ a.profile:focus-visible {
    ours for the /work subtree, and paints an explicit ground so no host colour
    shows through around or behind the page. */
 .work-root {
-  font-family: var(--font-thai), Arial, Helvetica, sans-serif;
+  font-family: var(--font-kanit), Arial, Helvetica, sans-serif;
   color: var(--foreground);
   background: var(--background);
   min-height: 100vh;
@@ -2272,6 +2873,13 @@ a.profile:focus-visible {
   gap: 16px 18px;
   margin-top: 4px;
 }
+/* Whatever follows the form (an empty state, a results table) had no
+   separation from it — .form-actions only carries a 2px margin-top, so the
+   submit button sat almost flush against the card below it. */
+.work-form + .state-panel,
+.work-form + .table-wrap {
+  margin-top: 20px;
+}
 .work-form > label {
   display: grid;
   gap: 6px;
@@ -2282,7 +2890,7 @@ a.profile:focus-visible {
   grid-column: 1 / -1;
 }
 .work-form > label > span {
-  font-size: 11px;
+  font-size: var(--text-sm);
   color: var(--muted-foreground);
 }
 .work-form input,
@@ -2294,7 +2902,7 @@ a.profile:focus-visible {
   border-radius: 9px;
   padding: 10px 12px;
   font: inherit;
-  font-size: 12px;
+  font-size: var(--text-base);
   width: 100%;
 }
 .work-form textarea {
@@ -2316,6 +2924,37 @@ a.profile:focus-visible {
 .work-form label.checkbox input {
   width: auto;
 }
+.work-form fieldset.vat-choice {
+  grid-column: 1 / -1;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.work-form fieldset.vat-choice legend {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted-foreground);
+  padding: 0 4px;
+}
+.work-form label.radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-md);
+}
+.work-form label.radio input {
+  width: auto;
+}
+.work-form .vat-disclaimer {
+  grid-column: 1 / -1;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+}
 .work-form .form-actions {
   display: flex;
   gap: 10px;
@@ -2333,10 +2972,664 @@ a.profile:focus-visible {
   }
 }
 
+/* Any direct child tagged .full spans the whole two-column grid — not just
+   <label>, which was the only element the earlier rule covered. The payment
+   plan editor drops a <div> and a <p> in here that were landing in one cell. */
+.work-form > .full {
+  grid-column: 1 / -1;
+}
+
+/* =========================================================================
+   PRICING ITEMS — optional draft rows on the create-project form
+   (components/work/domain/pricing-items-fieldset.tsx)
+   Only .pricing-fieldset-rows below was ever styled, so the fieldset had no
+   container, every control in a row inherited .work-form's width:100% and
+   stacked, and the two totals ran together with no space between them.
+   ========================================================================= */
+.pricing-fieldset {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  background: var(--muted);
+}
+.pricing-fieldset-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 14px;
+}
+.pricing-fieldset-head > span {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted-foreground);
+}
+/* .work-form's width:100% would stretch the add button across the row. */
+.pricing-fieldset-head > button {
+  width: auto;
+  flex: none;
+}
+/* Kind, name, quantity, unit price, delete — one row per item. */
+.pricing-fieldset-row {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) 88px 150px 36px;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+}
+.pricing-fieldset-row .icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+.pricing-fieldset-row .icon-button:hover {
+  color: var(--destructive);
+  border-color: var(--destructive);
+}
+.pricing-fieldset-totals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 6px 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: var(--text-base);
+  color: var(--muted-foreground);
+}
+.pricing-fieldset-totals strong {
+  color: var(--foreground);
+  font-size: var(--text-md);
+  font-weight: 600; /* was 650 — see .primary's comment */
+}
+
+/* Two columns is as narrow as the row reads: kind sits beside the name, then
+   quantity beside the unit price, with the delete button on its own line. */
+@media (max-width: 720px) {
+  .pricing-fieldset-row {
+    grid-template-columns: 120px minmax(0, 1fr);
+  }
+  .pricing-fieldset-row .icon-button {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
+/* =========================================================================
+   PAYMENT PLAN — milestone draft editor (payment-plan-form.tsx)
+   The rows and their controls had no styling, so every field stacked at full
+   width with no grouping and the "เพิ่มงวด" button stretched to fill a grid
+   cell on the right.
+   ========================================================================= */
+.pricing-fieldset-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.milestone-draft-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px 180px;
+  gap: 10px 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}
+.milestone-draft-row > input {
+  grid-row: 1;
+}
+.milestone-draft-row .unlock-checkboxes {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.milestone-draft-row .icon-button {
+  grid-column: 1;
+  justify-self: start;
+  width: auto;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.milestone-draft-row .icon-button:hover {
+  color: var(--foreground);
+  border-color: var(--muted-foreground);
+}
+.milestone-draft-row > small.muted {
+  grid-column: 2 / -1;
+  justify-self: end;
+  font-size: var(--text-base);
+  color: var(--foreground);
+}
+.milestone-add {
+  justify-self: start;
+}
+/* The ฿250 start-payment row reads differently from the rest of the schedule
+   — it is the one that unblocks the project actually starting. */
+.milestone-draft-row.is-start {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 4%, var(--card));
+}
+.milestone-draft-row .start-payment-radio {
+  grid-column: 1 / -1;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+}
+.milestone-draft-row.is-start .start-payment-radio {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* =========================================================================
+   PAYMENT PLAN — comparison, change requests, overview
+   ========================================================================= */
+.plan-comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+.plan-comparison-col {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: var(--card);
+  min-width: 0;
+}
+.plan-comparison-col h4 {
+  font-size: var(--text-base);
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+.plan-comparison-col-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.plan-comparison-col p {
+  font-size: var(--text-sm);
+  margin: 6px 0 0;
+}
+.plan-comparison-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.plan-comparison-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--text-sm);
+}
+.plan-comparison-list li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.plan-comparison-list li small {
+  grid-column: 1 / -1;
+  font-size: var(--text-xs);
+}
+.plan-comparison-diff {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: var(--text-sm);
+}
+@media (max-width: 720px) {
+  .plan-comparison-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.change-request-list {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.change-request-row {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: var(--card);
+}
+.change-request-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 8px;
+}
+.change-request-head .muted {
+  font-size: var(--text-xs);
+}
+.change-request-row p {
+  font-size: var(--text-base);
+  margin: 0 0 8px;
+  line-height: 1.6;
+}
+
+/* Admin's money-at-a-glance strip above the milestone table. */
+.payment-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px 18px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}
+.payment-overview > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.payment-overview span {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+.payment-overview strong {
+  font-size: var(--text-md);
+}
+
+/* Client-side progress line on the portal payments page. */
+.payment-progress-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px 14px;
+  margin-top: 16px;
+}
+.payment-progress-row strong {
+  font-size: 22px;
+}
+.payment-progress-row small {
+  grid-column: 1 / -1;
+  font-size: var(--text-sm);
+}
+
+.plan-status-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+.plan-status-line .muted {
+  font-size: var(--text-sm);
+}
+.plan-decision {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.plan-decision .form-actions {
+  justify-content: flex-start;
+}
+
+/* Inline forms that open inside a table cell — keep them from stretching the
+   row's column to the width of a full form grid. */
+.manual-proof-form,
+.verify-payment-form {
+  min-width: 260px;
+  margin-top: 8px;
+}
+.start-project-form {
+  display: inline-flex;
+}
+
+/* =========================================================================
+   PROJECT TIMELINE — work milestones (Phase 4)
+   Deliberately styled apart from the payment tables above: work and money
+   are different things and should not read as one list.
+   ========================================================================= */
+.work-timeline {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.work-timeline-item {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 0 14px;
+  padding-bottom: 20px;
+  position: relative;
+}
+/* The connecting rail, drawn from each marker down to the next one. */
+.work-timeline-item::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 26px;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+.work-timeline-item:last-child {
+  padding-bottom: 0;
+}
+.work-timeline-item:last-child::before {
+  display: none;
+}
+.work-timeline-marker {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--muted-foreground);
+  z-index: 1;
+}
+.work-timeline-item.done .work-timeline-marker {
+  background: #def8ed;
+  border-color: #249b6a;
+  color: #249b6a;
+}
+.work-timeline-item.active .work-timeline-marker {
+  background: #e5f2ff;
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.work-timeline-item.warn .work-timeline-marker {
+  background: #fff1dc;
+  border-color: #df8627;
+  color: #df8627;
+}
+.work-timeline-item.cancelled .work-timeline-marker {
+  opacity: 0.55;
+}
+.work-timeline-item.cancelled .work-timeline-body {
+  opacity: 0.6;
+}
+.work-timeline-body {
+  min-width: 0;
+  padding-top: 3px;
+}
+.work-timeline-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+.work-timeline-head strong {
+  font-size: var(--text-base);
+}
+/* The optional phase band (migration 0038). A quiet chip, not a status —
+   it groups milestones, it never says anything about their state. */
+.work-timeline-phase {
+  font-size: var(--text-2xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
+  background: color-mix(in srgb, var(--muted-foreground) 6%, var(--card));
+}
+/* Seeding the default timeline is an empty-state affordance, so it sits with
+   its explanation rather than competing with the primary add button. */
+.milestone-template-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+.milestone-template-form small {
+  font-size: var(--text-xs);
+}
+.work-timeline-desc {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  line-height: 1.6;
+  margin: 6px 0 0;
+}
+.work-timeline-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 7px;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+/* The money reference reads as a cross-link, not as a payment status. */
+.work-timeline-payment-ref {
+  color: var(--primary);
+}
+.work-timeline-note {
+  margin: 9px 0 0;
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--primary) 5%, var(--card));
+  border: 1px solid var(--border);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+}
+.work-timeline-note.override {
+  background: #fff6ec;
+  border-color: #f0d5b4;
+}
+.work-timeline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+}
+.work-timeline-actions .work-form {
+  flex-basis: 100%;
+  min-width: 0;
+}
+.inline-action {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+.inline-action button {
+  font-size: var(--text-sm);
+  padding: 7px 11px;
+}
+.milestone-edit-form,
+.override-form,
+.milestone-review-form {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}
+.milestone-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.milestone-review-actions .muted {
+  font-size: var(--text-sm);
+}
+
+/* Work progress and payment progress, side by side but never merged. */
+.progress-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+.progress-split-body {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+.progress-split-body > strong {
+  font-size: 28px;
+  line-height: 1;
+}
+.progress-split-body > small {
+  font-size: var(--text-sm);
+}
+.progress-split-next {
+  display: grid;
+  gap: 3px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.progress-split-next span {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+.progress-split-next strong {
+  font-size: var(--text-base);
+}
+
+.timeline-comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+.timeline-comparison-col {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: var(--card);
+  min-width: 0;
+}
+.timeline-comparison-col.agreed {
+  border-color: var(--primary);
+}
+.timeline-comparison-col h4 {
+  font-size: var(--text-base);
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+.timeline-comparison-col dl {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.timeline-comparison-col dl > div {
+  display: grid;
+  gap: 2px;
+}
+.timeline-comparison-col dt {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+.timeline-comparison-col dd {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 500;
+}
+
+.reorder-controls {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+}
+.reorder-list {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  counter-reset: reorder;
+}
+.reorder-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-sm);
+  counter-increment: reorder;
+}
+.reorder-list li span::before {
+  content: counter(reorder) '. ';
+  color: var(--muted-foreground);
+}
+.reorder-list .icon-button {
+  width: auto;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--card);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  display: inline-flex;
+}
+.reorder-list .icon-button:hover {
+  color: var(--foreground);
+  border-color: var(--muted-foreground);
+}
+
+@media (max-width: 900px) {
+  .timeline-comparison-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 720px) {
+  .progress-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 720px) {
+  .milestone-draft-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .milestone-draft-row > input {
+    grid-row: auto;
+  }
+  .milestone-draft-row > small.muted {
+    grid-column: 1;
+    justify-self: start;
+  }
+}
+
 /* Empty state inside a panel that already has a heading — a full state card
    would repeat the title directly above it. */
 .empty-inline {
-  font-size: 12px;
+  font-size: var(--text-base);
   padding: 18px 2px 6px;
   margin: 0;
 }
@@ -2354,7 +3647,7 @@ a.profile:focus-visible {
   margin-top: 40px;
   padding-top: 18px;
   border-top: 1px solid var(--border);
-  font-size: 11px;
+  font-size: var(--text-sm);
   color: var(--muted-foreground);
 }
 .work-footer-brand {
@@ -2412,7 +3705,7 @@ a.profile:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 12px;
+  font-size: var(--text-base);
   color: var(--muted-foreground);
   margin-bottom: 18px;
 }
@@ -2423,17 +3716,17 @@ a.profile:focus-visible {
   padding: 32px 30px;
 }
 .legal-head h1 {
-  font-size: 24px;
+  font-size: 26px;
   letter-spacing: -0.03em;
   margin: 0 0 8px;
 }
 .legal-head .muted {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--text-md);
 }
 .legal-updated {
   margin: 14px 0 0;
-  font-size: 11px;
+  font-size: var(--text-sm);
   color: var(--muted-foreground);
 }
 .legal-body {
@@ -2442,14 +3735,14 @@ a.profile:focus-visible {
   gap: 26px;
 }
 .legal-section h2 {
-  font-size: 14px;
+  font-size: 16px;
   margin: 0 0 8px;
 }
 /* Prose, not UI: a slightly longer line-height than the dense dashboard
    tables, because these paragraphs are actually read. */
 .legal-section p,
 .legal-section li {
-  font-size: 13px;
+  font-size: var(--text-md);
   line-height: 1.85;
   color: var(--muted-foreground);
   margin: 0 0 10px;
@@ -2460,7 +3753,7 @@ a.profile:focus-visible {
 }
 .legal-section strong {
   color: var(--foreground);
-  font-weight: 650;
+  font-weight: 600; /* was 650 — see .primary's comment */
 }
 .legal-section ul {
   margin: 0 0 10px;
@@ -2483,7 +3776,67 @@ a.profile:focus-visible {
     padding: 22px 18px;
   }
   .legal-head h1 {
-    font-size: 20px;
+    font-size: 22px;
+  }
+}
+
+/* Signed-out landing (app/work/page.tsx). Borrows the .legal-page column and
+   its footer-pinning trick; only the hero card and the feature grid are new. */
+.work-home-hero {
+  padding: 30px 30px 24px;
+}
+.work-home-hero h1 {
+  font-size: 26px;
+  line-height: 1.3;
+  letter-spacing: -0.03em;
+  margin: 4px 0 10px;
+}
+.work-home-hero .muted {
+  font-size: var(--text-md);
+  line-height: 1.8;
+}
+.work-home-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 20px 0 16px;
+}
+.work-home-hero .secure-note {
+  justify-content: flex-start;
+  text-align: left;
+}
+.work-home-features {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.work-home-feature {
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.work-home-feature h2 {
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+}
+.work-home-feature p {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.75;
+  color: var(--muted-foreground);
+}
+@media (max-width: 700px) {
+  .work-home-hero {
+    padding: 22px 18px;
+  }
+  .work-home-hero h1 {
+    font-size: 22px;
+  }
+  .work-home-features {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -2545,6 +3898,12 @@ a.profile:focus-visible {
    ผลคือทั้งเวิร์กสเปซกลายเป็นตัวหนากึ่งหนึ่งทุกตัวอักษร และ 'Bai Jamjuree'
    ก็ไม่มีใครโหลดในโปรเจกต์นี้อยู่แล้ว จึงตกไปใช้ Kanit เสมอ
    ชุดสีและกฎกันลากยังอยู่ครบ เอาออกเฉพาะส่วนตัวอักษร */
+/* ตอนหลัง (2026-09-08): /work เปลี่ยนไปใช้ Kanit จริงจังแล้ว — ผ่าน
+   layout.tsx โหลดเอง (ไม่ใช่ fallback จาก 'Bai Jamjuree' ที่ไม่มีใครโหลด
+   แบบครั้งนั้น) ที่น้ำหนัก 400/500/600/700/900 ตามที่ประกาศไว้จริง ไม่มี
+   font-weight บังคับทับ ตัวเลข/ตัวอักษรอังกฤษที่เคยใช้ Noto Sans Thai
+   (ชื่อโปรเจกต์ภาษาอังกฤษ, อีเมล, ตัวเลขในการ์ดสถิติ) หน้าตาดูเรียบไปเมื่อ
+   เทียบกับ Kanit ที่เว็บหลักใช้ — ดู var(--font-kanit) ด้านบน */
 
 /* ---- Sign-in methods ---- */
 .connection-rows {
@@ -2570,10 +3929,10 @@ a.profile:focus-visible {
   min-width: 0;
 }
 .connection-row strong {
-  font-size: 13px;
+  font-size: var(--text-md);
 }
 .connection-row small {
-  font-size: 11px;
+  font-size: var(--text-sm);
 }
 .connection-action {
   display: flex;
@@ -2587,7 +3946,7 @@ a.profile:focus-visible {
   display: flex;
 }
 .connection-form button {
-  font-size: 11px;
+  font-size: var(--text-sm);
   padding: 7px 13px;
 }
 
@@ -2602,7 +3961,8 @@ a.profile:focus-visible {
   transition: background 0.12s ease;
 }
 .activity-list .activity-link:hover {
-  background: var(--muted);
+  background: var(--accent);
+  color: var(--primary);
 }
 .activity-list .activity-link:focus-visible {
   outline: 2px solid var(--ring);
@@ -2610,6 +3970,9 @@ a.profile:focus-visible {
 }
 .activity-list .activity-link strong {
   color: var(--foreground);
+}
+.activity-list .activity-link:hover strong {
+  color: var(--primary);
 }
 
 /* ---- Password recovery ---- */
@@ -2619,7 +3982,7 @@ a.profile:focus-visible {
 .auth-secondary-link {
   justify-self: end;
   margin-top: 6px;
-  font-size: 11px;
+  font-size: var(--text-sm);
   color: var(--muted-foreground);
 }
 .auth-secondary-link:hover {
@@ -2628,7 +3991,7 @@ a.profile:focus-visible {
 .auth-alt {
   margin: 18px 0 0;
   text-align: center;
-  font-size: 11px;
+  font-size: var(--text-sm);
   color: var(--muted-foreground);
 }
 .auth-alt a:hover {
@@ -2642,4 +4005,718 @@ a.profile:focus-visible {
 }
 .auth-form .form-actions button {
   width: 100%;
+}
+
+/* =========================================================================
+   PHASE 10 — PAYMENTS
+   Additive only. The checkout modal's own styles already exist above
+   (.payment-modal and friends, unchanged since the prototype); what was
+   missing is everything around a checkout that can actually fail.
+   ========================================================================= */
+
+/* Table-row action button. The base .outline is sized for page headers and
+   looks oversized inside a table cell. */
+.btn-sm {
+  padding: 7px 11px;
+  font-size: var(--text-sm);
+}
+
+/* The provider's refusal, shown inside the modal above the pay button. It is
+   red because it means no payment was taken — the one thing the client must
+   not misread as success. */
+.payment-error {
+  color: var(--destructive, #d4183d);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 9px 11px;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  margin: 4px 0 12px;
+}
+
+/* Shown on return from the provider. Deliberately neutral rather than green:
+   coming back from checkout is not confirmation, and a success-coloured banner
+   would say otherwise before the webhook has said anything at all. */
+.checkout-notice {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  background: var(--card);
+  border-radius: 9px;
+  padding: 12px 14px;
+  font-size: var(--text-base);
+  line-height: 1.6;
+  color: var(--foreground);
+  margin: 0 0 18px;
+}
+
+/* Both banner variants of .checkout-notice (DRAFT "submit for review",
+   NEEDS_INFORMATION "we need more from you") lead with a <strong> title over a
+   muted explanation. Bold text alone is not a heading — it ran into the
+   paragraph under it. */
+.checkout-notice strong {
+  display: block;
+  font-size: var(--text-md);
+  margin-bottom: 5px;
+}
+.checkout-notice .form-actions {
+  margin-top: 10px;
+}
+
+/* =========================================================================
+   Scrollbar — /work does not import the host's globals.css (see
+   app/work/layout.tsx), so it never picked up the site-wide
+   `scrollbar-width: none` rule and was falling back to the bare OS
+   scrollbar. Give it a themed one instead, in the brand blue used
+   elsewhere in this file (#409EFE).
+   ========================================================================= */
+/*
+ * `.work-root ::-webkit-scrollbar` only reaches scrollbars on elements
+ * INSIDE .work-root. The one in the screenshot is the page/viewport
+ * scrollbar, which lives on <html>/<body> — an ancestor of .work-root, never
+ * a descendant — so none of the rules below ever matched it and nothing
+ * changed. `html:has(.work-root)` / `body:has(.work-root)` scope the root
+ * scrollbar to /work pages without leaking into the host site, since
+ * work.css is loaded alongside the host's globals.css everywhere (see the
+ * big comment above this block).
+ */
+html:has(.work-root),
+.work-root {
+  scrollbar-width: thin;
+  scrollbar-color: #409efe80 transparent;
+}
+/* Reserves the scrollbar's width on every /work page, even the ones short
+   enough not to overflow — otherwise the gutter only appears once a page
+   grows past the viewport, and every page shifts width by a few pixels the
+   moment it crosses that line. */
+html:has(.work-root) {
+  overflow-y: scroll;
+}
+html:has(.work-root)::-webkit-scrollbar,
+.work-root ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+html:has(.work-root)::-webkit-scrollbar-thumb,
+.work-root ::-webkit-scrollbar-thumb {
+  background: #409efe80;
+  border-radius: 9999px;
+}
+html:has(.work-root)::-webkit-scrollbar-thumb:hover,
+.work-root ::-webkit-scrollbar-thumb:hover {
+  background: #409efe;
+}
+html:has(.work-root)::-webkit-scrollbar-track,
+.work-root ::-webkit-scrollbar-track {
+  background: transparent;
+}
+/* Windows Chrome draws increment/decrement arrow buttons on scrollbars by
+   default, which the rules above never addressed — leaving a native grey
+   triangle cap on each end of an otherwise themed blue thumb. Hidden so the
+   scrollbar reads as one styled control end to end. */
+html:has(.work-root)::-webkit-scrollbar-button,
+.work-root ::-webkit-scrollbar-button {
+  display: none;
+}
+.project-card .project-card-meta .next-action {
+  color: var(--primary);
+  font-weight: 600;
+}
+.needs-info-banner form {
+  margin-top: 8px;
+}
+.projects-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.projects-filter-bar input[type='search'] {
+  flex: 1 1 240px;
+  min-width: 180px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  font-size: var(--text-md);
+}
+.projects-filter-bar select {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  font-size: var(--text-md);
+}
+.scope-checklist {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+/* =========================================================================
+   ORPHANED CLASS NAMES
+   Each selector below was already in the markup with no rule behind it, so
+   the element fell back to browser defaults. Grouped here rather than spread
+   across the file so the set stays auditable.
+   ========================================================================= */
+
+/* A <form> or <span> holding two or three controls that belong on one line.
+   As a plain block the controls wrapped with no gap and no shared baseline
+   (asset-review-form, members-panel role picker, my-projects-grid meta). */
+.row-inline {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.row-inline select,
+.row-inline input {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--foreground);
+  font: inherit;
+  font-size: var(--text-base);
+  padding: 7px 10px;
+}
+
+/* Reject, remove member, delete. Without this they inherited .text-btn's
+   --primary and read as an ordinary blue action. */
+.danger {
+  color: var(--destructive);
+}
+.text-btn.danger:hover,
+.outline.danger:hover {
+  color: var(--destructive);
+  border-color: var(--destructive);
+}
+
+/* Client-authored scope items on the review page — a bare <ul> with disc
+   bullets and the browser's 40px indent. */
+.scope-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.scope-list > li {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--card);
+  font-size: var(--text-md);
+}
+.scope-list > li > p {
+  margin: 4px 0 0;
+  font-size: var(--text-base);
+  line-height: 1.5;
+}
+
+/* The share URL is shown exactly once, so it needs to read as a callout —
+   and the token is long enough to overflow its container unbroken. */
+.share-link-created {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--primary);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--primary) 6%, var(--card));
+  font-size: var(--text-base);
+}
+.share-link-created > code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--text-base);
+  line-height: 1.5;
+  color: var(--foreground);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+/* Quotation text is stored with the author's line breaks; a plain <p>
+   collapsed the whole thing into one paragraph. */
+.agreement-body {
+  white-space: pre-wrap;
+  margin: 0 0 4px;
+  font-size: var(--text-md);
+  line-height: 1.7;
+  max-width: 68ch;
+}
+
+/* Intro copy above a form's fields. Most forms tag it .full by hand; the
+   three that forgot (record-payment, verify-payment, manual-proof) had the
+   sentence squeezed into one column of the two-column grid. */
+.work-form > p {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+/* -----------------------------------------------------------------------------
+   Phase 5 — documents and brand
+   Built from the tokens and primitives already in this file (--border, --muted,
+   --radius, --text-sm, .work-form, .table-wrap, .text-btn); no new colours and
+   no new type scale.
+   ----------------------------------------------------------------------------- */
+
+.document-manager {
+  display: grid;
+  gap: 24px;
+}
+.document-upload-form {
+  padding: 18px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--muted);
+}
+/* Actions stay on one line and wrap as a group, so a narrow column never splits
+   a single control across two rows. */
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.row-actions .inline-form {
+  display: inline-flex;
+  margin: 0;
+}
+.row-actions .inline-form button {
+  padding: 2px 8px;
+  font-size: var(--text-xs);
+}
+.row-drawer > td {
+  background: var(--muted);
+}
+.document-archive {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+.document-archive summary {
+  cursor: pointer;
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+}
+.document-archive ul {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.document-archive li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: var(--text-sm);
+}
+
+/* Brand ------------------------------------------------------------------- */
+
+.brand-display {
+  display: grid;
+  gap: 18px;
+}
+.brand-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.brand-swatch {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+  min-width: 112px;
+}
+/* An explicit border, because a swatch whose colour is near the card colour
+   would otherwise have no visible edge — white on white shows nothing. */
+.brand-swatch-chip {
+  display: block;
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+.brand-swatch figcaption {
+  display: grid;
+  font-size: var(--text-sm);
+}
+.brand-fonts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.brand-fonts li {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  font-size: var(--text-sm);
+}
+.brand-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.brand-editor-head h4 {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+.brand-editor-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.brand-editor-rows li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.brand-editor-rows input {
+  flex: 1 1 128px;
+  min-width: 0;
+}
+.brand-color-input {
+  flex: 0 0 48px;
+  padding: 0;
+  height: 36px;
+  cursor: pointer;
+}
+
+.asset-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+.asset-grid li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* -----------------------------------------------------------------------------
+   Phase 6 — publishing and source-code delivery
+   ----------------------------------------------------------------------------- */
+
+.publishing-panel {
+  display: grid;
+  gap: 24px;
+}
+.publishing-state {
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--muted);
+  display: grid;
+  gap: 14px;
+}
+.publishing-state .form-actions {
+  margin: 0;
+}
+.publishing-panel .inline-form {
+  display: inline-flex;
+  margin: 0;
+}
+
+/* -----------------------------------------------------------------------------
+   Phase 7 — delivery checklist and handover
+   ----------------------------------------------------------------------------- */
+
+.delivery-panel {
+  display: grid;
+  gap: 24px;
+}
+.delivery-progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--muted);
+}
+.delivery-progress > div {
+  display: grid;
+  gap: 2px;
+  font-size: var(--text-sm);
+}
+.delivery-percent {
+  font-size: var(--text-base);
+}
+.handover-form {
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+}
+/* Chips for the client's original, frozen request — visually distinct from the
+   agreed table so the two lists are never mistaken for one another. */
+.requested-chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.requested-chips li {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--muted);
+  font-size: var(--text-sm);
+}
+.handover-ack {
+  display: grid;
+  gap: 18px;
+}
+.handover-ack-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.handover-ack-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: var(--text-sm);
+}
+
+/* -----------------------------------------------------------------------------
+   Phase 8 — change-request review and maintenance
+   ----------------------------------------------------------------------------- */
+
+.cr-review {
+  display: grid;
+  gap: 18px;
+}
+.cr-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+.cr-card > header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.cr-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* The client's own words, visually quoted so they are never mistaken for the
+   team's agreed scope beside them. */
+.cr-client-text {
+  margin: 0;
+  padding: 12px 14px;
+  border-left: 3px solid var(--border);
+  background: var(--muted);
+  border-radius: 0 12px 12px 0;
+  font-size: var(--text-sm);
+}
+.cr-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin: 0;
+}
+.cr-facts dt {
+  color: var(--muted-foreground);
+  font-size: var(--text-xs);
+}
+.cr-facts dd {
+  margin: 2px 0 0;
+  font-size: var(--text-sm);
+}
+.cr-decision {
+  display: grid;
+  gap: 18px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+.maintenance-panel {
+  display: grid;
+  gap: 24px;
+}
+.maintenance-records {
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+  display: grid;
+  gap: 14px;
+}
+.maintenance-records h4 {
+  margin: 0;
+  font-size: var(--text-sm);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.plan-state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.service-editor {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.service-editor input {
+  flex: 1 1 auto;
+}
+.field-label {
+  display: block;
+  font-size: var(--text-sm);
+  margin-bottom: 4px;
+}
+
+/* -----------------------------------------------------------------------------
+   Phase 9 — notifications and reports
+   ----------------------------------------------------------------------------- */
+
+.notification-list {
+  display: grid;
+  gap: 12px;
+}
+.notification-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.notification-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.notification-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: var(--text-sm);
+}
+/* Unread carries a tint AND a dot: colour alone would be the only signal for
+   anyone who cannot distinguish it. */
+.notification-list li.unread {
+  background: var(--muted);
+}
+.notification-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex: 0 0 auto;
+  background: var(--muted-foreground);
+}
+.notification-list li.unread .notification-dot {
+  background: var(--primary);
+}
+.notification-body {
+  display: grid;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.notification-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.notification-row-actions button {
+  padding: 2px 8px;
+  font-size: var(--text-xs);
+}
+
+.report-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 18px;
+}
+.report-metric {
+  display: grid;
+  gap: 4px;
+  font-size: var(--text-sm);
+}
+.report-metric strong {
+  font-size: var(--text-base);
+}
+.report-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--muted);
+  overflow: hidden;
+}
+.report-bar span {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+}
+
+/* Admin project list — active / archived views. */
+.project-view-tabs {
+  margin-bottom: 14px;
+}
+/* Reads as a state, not an error: archiving is a deliberate, reversible act. */
+.archived-flag {
+  color: var(--muted-foreground);
+  font-weight: 600;
+}
+
+/* Clickable stat cards (admin project list). Same box as a plain .stat-card —
+   only the affordances are added, so the two sit in one grid without the
+   linked ones looking like a different component. */
+.stat-card-link {
+  display: flex;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.stat-card-link:hover {
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+/* The applied filter is marked with a border AND a ring, not colour alone. */
+.stat-card-link.selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary) inset;
+}
+.stat-card-link:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Client-uploaded logo in the project list. Same footprint as the generic
+   .project-icon so rows with and without a logo line up exactly. */
+.project-icon-logo {
+  object-fit: contain;
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 3px;
 }

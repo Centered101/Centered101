@@ -21,6 +21,15 @@ export type ChangeRequestItem = {
   requestedByEmail: string | null
   createdAt: string
   resolvedAt: string | null
+  // Phase 8 (migration 0042): the review record. `agreedScope` sits BESIDE
+  // `description` — the client's own words are never overwritten.
+  agreedScope: string | null
+  decisionReason: string | null
+  impactDays: number | null
+  workMilestoneId: string | null
+  reviewedByName: string | null
+  reviewedAt: string | null
+  completedAt: string | null
 }
 
 type ChangeRequestRow = {
@@ -35,8 +44,15 @@ type ChangeRequestRow = {
   currency: string
   created_at: string
   resolved_at: string | null
+  agreed_scope: string | null
+  decision_reason: string | null
+  impact_days: number | null
+  work_milestone_id: string | null
+  reviewed_at: string | null
+  completed_at: string | null
   projects: { name: string } | null
   profiles: { full_name: string | null; email: string } | null
+  reviewer: { full_name: string | null } | null
 }
 
 // Thai labels for these live in lib/work/format.ts with every other enum's,
@@ -52,7 +68,10 @@ export async function getChangeRequests(
     .from('change_requests')
     .select(
       'id, project_id, request_code, title, description, status, priority, estimated_amount, ' +
-        'currency, created_at, resolved_at, projects(name), profiles(full_name, email)',
+        'currency, created_at, resolved_at, agreed_scope, decision_reason, impact_days, ' +
+        'work_milestone_id, reviewed_at, completed_at, projects(name), ' +
+        'profiles!change_requests_requested_by_fkey(full_name, email), ' +
+        'reviewer:profiles!change_requests_reviewed_by_fkey(full_name)',
     )
     .order('created_at', { ascending: false })
 
@@ -76,5 +95,12 @@ export async function getChangeRequests(
     requestedByEmail: row.profiles?.email ?? null,
     createdAt: row.created_at,
     resolvedAt: row.resolved_at,
+    agreedScope: row.agreed_scope,
+    decisionReason: row.decision_reason,
+    impactDays: row.impact_days,
+    workMilestoneId: row.work_milestone_id,
+    reviewedByName: row.reviewer?.full_name ?? null,
+    reviewedAt: row.reviewed_at,
+    completedAt: row.completed_at,
   }))
 }

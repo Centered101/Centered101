@@ -56,14 +56,43 @@ export function ProjectsTable({
             <tr key={project.id}>
               <td>
                 <div className="project-name">
-                  <div className={`project-icon ${idTone(project.id)}`}>
-                    <Code2 size={16} />
-                  </div>
+                  {/* The client's OWN logo when they uploaded one at intake,
+                      so a row is recognisable at a glance instead of every
+                      project wearing the same generic mark. Falls back to the
+                      id-toned icon, which is what every project had before.
+
+                      No signed URL is minted here: the src points at the
+                      existing asset download route, which authorizes under the
+                      caller's session and redirects to a short-lived signed
+                      URL — the same approach AssetThumbnail already uses. */}
+                  {project.logoAssetId ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`/work/api/assets/${project.logoAssetId}/download`}
+                      alt=""
+                      className="project-icon project-icon-logo"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className={`project-icon ${idTone(project.id)}`}>
+                      <Code2 size={16} />
+                    </div>
+                  )}
                   <span>
                     <strong>
                       <Link href={`${basePath}/${project.id}`}>{project.name}</Link>
                     </strong>
-                    <small>{project.projectCode}</small>
+                    <small>
+                      {project.projectCode}
+                      {/* Marked on the row itself, so an archived project is
+                          obvious in the "ทั้งหมด" view without opening it. */}
+                      {project.archivedAt && (
+                        <>
+                          {' · '}
+                          <span className="archived-flag">จัดเก็บแล้ว</span>
+                        </>
+                      )}
+                    </small>
                   </span>
                 </div>
               </td>

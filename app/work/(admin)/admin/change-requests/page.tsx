@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { Panel, PageHeading } from '@/components/work/data/panel'
 import { Status } from '@/components/work/data/status'
 import { EmptyState } from '@/components/work/states'
-import { requireAdmin } from '@/lib/work/auth/permissions'
+import { requireCapability } from '@/lib/work/auth/permissions'
 import {
   CHANGE_REQUEST_PRIORITY_LABELS,
   CHANGE_REQUEST_STATUS_LABELS,
@@ -23,7 +23,7 @@ export const metadata = { title: 'คำขอเปลี่ยนแปลง'
  * by which controls this page renders.
  */
 export default async function AdminChangeRequestsPage() {
-  await requireAdmin()
+  await requireCapability('project:read')
   const requests = await getChangeRequests()
 
   const open = requests.filter(

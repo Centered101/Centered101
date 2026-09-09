@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from './zod'
 
 import { FEEDBACK_KINDS } from '@/lib/work/types/enums'
 

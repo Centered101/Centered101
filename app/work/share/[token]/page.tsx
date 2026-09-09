@@ -2,19 +2,22 @@ import type { Metadata } from 'next'
 
 import { AuthBrand } from '@/components/work/layout/auth-brand'
 import { Footer } from '@/components/work/layout/footer'
-import { isPlausibleShareToken } from '@/lib/work/tokens'
+import { resolveShareLink } from '@/lib/work/queries/share-links'
 
 /**
  * Public share link.
  *
  * Outside both portals and outside the app shell — the viewer is anonymous by
  * design and must never see workspace chrome, navigation, or anything about
- * the organisation beyond the single shared resource.
+ * the organisation beyond the single shared project's preview.
  *
- * Today this only validates the token's shape. Resolution against
- * `share_links` — exists, not revoked, not expired, view budget remaining,
- * password if set, all checked *before* any project data is loaded — arrives
- * with Phase 13. It fails closed in the meantime.
+ * Resolution happens entirely in `resolveShareLink()` (queries/share-links.ts)
+ * with the privileged client, because there is no session here for RLS to
+ * scope. This page only turns that result into one of a small set of Thai
+ * messages — it never learns, and never shows, which specific check failed
+ * beyond "invalid" / "revoked" / "expired" / "view limit reached". Collapsing
+ * those into one visible message on the page (below) is deliberate: token
+ * enumeration should learn nothing from the response.
  */
 export const metadata: Metadata = {
   title: 'ลิงก์แชร์',
@@ -22,20 +25,41 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
+const MESSAGES: Record<'invalid' | 'revoked' | 'expired' | 'exhausted', string> = {
+  invalid: 'ลิงก์นี้ไม่ถูกต้อง',
+  revoked: 'ลิงก์นี้ถูกยกเลิกแล้ว',
+  expired: 'ลิงก์นี้หมดอายุแล้ว',
+  exhausted: 'ลิงก์นี้ถูกเปิดดูครบจำนวนที่กำหนดแล้ว',
+}
+
 export default async function SharePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
-  const plausible = isPlausibleShareToken(token)
+  const result = await resolveShareLink(token)
 
   return (
     <div className="auth-screen">
       <div className="auth-card">
         <AuthBrand />
-        <h1>{plausible ? 'ลิงก์นี้ยังไม่พร้อมใช้งาน' : 'ลิงก์ไม่ถูกต้อง'}</h1>
-        <p className="muted">
-          {plausible
-            ? 'ระบบลิงก์แชร์จะเปิดใช้งานในเฟส 13 — ขณะนี้ยังไม่สามารถเปิดดูเนื้อหาได้'
-            : 'ลิงก์นี้ไม่ถูกต้อง หมดอายุ หรือถูกยกเลิกแล้ว'}
-        </p>
+        {result.status === 'ok' ? (
+          <>
+            <h1>{result.projectName}</h1>
+            {result.previewUrl ? (
+              <>
+                <p className="muted">ลิงก์แสดงตัวอย่างของโปรเจกต์นี้</p>
+                <a className="primary" href={result.previewUrl} target="_blank" rel="noreferrer noopener">
+                  เปิดดูตัวอย่าง
+                </a>
+              </>
+            ) : (
+              <p className="muted">ยังไม่มีลิงก์ตัวอย่างสำหรับโปรเจกต์นี้</p>
+            )}
+          </>
+        ) : (
+          <>
+            <h1>เปิดลิงก์ไม่ได้</h1>
+            <p className="muted">{MESSAGES[result.status]}</p>
+          </>
+        )}
       </div>
       <Footer />
     </div>

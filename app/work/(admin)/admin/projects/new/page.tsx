@@ -13,7 +13,7 @@ export const metadata = { title: 'สร้างโปรเจกต์' }
  * rather than shown a form whose submission would fail at the database.
  */
 export default async function NewProjectPage() {
-  await requireCapability('project:write')
+  const staff = await requireCapability('project:write')
   const clients = await getClientOptions()
 
   return (
@@ -31,7 +31,7 @@ export default async function NewProjectPage() {
             description="โปรเจกต์ต้องผูกกับลูกค้าเสมอ — เพิ่มลูกค้าก่อนจึงจะสร้างโปรเจกต์ได้"
           />
         ) : (
-          <ProjectForm clients={clients} />
+          <ProjectForm clients={clients} canPrice={staff.can('finance:write')} />
         )}
       </Panel>
     </>
