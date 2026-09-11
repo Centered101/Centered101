@@ -94,18 +94,21 @@ export default async function PortalPaymentsPage(
           label="มูลค่าทั้งหมด"
           value={formatMoney(summary.total, summary.currency)}
           icon={WalletCards}
+          href="#payment-milestones"
         />
         <StatCard
           label="ชำระแล้ว"
           value={formatMoney(summary.paid, summary.currency)}
           icon={WalletCards}
           tone="green"
+          href="#payment-history"
         />
         <StatCard
           label="คงเหลือ"
           value={formatMoney(summary.remaining, summary.currency)}
           icon={Clock3}
           tone="orange"
+          href="#payment-milestones"
         />
         <StatCard
           label="งวดถัดไป"
@@ -116,6 +119,7 @@ export default async function PortalPaymentsPage(
           }
           icon={Clock3}
           tone="violet"
+          href="#payment-milestones"
         />
       </section>
 
@@ -156,7 +160,7 @@ export default async function PortalPaymentsPage(
         </Panel>
       )}
 
-      <Panel className="projects-panel">
+      <Panel className="projects-panel" id="payment-milestones">
         <PanelHead title="ไมล์สโตน" description="งวดการชำระเงินตามแผน" />
         {summary.milestones.length === 0 ? (
           <p className="muted empty-inline">ยังไม่ได้กำหนดแผนการชำระเงิน</p>
@@ -232,7 +236,7 @@ export default async function PortalPaymentsPage(
         )}
       </Panel>
 
-      <Panel className="projects-panel">
+      <Panel className="projects-panel" id="payment-history">
         <PanelHead title="ประวัติการชำระเงิน" description="รายการที่บันทึกไว้ทั้งหมด" />
         {summary.payments.length === 0 ? (
           <p className="muted empty-inline">ยังไม่มีประวัติการชำระเงิน</p>

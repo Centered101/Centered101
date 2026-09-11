@@ -148,8 +148,8 @@ export default async function AdminProjectDetailPage(
     <>
       {created === '1' && <CreatedToast />}
 
-      {/* Section navigation for this project lives in `[id]/layout.tsx` now
-          (ProjectTabs), so the heading carries only identity, state and the
+      {/* Section navigation for this project lives in the sidebar now
+          (ProjectNav), so the heading carries only identity, state and the
           two real actions — not a row of links wrapping into the badges. */}
       <PageHeading
         eyebrow={project.projectCode}

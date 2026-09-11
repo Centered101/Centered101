@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { Fragment, type ReactNode } from 'react'
 import Link from 'next/link'
 import { Menu } from 'lucide-react'
 
@@ -35,20 +35,20 @@ import { NotificationBell } from './notification-bell'
  * labelled pill and the bell is an icon — see `feedback-menu.tsx`.
  */
 export function Topbar({
-  breadcrumb,
-  breadcrumbHref,
-  homeHref,
+  crumbs,
   onOpenMobileNav,
   notifications,
   latestActivityId,
   userId,
   changeRequestsHref,
 }: {
-  breadcrumb: string
-  /** Where the current crumb points — its own page, so it also acts as a reload. */
-  breadcrumbHref: string
-  /** The portal's landing page, behind the "พื้นที่ทำงาน" crumb. */
-  homeHref: string
+  /**
+   * The trail from the workspace root to the current page, resolved from the
+   * real path (see AppShell). Two or more entries: the first is always
+   * "พื้นที่ทำงาน", the last is the page you are on. Every crumb is a link —
+   * the last one to its own URL, so it doubles as a reload.
+   */
+  crumbs: { label: string; href: string }[]
   onOpenMobileNav: () => void
   /** The activity feed, rendered on the server — see NotificationBell. */
   notifications: ReactNode
@@ -63,13 +63,23 @@ export function Topbar({
         <Menu size={20} />
       </button>
       <nav className="breadcrumbs" aria-label="เส้นทางนำทาง">
-        <Link className="crumb crumb-root" href={homeHref}>
-          พื้นที่ทำงาน
-        </Link>
-        <span aria-hidden="true">/</span>
-        <Link className="crumb crumb-current" href={breadcrumbHref} aria-current="page">
-          {breadcrumb}
-        </Link>
+        {crumbs.map((crumb, index) => {
+          const isLast = index === crumbs.length - 1
+          return (
+            <Fragment key={`${crumb.href}:${index}`}>
+              {index > 0 && <span aria-hidden="true">/</span>}
+              <Link
+                className={`crumb${index === 0 ? ' crumb-root' : ''}${
+                  index > 0 && !isLast ? ' crumb-mid' : ''
+                }${isLast ? ' crumb-current' : ''}`}
+                href={crumb.href}
+                aria-current={isLast ? 'page' : undefined}
+              >
+                {crumb.label}
+              </Link>
+            </Fragment>
+          )
+        })}
       </nav>
       <div className="top-actions">
         <FeedbackMenu changeRequestsHref={changeRequestsHref} />

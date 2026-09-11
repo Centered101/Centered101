@@ -4,6 +4,7 @@ import { useActionState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import { SubmitButton, useActionToast } from '@/components/work/forms'
+import { useWorkHref } from '@/components/work/layout/work-link-context'
 import { PROJECT_ROLE_LABELS, formatDate } from '@/lib/work/format'
 import {
   acceptProjectInvitationById,
@@ -36,12 +37,13 @@ export function InvitationsInbox({ invitations }: { invitations: ProjectInvitati
 
 function InvitationRow({ invitation }: { invitation: ProjectInvitationListItem }) {
   const router = useRouter()
+  const projectsHref = useWorkHref('/work/portal/projects')
   const [state, action] = useActionState<AcceptInvitationState, FormData>(
     acceptProjectInvitationById,
     {},
   )
   useActionToast(state, () => {
-    if (state.projectId) router.push(`/work/portal/projects/${state.projectId}`)
+    if (state.projectId) router.push(`${projectsHref}/${state.projectId}`)
   })
 
   return (

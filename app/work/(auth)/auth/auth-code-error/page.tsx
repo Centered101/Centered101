@@ -1,8 +1,8 @@
-import Link from 'next/link'
 import { AlertCircle } from 'lucide-react'
 
 import { AuthBrand } from '@/components/work/layout/auth-brand'
 import { Footer } from '@/components/work/layout/footer'
+import { WorkLink } from '@/components/work/layout/work-link'
 
 export const metadata = { title: 'เข้าสู่ระบบไม่สำเร็จ' }
 
@@ -36,9 +36,9 @@ export default async function AuthCodeErrorPage({
 
         {reason && <p className="auth-notice">{reason}</p>}
 
-        <Link className="primary full" href="/work/login" style={{ marginTop: 20 }}>
+        <WorkLink className="primary full" href="/work/login" style={{ marginTop: 20 }}>
           กลับไปหน้าเข้าสู่ระบบ
-        </Link>
+        </WorkLink>
       </div>
       <Footer />
     </div>

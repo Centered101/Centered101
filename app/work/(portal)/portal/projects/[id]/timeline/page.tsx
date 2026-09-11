@@ -51,24 +51,32 @@ export default async function PortalTimelinePage(props: { params: Promise<{ id: 
       />
 
       <section className="stats-grid client-stats">
-        <StatCard label="ความคืบหน้างาน" value={`${progress.percent}%`} icon={ListChecks} />
+        <StatCard
+          label="ความคืบหน้างาน"
+          value={`${progress.percent}%`}
+          icon={ListChecks}
+          href="#work-progress"
+        />
         <StatCard
           label="ไมล์สโตนที่เสร็จแล้ว"
           value={`${progress.completed}/${progress.total}`}
           icon={ClipboardCheck}
           tone="green"
+          href="#work-timeline"
         />
         <StatCard
           label="ไมล์สโตนถัดไป"
           value={progress.next?.title ?? 'ไม่มี'}
           icon={CalendarClock}
           tone="violet"
+          href="#work-timeline"
         />
         <StatCard
           label="กำหนดส่งมอบ"
           value={formatDate(project?.expectedDelivery ?? null)}
           icon={CalendarClock}
           tone="orange"
+          href="#work-timeline"
         />
       </section>
 
@@ -78,7 +86,7 @@ export default async function PortalTimelinePage(props: { params: Promise<{ id: 
         </p>
       )}
 
-      <Panel className="projects-panel">
+      <Panel className="projects-panel" id="work-progress">
         <PanelHead title="ความคืบหน้างาน" description="คำนวณจากไมล์สโตนงานที่ปิดแล้ว (แยกจากการชำระเงิน)" />
         <div className="payment-progress-row">
           <strong>{progress.percent}%</strong>
@@ -89,7 +97,7 @@ export default async function PortalTimelinePage(props: { params: Promise<{ id: 
         </div>
       </Panel>
 
-      <Panel className="projects-panel">
+      <Panel className="projects-panel" id="work-timeline">
         <PanelHead title="ไทม์ไลน์งาน" description="ลำดับการทำงานและสถานะปัจจุบัน" />
         <WorkTimeline
           milestones={milestones}

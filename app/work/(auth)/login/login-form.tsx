@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowUpRight, Mail } from 'lucide-react'
 
 import { PasswordInput, useActionToast } from '@/components/work/forms'
+import { useWorkHref } from '@/components/work/layout/work-link-context'
 import {
   signInWithGoogle,
   signInWithMagicLink,
@@ -34,6 +35,7 @@ const EMPTY: AuthState = {}
  */
 export function LoginForm({ next }: { next?: string }) {
   const [mode, setMode] = useState<Mode>('signin')
+  const forgotPasswordHref = useWorkHref('/work/forgot-password')
 
   const [signInState, signInAction, signInPending] = useActionState(signInWithPassword, EMPTY)
   const [signUpState, signUpAction, signUpPending] = useActionState(signUpWithPassword, EMPTY)
@@ -136,7 +138,7 @@ export function LoginForm({ next }: { next?: string }) {
             {/* Only on sign-in: offering "forgot password" while somebody is
                 choosing a new one reads as an error message. */}
             {mode === 'signin' && (
-              <Link className="auth-secondary-link" href="/work/forgot-password">
+              <Link className="auth-secondary-link" href={forgotPasswordHref}>
                 ลืมรหัสผ่าน?
               </Link>
             )}

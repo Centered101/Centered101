@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 import { guardWorkRoute } from '@/lib/work/auth/proxy-guard'
+import { ownsWorkPrefix } from '@/lib/work/nav'
 
 const ROOT_DOMAIN = process.env.ROOT_DOMAIN || 'centered101.com'
 
@@ -144,22 +145,6 @@ function isNextClientRuntimeRequest(request: NextRequest): boolean {
     headers.has('next-router-state-tree') ||
     headers.has('next-router-prefetch')
   )
-}
-
-/**
- * Paths under /work whose prefix is REAL and must survive.
- *
- *   - `public/work/favicon.ico` is a file on disk served at `/work/favicon.ico`
- *     on every host. Stripping it would redirect the workspace's brand mark to
- *     the marketing site's favicon.
- *   - `/work/api/*` is where the workspace's routes actually live, and on the
- *     subdomain a bare `/api/*` deliberately passes through to the MAIN site's
- *     API instead. Stripping it would silently point the workspace at the wrong
- *     backend — and machine callers like Stripe's webhook do not follow
- *     redirects reliably anyway.
- */
-function ownsWorkPrefix(pathname: string): boolean {
-  return pathname.startsWith('/work/api/') || /\.[a-z0-9]+$/i.test(pathname)
 }
 
 export async function proxy(request: NextRequest) {

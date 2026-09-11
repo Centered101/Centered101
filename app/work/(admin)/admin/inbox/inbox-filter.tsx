@@ -2,6 +2,9 @@
 
 import Link from 'next/link'
 
+import { useStripWorkPrefix } from '@/components/work/layout/work-link-context'
+import { workHref } from '@/lib/work/nav'
+
 /** Simple query-string filter strip — no client state, so a shared link (or a browser back) always shows the right filter. */
 export function InboxFilter({
   active,
@@ -10,12 +13,17 @@ export function InboxFilter({
   active: string
   filters: readonly { key: string; label: string }[]
 }) {
+  const stripPrefix = useStripWorkPrefix()
+
   return (
     <nav className="range-tabs">
       {filters.map((filter) => (
         <Link
           key={filter.key}
-          href={filter.key === 'all' ? '/work/admin/inbox' : `/work/admin/inbox?filter=${filter.key}`}
+          href={workHref(
+            filter.key === 'all' ? '/work/admin/inbox' : `/work/admin/inbox?filter=${filter.key}`,
+            stripPrefix,
+          )}
           className={filter.key === active ? 'selected' : ''}
         >
           {filter.label}

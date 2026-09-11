@@ -3,7 +3,9 @@
 import { useActionState, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+import { GearIcon } from '@/components/work/data/gear-icon'
 import { SubmitButton, useActionToast } from '@/components/work/forms'
+import { useWorkHref } from '@/components/work/layout/work-link-context'
 import { submitProject } from '@/lib/work/services/projects'
 import type { ActionState } from '@/lib/work/services/projects'
 
@@ -16,8 +18,9 @@ import type { ActionState } from '@/lib/work/services/projects'
  */
 export function ReviewSubmitForm({ projectId }: { projectId: string }) {
   const router = useRouter()
+  const projectHref = useWorkHref(`/work/portal/projects/${projectId}`)
   const [state, formAction] = useActionState<ActionState, FormData>(submitProject, {})
-  useActionToast(state, () => router.push(`/work/portal/projects/${projectId}`))
+  useActionToast(state, () => router.push(projectHref))
   const [confirmed, setConfirmed] = useState(false)
 
   return (
@@ -34,6 +37,7 @@ export function ReviewSubmitForm({ projectId }: { projectId: string }) {
           checked={confirmed}
           onChange={(event) => setConfirmed(event.target.checked)}
         />
+        <GearIcon />
         <span>ฉันยืนยันว่าข้อมูลที่ส่งถูกต้อง</span>
       </label>
       {state.error && <p className="field-error">{state.error}</p>}

@@ -1,4 +1,4 @@
-import { UnauthorizedState } from '@/components/work/states'
+import { UnauthorizedState } from '@/components/work/states/linked'
 import { Footer } from '@/components/work/layout/footer'
 
 export const metadata = { title: 'ไม่มีสิทธิ์เข้าถึง' }

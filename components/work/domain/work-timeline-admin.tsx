@@ -3,6 +3,7 @@
 import { useActionState, useState } from 'react'
 import { ArrowDown, ArrowUp, ListChecks, Pencil, Plus } from 'lucide-react'
 
+import { GearIcon } from '@/components/work/data/gear-icon'
 import { Panel, PanelHead } from '@/components/work/data/panel'
 import { SubmitButton, useActionToast } from '@/components/work/forms'
 import { WorkTimeline } from '@/components/work/domain/work-timeline'
@@ -279,6 +280,7 @@ function MilestoneForm({
           name="clientReviewRequired"
           defaultChecked={milestone?.clientReviewRequired ?? false}
         />
+        <GearIcon />
         <span>ต้องให้ลูกค้าตรวจรับก่อนปิดงาน</span>
       </label>
 

@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { WorkLink } from '@/components/work/layout/work-link'
 import { redirect } from 'next/navigation'
 
 import { AuthBrand } from '@/components/work/layout/auth-brand'
@@ -32,7 +32,7 @@ export default async function ForgotPasswordPage() {
         <ForgotPasswordForm />
 
         <p className="auth-alt">
-          <Link href="/work/login">กลับไปหน้าเข้าสู่ระบบ</Link>
+          <WorkLink href="/work/login">กลับไปหน้าเข้าสู่ระบบ</WorkLink>
         </p>
       </div>
       <Footer />

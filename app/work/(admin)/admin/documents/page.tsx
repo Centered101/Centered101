@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { WorkLink } from '@/components/work/layout/work-link'
 import { Download } from 'lucide-react'
 
 import { Panel, PageHeading } from '@/components/work/data/panel'
@@ -66,9 +66,9 @@ export default async function AdminDocumentsPage() {
                     <td>{DOCUMENT_TYPE_LABELS[document.type]}</td>
                     <td>
                       {document.projectId ? (
-                        <Link href={`/work/admin/projects/${document.projectId}`}>
+                        <WorkLink href={`/work/admin/projects/${document.projectId}`}>
                           {document.projectName}
-                        </Link>
+                        </WorkLink>
                       ) : (
                         <span className="muted">—</span>
                       )}

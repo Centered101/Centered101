@@ -1,15 +1,13 @@
-import Link from 'next/link'
-import { Code2 } from 'lucide-react'
-
 import {
   PROJECT_STATUS_LABELS,
   formatDate,
   formatMoney,
-  idTone,
   projectStatusTone,
 } from '@/lib/work/format'
 import type { ProjectListItem } from '@/lib/work/queries/projects'
 import { EmptyState } from '@/components/work/states'
+import { WorkLink } from '@/components/work/layout/work-link'
+import { ProjectIcon } from './project-icon'
 import { ProgressBar } from './panel'
 import { Status } from './status'
 
@@ -56,31 +54,10 @@ export function ProjectsTable({
             <tr key={project.id}>
               <td>
                 <div className="project-name">
-                  {/* The client's OWN logo when they uploaded one at intake,
-                      so a row is recognisable at a glance instead of every
-                      project wearing the same generic mark. Falls back to the
-                      id-toned icon, which is what every project had before.
-
-                      No signed URL is minted here: the src points at the
-                      existing asset download route, which authorizes under the
-                      caller's session and redirects to a short-lived signed
-                      URL — the same approach AssetThumbnail already uses. */}
-                  {project.logoAssetId ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={`/work/api/assets/${project.logoAssetId}/download`}
-                      alt=""
-                      className="project-icon project-icon-logo"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className={`project-icon ${idTone(project.id)}`}>
-                      <Code2 size={16} />
-                    </div>
-                  )}
+                  <ProjectIcon projectId={project.id} logoAssetId={project.logoAssetId} />
                   <span>
                     <strong>
-                      <Link href={`${basePath}/${project.id}`}>{project.name}</Link>
+                      <WorkLink href={`${basePath}/${project.id}`}>{project.name}</WorkLink>
                     </strong>
                     <small>
                       {project.projectCode}

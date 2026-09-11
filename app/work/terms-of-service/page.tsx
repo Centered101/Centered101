@@ -1,7 +1,25 @@
+import type { Metadata } from 'next'
+
 import { LegalSection, LegalShell } from '@/components/work/layout/legal-shell'
 import { LEGAL, LEGAL_UPDATED } from '@/lib/work/legal'
 
-export const metadata = { title: 'ข้อกำหนดการใช้งาน' }
+const TERMS_DESCRIPTION =
+  `เงื่อนไขการใช้พื้นที่ทำงาน ${LEGAL.serviceName} — บัญชีและการเข้าถึง การใช้งานที่ยอมรับได้ ` +
+  'ความพร้อมใช้งาน และความสัมพันธ์กับสัญญาของแต่ละโปรเจกต์'
+
+// Public — opts out of the layout's noindex default.
+export const metadata: Metadata = {
+  title: 'ข้อกำหนดการใช้งาน',
+  description: TERMS_DESCRIPTION,
+  alternates: { canonical: '/terms-of-service' },
+  robots: { index: true, follow: true },
+  openGraph: {
+    type: 'article',
+    url: '/terms-of-service',
+    title: `ข้อกำหนดการใช้งาน — ${LEGAL.serviceName}`,
+    description: TERMS_DESCRIPTION,
+  },
+}
 
 /**
  * Terms for the workspace.

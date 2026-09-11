@@ -21,7 +21,9 @@ import {
 } from 'lucide-react'
 
 import { useActionToast } from '@/components/work/forms'
+import { useStripWorkPrefix } from '@/components/work/layout/work-link-context'
 import { LEGAL } from '@/lib/work/legal'
+import { workHref } from '@/lib/work/nav'
 import { submitFeedback } from '@/lib/work/services/feedback'
 import type { ActionState } from '@/lib/work/services/projects'
 import { FEEDBACK_MESSAGE_MAX, describeImageRejection } from '@/lib/work/validation/feedback'
@@ -101,6 +103,11 @@ export function FeedbackMenu({ changeRequestsHref }: { changeRequestsHref: strin
   const [attachmentError, setAttachmentError] = useState<string | null>(null)
   // True only for the frame or two while the page is being photographed.
   const [capturing, setCapturing] = useState(false)
+  // The lightbox showing `attachment` full-size. A separate flag from
+  // `attachment` itself so clearing the file also closes it in one place
+  // (clearAttachment) rather than every reader of `attachment` needing to
+  // remember to check both.
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   const rootRef = useRef<HTMLDivElement>(null)
   const attachRef = useRef<HTMLDivElement>(null)
@@ -109,6 +116,20 @@ export function FeedbackMenu({ changeRequestsHref }: { changeRequestsHref: strin
 
   const pathname = usePathname()
   const [state, formAction] = useActionState(submitFeedback, EMPTY)
+
+  // A fresh object URL per attachment (captured or uploaded), revoked when
+  // it's replaced or cleared — otherwise each one leaks the previous blob
+  // for the life of the tab.
+  const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null)
+  useEffect(() => {
+    if (!attachment) {
+      setAttachmentUrl(null)
+      return
+    }
+    const url = URL.createObjectURL(attachment)
+    setAttachmentUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [attachment])
 
   // Sonner reports the result, the same as every other action in the app. The
   // callback runs once per success and returns the panel to its resting state,
@@ -119,19 +140,22 @@ export function FeedbackMenu({ changeRequestsHref }: { changeRequestsHref: strin
     setKind(null)
     setAttachment(null)
     setAttachmentError(null)
+    setPreviewOpen(false)
   })
 
   // Same dismissal contract as the notification bell next door: an outside
   // click or Escape closes it, so it behaves like a menu rather than a panel
   // you have to hit the button again to get rid of.
   //
-  // The attach menu is a menu inside that menu, so it takes the click and the
-  // Escape first. Closing both at once would make one keypress undo two
-  // decisions, and the second one is the expensive one to retype.
+  // The attach menu is a menu inside that menu, and the preview lightbox is
+  // a layer on top of everything, so Escape closes the topmost one first —
+  // one keypress undoing three decisions at once would cost more retyping
+  // than it saves clicks.
   useEffect(() => {
     if (!open) return
 
     function onPointerDown(event: MouseEvent) {
+      if (previewOpen) return // its own backdrop handles this
       const target = event.target as Node
       if (!rootRef.current?.contains(target)) {
         setOpen(false)
@@ -141,7 +165,8 @@ export function FeedbackMenu({ changeRequestsHref }: { changeRequestsHref: strin
     }
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== 'Escape') return
-      if (attachOpen) setAttachOpen(false)
+      if (previewOpen) setPreviewOpen(false)
+      else if (attachOpen) setAttachOpen(false)
       else setOpen(false)
     }
 
@@ -151,7 +176,7 @@ export function FeedbackMenu({ changeRequestsHref }: { changeRequestsHref: strin
       document.removeEventListener('mousedown', onPointerDown)
       document.removeEventListener('keydown', onKeyDown)
     }
-  }, [open, attachOpen])
+  }, [open, attachOpen, previewOpen])
 
   // Choosing a kind is a click; typing the report is the point. Moving focus
   // saves the second click that every one of these widgets otherwise costs.
@@ -189,6 +214,7 @@ export function FeedbackMenu({ changeRequestsHref }: { changeRequestsHref: strin
   function clearAttachment() {
     setAttachment(null)
     setAttachmentError(null)
+    setPreviewOpen(false)
     // The input keeps its own FileList, which is what the form submits —
     // clearing the state alone would send a file the user thinks they removed.
     if (fileRef.current) fileRef.current.value = ''
@@ -219,6 +245,20 @@ export function FeedbackMenu({ changeRequestsHref }: { changeRequestsHref: strin
     setAttachmentError(null)
     setCapturing(true)
 
+    // Hiding the widget is only meant to last "a frame or two" (see above).
+    // html2canvas has no timeout of its own, and the cross-origin avatar
+    // refetch below (useCORS) can stall instead of failing outright — with
+    // nothing racing it, that leaves `capturing` true and the whole widget
+    // invisible indefinitely. This bounds the wait so the button always
+    // comes back, even when the capture itself never settles.
+    let timedOut = false
+    const timeout = new Promise<never>((_resolve, reject) => {
+      setTimeout(() => {
+        timedOut = true
+        reject(new Error('screen capture timed out'))
+      }, 8000)
+    })
+
     try {
       // Two frames: one for React to commit the hidden panel, one for the
       // browser to paint it. Capturing after a single frame photographs the
@@ -228,17 +268,29 @@ export function FeedbackMenu({ changeRequestsHref }: { changeRequestsHref: strin
       })
 
       const { default: html2canvas } = await import('html2canvas-pro')
-      const canvas = await html2canvas(document.body, {
-        backgroundColor: null,
-        // Capped at 2: a 3x phone screen triples the file size for detail
-        // nobody reads in a bug report.
-        scale: Math.min(window.devicePixelRatio || 1, 2),
-        x: window.scrollX,
-        y: window.scrollY,
-        width: window.innerWidth,
-        height: window.innerHeight,
-        logging: false,
-      })
+      const canvas = await Promise.race([
+        html2canvas(document.body, {
+          backgroundColor: null,
+          // Capped at 2: a 3x phone screen triples the file size for detail
+          // nobody reads in a bug report.
+          scale: Math.min(window.devicePixelRatio || 1, 2),
+          x: window.scrollX,
+          y: window.scrollY,
+          width: window.innerWidth,
+          height: window.innerHeight,
+          logging: false,
+          // The sidebar's account chip is a Google avatar (lh3.googleusercontent.com)
+          // — cross-origin, and in dev next/image links straight to it instead of
+          // proxying through same-origin /_next/image (next.config.mjs sets
+          // `images.unoptimized` there). Without this, html2canvas draws that <img>
+          // onto the canvas untainted-check-free, the canvas is marked tainted, and
+          // `toBlob()` below throws a SecurityError — this asks html2canvas to
+          // (re-)fetch cross-origin images in CORS mode, which Google's avatar CDN
+          // permits, so the canvas stays exportable.
+          useCORS: true,
+        }),
+        timeout,
+      ])
 
       const blob = await new Promise<Blob | null>((resolve) => {
         canvas.toBlob(resolve, 'image/png')
@@ -251,7 +303,11 @@ export function FeedbackMenu({ changeRequestsHref }: { changeRequestsHref: strin
       // A capture that fails must not cost the message that was already typed,
       // so this reports beside the attach button and leaves the form alone.
       console.error('[feedback] screen capture failed:', error)
-      setAttachmentError('จับภาพหน้าจอไม่สำเร็จ ลองอัปโหลดรูปแทนได้')
+      setAttachmentError(
+        timedOut
+          ? 'จับภาพหน้าจอใช้เวลานานเกินไป ลองใหม่หรืออัปโหลดรูปแทนได้'
+          : 'จับภาพหน้าจอไม่สำเร็จ ลองอัปโหลดรูปแทนได้',
+      )
     } finally {
       setCapturing(false)
     }
@@ -344,8 +400,31 @@ export function FeedbackMenu({ changeRequestsHref }: { changeRequestsHref: strin
 
               {attachment && (
                 <div className="feedback-attachment">
-                  <ImagePlus size={13} />
-                  <span>{attachment.name}</span>
+                  <button
+                    type="button"
+                    className="feedback-attachment-name"
+                    onClick={() => setPreviewOpen(true)}
+                    disabled={!attachmentUrl}
+                  >
+                    {attachmentUrl ? (
+                      // Visible without a click — the full-size lightbox
+                      // (on click) is for confirming detail, not for seeing
+                      // that the right picture got attached at all. Sized
+                      // inline as well as by class: an unscaled screenshot
+                      // is thousands of pixels wide, and this thumbnail must
+                      // never render at that native size while the stylesheet
+                      // is mid-reload.
+                      <img
+                        src={attachmentUrl}
+                        alt=""
+                        className="feedback-attachment-thumb"
+                        style={{ width: 22, height: 22, maxWidth: 22, maxHeight: 22 }}
+                      />
+                    ) : (
+                      <ImagePlus size={13} />
+                    )}
+                    <span>{attachment.name}</span>
+                  </button>
                   <button type="button" onClick={clearAttachment} aria-label="เอารูปออก">
                     <X size={13} />
                   </button>
@@ -423,6 +502,32 @@ export function FeedbackMenu({ changeRequestsHref }: { changeRequestsHref: strin
           {screen === 'help' && <HelpScreen changeRequestsHref={changeRequestsHref} onBack={() => setScreen('choose')} onClose={() => setOpen(false)} />}
         </div>
       )}
+
+      {previewOpen && attachmentUrl && (
+        <div
+          className="feedback-preview-backdrop"
+          onClick={() => setPreviewOpen(false)}
+          role="dialog"
+          aria-label="ตัวอย่างรูปที่แนบ"
+        >
+          {/* The stopPropagation is the whole point: clicking the backdrop
+              closes the preview, clicking the picture itself must not. */}
+          <img
+            src={attachmentUrl}
+            alt={attachment?.name ?? 'ตัวอย่างรูปที่แนบ'}
+            className="feedback-preview-image"
+            onClick={(event) => event.stopPropagation()}
+          />
+          <button
+            type="button"
+            className="feedback-preview-close"
+            onClick={() => setPreviewOpen(false)}
+            aria-label="ปิดตัวอย่าง"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -449,6 +554,7 @@ function HelpScreen({
   onBack: () => void
   onClose: () => void
 }) {
+  const stripPrefix = useStripWorkPrefix()
   const links: {
     href: string
     label: string
@@ -457,6 +563,8 @@ function HelpScreen({
     external?: boolean
   }[] = [
     {
+      // Already resolved by AppShell, where the portal (and so which queue)
+      // is known — see its own comment.
       href: changeRequestsHref,
       label: 'คำขอเปลี่ยนแปลง',
       hint: 'ขอแก้ไขหรือเพิ่มงานในโปรเจกต์ พร้อมใบเสนอราคา',
@@ -470,13 +578,13 @@ function HelpScreen({
       external: true,
     },
     {
-      href: '/work/terms-of-service',
+      href: workHref('/work/terms-of-service', stripPrefix),
       label: 'ข้อกำหนดการใช้งาน',
       hint: 'ขอบเขตบริการ การชำระเงิน และการส่งมอบงาน',
       icon: ScrollText,
     },
     {
-      href: '/work/privacy-policy',
+      href: workHref('/work/privacy-policy', stripPrefix),
       label: 'นโยบายความเป็นส่วนตัว',
       hint: 'ข้อมูลที่เก็บ ใครเห็นได้บ้าง และการขอลบข้อมูล',
       icon: ShieldCheck,

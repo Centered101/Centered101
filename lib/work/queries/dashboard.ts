@@ -59,12 +59,26 @@ export async function getAdminDashboard(): Promise<AdminDashboardData> {
 
   const summary = summariseProjects(projects)
 
-  const paidPayments = payments.filter((p) => p.status === 'PAID')
-  const pendingPayments = payments.filter(
+  // getPayments() and getMaintenancePlans() are not scoped by project status
+  // — unlike getProjects(), they return rows for archived projects too. Every
+  // figure below is money/retainers on the ACTIVE book, so it's rescoped to
+  // the same project set `projects` (and activeProjects/overdueProjects) is
+  // already limited to. Left unscoped, an archived project's payments and
+  // retainer would go on inflating รายได้รวม/การชำระเงินที่รอดำเนินการ/
+  // การดูแลรักษาที่ใช้งานอยู่ forever, even after it stopped counting toward
+  // "active projects" itself.
+  const activeProjectIds = new Set(projects.map((project) => project.id))
+  const activePayments = payments.filter((payment) => activeProjectIds.has(payment.projectId))
+  const activeMaintenancePlans = maintenance.filter((plan) =>
+    activeProjectIds.has(plan.projectId),
+  )
+
+  const paidPayments = activePayments.filter((p) => p.status === 'PAID')
+  const pendingPayments = activePayments.filter(
     (p) => p.status === 'PENDING' || p.status === 'PROCESSING',
   )
 
-  const activeMaintenance = maintenance.filter((plan) => plan.status === 'ACTIVE')
+  const activeMaintenance = activeMaintenancePlans.filter((plan) => plan.status === 'ACTIVE')
 
   // Monthly-equivalent value of the retainer book, so quarterly and yearly
   // plans are comparable to monthly ones instead of inflating the figure.

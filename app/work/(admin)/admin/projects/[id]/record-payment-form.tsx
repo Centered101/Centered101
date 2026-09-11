@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react'
 
+import { GearIcon } from '@/components/work/data/gear-icon'
 import { SubmitButton, useActionToast } from '@/components/work/forms'
 import { recordManualPayment } from '@/lib/work/services/payments'
 import type { ActionState } from '@/lib/work/services/projects'
@@ -81,6 +82,7 @@ export function RecordPaymentForm({
 
       <label className="checkbox">
         <input type="checkbox" name="allowOverpayment" />
+        <GearIcon />
         <span>อนุญาตให้เกินยอดคงเหลือของงวดนี้</span>
       </label>
 

@@ -1,7 +1,25 @@
+import type { Metadata } from 'next'
+
 import { LegalSection, LegalShell } from '@/components/work/layout/legal-shell'
 import { LEGAL, LEGAL_UPDATED } from '@/lib/work/legal'
 
-export const metadata = { title: 'นโยบายความเป็นส่วนตัว' }
+const PRIVACY_DESCRIPTION =
+  `นโยบายความเป็นส่วนตัวของ ${LEGAL.serviceName} — ข้อมูลที่เก็บ วัตถุประสงค์ การเข้าถึง คุกกี้ ` +
+  'ผู้ให้บริการภายนอก ระยะเวลาเก็บรักษา และสิทธิ์ของคุณตาม PDPA'
+
+// Public — opts out of the layout's noindex default.
+export const metadata: Metadata = {
+  title: 'นโยบายความเป็นส่วนตัว',
+  description: PRIVACY_DESCRIPTION,
+  alternates: { canonical: '/privacy-policy' },
+  robots: { index: true, follow: true },
+  openGraph: {
+    type: 'article',
+    url: '/privacy-policy',
+    title: `นโยบายความเป็นส่วนตัว — ${LEGAL.serviceName}`,
+    description: PRIVACY_DESCRIPTION,
+  },
+}
 
 /**
  * Privacy notice for the workspace.

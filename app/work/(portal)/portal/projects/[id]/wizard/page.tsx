@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation'
 
 import { Panel, PageHeading } from '@/components/work/data/panel'
+import { isWorkSubdomain } from '@/lib/work/auth/callback-url'
 import { requireProjectAccess } from '@/lib/work/auth/permissions'
+import { workHref } from '@/lib/work/nav'
 import {
   DELIVERY_ITEM_LABELS,
   PROJECT_STATUS_LABELS,
@@ -57,9 +59,14 @@ export default async function ProjectWizardPage(props: {
 
   const currentStep: WizardStepKey = isWizardStepKey(step) ? step : 'requirements'
   const nextStep = nextWizardStep(currentStep)
-  const nextHref = nextStep
-    ? `/work/portal/projects/${id}/wizard?step=${nextStep}`
-    : `/work/portal/projects/${id}`
+  // Resolved here, not left for the client: every step form's router.push()
+  // after a save uses this same value, and a Client Component can't await
+  // isWorkSubdomain() itself (see WorkLink's comment).
+  const stripWorkPrefix = await isWorkSubdomain()
+  const nextHref = workHref(
+    nextStep ? `/work/portal/projects/${id}/wizard?step=${nextStep}` : `/work/portal/projects/${id}`,
+    stripWorkPrefix,
+  )
 
   const [intake, features, totals, assets] = await Promise.all([
     getProjectIntake(id),

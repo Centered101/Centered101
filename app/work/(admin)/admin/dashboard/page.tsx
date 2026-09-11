@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { WorkLink } from '@/components/work/layout/work-link'
 import {
   AlertCircle,
   ArrowUpRight,
@@ -44,10 +44,10 @@ export default async function AdminDashboardPage() {
         description="นี่คือความเคลื่อนไหวของโปรเจกต์ทั้งหมดวันนี้"
         action={
           staff.can('project:write') ? (
-            <Link className="primary" href="/work/admin/projects/new">
+            <WorkLink className="primary" href="/work/admin/projects/new">
               <Plus size={17} />
               สร้างโปรเจกต์
-            </Link>
+            </WorkLink>
           ) : undefined
         }
       />
@@ -57,30 +57,35 @@ export default async function AdminDashboardPage() {
           label="รายได้รวม"
           value={formatMoney(data.totalRevenue, data.currency)}
           icon={WalletCards}
+          href="/work/admin/payments"
         />
         <StatCard
           label="การชำระเงินที่รอดำเนินการ"
           value={formatMoney(data.pendingAmount, data.currency)}
           icon={Clock3}
           tone="orange"
+          href="/work/admin/payments"
         />
         <StatCard
           label="โปรเจกต์ที่กำลังดำเนินการ"
           value={String(data.activeProjects)}
           icon={FolderKanban}
           tone="violet"
+          href="/work/admin/projects"
         />
         <StatCard
           label="การดูแลรักษาที่ใช้งานอยู่"
           value={String(data.maintenanceCount)}
           icon={LifeBuoy}
           tone="green"
+          href="/work/admin/maintenance"
         />
         <StatCard
           label="การชำระเงินที่เกินกำหนด"
           value={formatMoney(data.overdueAmount, data.currency)}
           icon={AlertCircle}
           tone="red"
+          href="/work/admin/payments"
         />
       </section>
 
@@ -124,9 +129,9 @@ export default async function AdminDashboardPage() {
           title="โปรเจกต์ล่าสุด"
           description="ภาพรวมงานลูกค้าที่กำลังดำเนินการ"
           action={
-            <Link className="outline" href="/work/admin/projects">
+            <WorkLink className="outline" href="/work/admin/projects">
               ดูโปรเจกต์ <ArrowUpRight size={15} />
-            </Link>
+            </WorkLink>
           }
         />
         <ProjectsTable projects={data.recentProjects} />

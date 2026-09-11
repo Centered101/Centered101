@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
+import { WorkLink } from '@/components/work/layout/work-link'
 
 import { ActivityList } from '@/components/work/data/activity-list'
 import { Panel, PageHeading, PanelHead } from '@/components/work/data/panel'
@@ -68,17 +68,17 @@ export default async function AdminProjectActivityPage(
       <Panel className="projects-panel">
         <PanelHead title="ตัวกรอง" description="กรองตามประเภทเหตุการณ์" />
         <nav className="range-tabs">
-          <Link href={base} className={!selected ? 'selected' : ''}>
+          <WorkLink href={base} className={!selected ? 'selected' : ''}>
             ทั้งหมด
-          </Link>
+          </WorkLink>
           {(Object.keys(ACTIVITY_CATEGORIES) as ActivityCategory[]).map((key) => (
-            <Link
+            <WorkLink
               key={key}
               href={`${base}?category=${key}`}
               className={selected === key ? 'selected' : ''}
             >
               {ACTIVITY_CATEGORY_LABELS[key]}
-            </Link>
+            </WorkLink>
           ))}
         </nav>
       </Panel>
@@ -94,12 +94,12 @@ export default async function AdminProjectActivityPage(
           <div className="form-actions">
             {/* Keyset paging on created_at — no OFFSET, so a deep page costs
                 what the first page costs. */}
-            <Link
+            <WorkLink
               className="text-btn"
               href={`${base}?${selected ? `category=${selected}&` : ''}before=${encodeURIComponent(older)}`}
             >
               ดูรายการที่เก่ากว่านี้
-            </Link>
+            </WorkLink>
           </div>
         )}
       </Panel>

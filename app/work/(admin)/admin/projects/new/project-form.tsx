@@ -3,6 +3,7 @@
 import { useActionState, useEffect } from 'react'
 import { toast } from 'sonner'
 
+import { GearIcon } from '@/components/work/data/gear-icon'
 import { SubmitButton } from '@/components/work/forms'
 import { PricingItemsFieldset } from '@/components/work/domain/pricing-items-fieldset'
 import { createProject, type ActionState } from '@/lib/work/services/projects'
@@ -123,6 +124,7 @@ export function ProjectForm({
 
       <label className="checkbox full">
         <input name="maintenanceEnabled" type="checkbox" />
+        <GearIcon />
         <span>เปิดใช้แพ็กเกจดูแลรักษา</span>
       </label>
 

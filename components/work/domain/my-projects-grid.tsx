@@ -1,7 +1,7 @@
-import Link from 'next/link'
 import { Users } from 'lucide-react'
 
 import { EmptyState } from '@/components/work/states'
+import { WorkLink } from '@/components/work/layout/work-link'
 import { ProgressBar } from '@/components/work/data/panel'
 import { Status } from '@/components/work/data/status'
 import {
@@ -48,7 +48,7 @@ export function MyProjectsGrid({
         return (
           <div key={project.id} className="project-card">
             <h3>
-              <Link href={`${basePath}/${project.id}`}>{project.name}</Link>
+              <WorkLink href={`${basePath}/${project.id}`}>{project.name}</WorkLink>
             </h3>
             <small className="muted">{project.projectCode}</small>
 

@@ -22,3 +22,14 @@ export const APP_NAME = process.env.NEXT_PUBLIC_WORK_APP_NAME || "Centered101's 
 /** The tagline under the name, on the page title and in metadata. */
 export const APP_TAGLINE =
   process.env.NEXT_PUBLIC_WORK_APP_TAGLINE || 'ระบบจัดการลูกค้าสำหรับเอเจนซี'
+
+/**
+ * The workspace's public origin — the host it is actually served from, not the
+ * `/work` path it is authored under (see proxy.ts). Used for `metadataBase`,
+ * canonical URLs, the sitemap and JSON-LD.
+ *
+ * SERVER-ONLY: `ROOT_DOMAIN` is not a `NEXT_PUBLIC_` var, so this resolves to
+ * `https://work.undefined` in a browser bundle. Only read it from Server
+ * Components, metadata exports and route handlers.
+ */
+export const APP_ORIGIN = `https://work.${process.env.ROOT_DOMAIN || 'centered101.com'}`

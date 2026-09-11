@@ -4,10 +4,11 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-import { isNavItemActive, type NavItem } from '@/lib/work/nav'
+import { isNavItemActive, workPath, type NavItem } from '@/lib/work/nav'
 import { APP_NAME } from '@/lib/work/branding'
 import type { ProjectSwitcherItem } from '@/lib/work/queries/projects'
 import { AccountMenu } from './account-menu'
+import { ProjectNav } from './project-nav'
 import { ProjectSwitcher } from './project-switcher'
 
 /**
@@ -18,6 +19,7 @@ import { ProjectSwitcher } from './project-switcher'
  *  - the active item is derived from the URL, not from a useState value
  */
 export function Sidebar({
+  activePortal,
   items,
   workspaceRole,
   accountHref,
@@ -30,8 +32,13 @@ export function Sidebar({
   onClose,
   projects,
 }: {
+  activePortal: 'admin' | 'portal'
   items: NavItem[]
-  /** Portal only — the client's own projects for the switcher. Undefined on the admin side. */
+  /**
+   * id → name for every project the caller can see. Feeds the portal's
+   * project switcher and, on both portals, the section nav's name header
+   * while a project is open (ProjectNav).
+   */
   projects?: ProjectSwitcherItem[]
   /**
    * What this workspace is, in one line under the brand — "ผู้ดูแลระบบ
@@ -63,6 +70,16 @@ export function Sidebar({
 }) {
   const pathname = usePathname()
 
+  // While a single project is open, the sidebar becomes that project's own
+  // section nav (ProjectNav) — the strip that used to run across the top of
+  // the page. `new` and the list route are not 36-char UUIDs, so they don't
+  // match and keep the normal nav. workPath so this fires on both URL shapes
+  // (see its comment).
+  const activeProjectId =
+    workPath(pathname).match(
+      new RegExp(`^/${activePortal}/projects/([0-9a-f-]{36})(?:/|$)`),
+    )?.[1] ?? null
+
   return (
     <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
       <div className="brand">
@@ -83,20 +100,31 @@ export function Sidebar({
           {workspaceRole && <small>พื้นที่ทำงาน{workspaceRole}</small>}
         </div>
       </div>
-      {projects && <ProjectSwitcher projects={projects} />}
-      <nav>
-        {items.map(({ label, href, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className={isNavItemActive(pathname, href) ? 'active' : ''}
-            onClick={onClose}
-          >
-            <Icon size={17} />
-            {label}
-          </Link>
-        ))}
-      </nav>
+      {activeProjectId ? (
+        <ProjectNav
+          activePortal={activePortal}
+          projectId={activeProjectId}
+          projectName={projects?.find((project) => project.id === activeProjectId)?.name ?? null}
+          onNavigate={onClose}
+        />
+      ) : (
+        <>
+          {activePortal === 'portal' && projects && <ProjectSwitcher projects={projects} />}
+          <nav>
+            {items.map(({ label, href, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className={isNavItemActive(pathname, href) ? 'active' : ''}
+                onClick={onClose}
+              >
+                <Icon size={17} />
+                {label}
+              </Link>
+            ))}
+          </nav>
+        </>
+      )}
       {/* No Settings link down here.
           It used to be hardcoded, which broke twice over once the nav became
           real: it duplicated the ตั้งค่า entry in adminNav, and it pointed at

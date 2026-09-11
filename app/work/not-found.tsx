@@ -1,4 +1,4 @@
-import { NotFoundState } from '@/components/work/states'
+import { NotFoundState } from '@/components/work/states/linked'
 import { Footer } from '@/components/work/layout/footer'
 
 export const metadata = { title: 'ไม่พบหน้านี้' }

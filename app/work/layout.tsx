@@ -3,7 +3,7 @@ import { Kanit } from 'next/font/google'
 import localFont from 'next/font/local'
 
 import { WorkToaster } from '@/components/work/work-toaster'
-import { APP_NAME, APP_TAGLINE } from '@/lib/work/branding'
+import { APP_NAME, APP_ORIGIN, APP_TAGLINE } from '@/lib/work/branding'
 
 import './work.css'
 
@@ -74,16 +74,29 @@ const sansationFont = localFont({
 })
 
 export const metadata: Metadata = {
+  // The host /work is served from, so canonical/OG URLs and the icon paths
+  // below resolve to work.centered101.com, not the /work path they're authored
+  // under (see proxy.ts).
+  metadataBase: new URL(APP_ORIGIN),
   title: {
     default: `${APP_NAME} — ${APP_TAGLINE}`,
     template: `%s — ${APP_NAME}`,
   },
   description:
     'พื้นที่ทำงานสำหรับจัดการโปรเจกต์ลูกค้า การชำระเงิน การส่งมอบ การเผยแพร่ และการดูแลรักษา',
+  applicationName: APP_NAME,
   // The workspace has its own mark, separate from the marketing site's.
   icons: { icon: '/work/favicon.ico', apple: '/work/favicon.png' },
-  // A private client workspace has no reason to be indexed.
+  // DEFAULT for the whole subtree: the client portal, the admin dashboard, the
+  // login and auth screens, share links and invitations have no reason to be
+  // indexed. The four genuinely public pages — the landing, /about and the two
+  // legal pages — each re-declare `robots` and a canonical URL to opt back in.
   robots: { index: false, follow: false },
+  openGraph: {
+    type: 'website',
+    siteName: APP_NAME,
+    locale: 'th_TH',
+  },
 }
 
 export const viewport: Viewport = {

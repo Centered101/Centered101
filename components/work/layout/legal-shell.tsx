@@ -1,9 +1,9 @@
-import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { formatDate } from '@/lib/work/format'
 import { Footer } from './footer'
+import { WorkLink } from './work-link'
 
 /**
  * Chrome shared by the privacy policy and the terms.
@@ -30,10 +30,10 @@ export function LegalShell({
 }) {
   return (
     <div className="legal-page">
-      <Link className="legal-back" href="/work">
+      <WorkLink className="legal-back" href="/work">
         <ArrowLeft size={15} />
         กลับสู่พื้นที่ทำงาน
-      </Link>
+      </WorkLink>
 
       <article className="panel legal-panel">
         <header className="legal-head">

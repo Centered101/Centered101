@@ -1,6 +1,5 @@
-import Link from 'next/link'
-
 import { Panel, PageHeading } from '@/components/work/data/panel'
+import { WorkLink } from '@/components/work/layout/work-link'
 import { StatCard } from '@/components/work/data/stat-card'
 import { Status } from '@/components/work/data/status'
 import { EmptyState } from '@/components/work/states'
@@ -36,15 +35,22 @@ export default async function AdminMaintenancePage() {
       <PageHeading title="การดูแลรักษา" description="แพ็กเกจดูแลรักษาของลูกค้าทั้งหมด" />
 
       <section className="stats-grid">
-        <StatCard label="แพ็กเกจที่ใช้งานอยู่" value={String(active.length)} icon={LifeBuoy} tone="green" />
+        <StatCard
+          label="แพ็กเกจที่ใช้งานอยู่"
+          value={String(active.length)}
+          icon={LifeBuoy}
+          tone="green"
+          href="#maintenance-list"
+        />
         <StatCard
           label="มูลค่าต่อเดือน"
           value={formatMoney(monthlyValue, active[0]?.currency ?? 'THB')}
           icon={WalletCards}
+          href="#maintenance-list"
         />
       </section>
 
-      <Panel className="projects-panel">
+      <Panel className="projects-panel" id="maintenance-list">
         {plans.length === 0 ? (
           <EmptyState
             title="ยังไม่มีแพ็กเกจดูแลรักษา"
@@ -70,9 +76,9 @@ export default async function AdminMaintenancePage() {
                       <strong>{plan.name}</strong>
                     </td>
                     <td>
-                      <Link href={`/work/admin/projects/${plan.projectId}`}>
+                      <WorkLink href={`/work/admin/projects/${plan.projectId}`}>
                         {plan.projectName ?? '—'}
-                      </Link>
+                      </WorkLink>
                     </td>
                     <td>{plan.clientName ?? '—'}</td>
                     <td>

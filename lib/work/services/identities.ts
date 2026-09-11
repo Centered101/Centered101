@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { getCallbackUrl } from '@/lib/work/auth/callback-url'
 import { requireUser } from '@/lib/work/auth/session'
 import { createClient } from '@/lib/work/supabase/server'
+import { isNetworkError } from '@/lib/work/supabase/errors'
 import { safeRedirectPath } from '@/lib/work/validation/auth'
 import type { ActionState } from './projects'
 
@@ -30,21 +31,10 @@ function returnPath(formData: FormData): string {
 /**
  * Could not reach the auth server at all.
  *
- * supabase-js turns a failed fetch into an AuthRetryableFetchError and returns
- * it in `error`, so it arrives on the same channel as a real rejection — and
- * without this check a dropped connection was reported as "Manual linking is
- * off", sending people to a dashboard setting that was never the problem.
- *
- * Anything that is NOT an auth error it rethrows instead. Left uncaught in a
- * Server Action that becomes a 500 whose body the client cannot parse, which
- * is the "An unexpected response was received from the server." overlay rather
- * than the message this form is built to show.
+ * Without this check a dropped connection was reported as "Manual linking is
+ * off", sending people to a dashboard setting that was never the problem. See
+ * `isNetworkError` for why this matters in a Server Action specifically.
  */
-function isNetworkError(error: unknown): boolean {
-  const { name, message } = (error ?? {}) as { name?: string; message?: string }
-  return name === 'AuthRetryableFetchError' || message === 'fetch failed'
-}
-
 const NETWORK_MESSAGE = 'ติดต่อเซิร์ฟเวอร์ยืนยันตัวตนไม่ได้ ตรวจสอบการเชื่อมต่อแล้วลองใหม่อีกครั้ง'
 
 export async function linkGoogle(_prev: ActionState, formData: FormData): Promise<ActionState> {

@@ -1,14 +1,14 @@
-import Link from 'next/link'
+import { WorkLink } from '@/components/work/layout/work-link'
 import {
   ArrowUpRight,
   Clock3,
-  Code2,
   FolderKanban,
   ShieldCheck,
   WalletCards,
 } from 'lucide-react'
 
 import { Panel, PageHeading, PanelHead } from '@/components/work/data/panel'
+import { ProjectIcon } from '@/components/work/data/project-icon'
 import { StatCard } from '@/components/work/data/stat-card'
 import { Status } from '@/components/work/data/status'
 import { Timeline } from '@/components/work/data/timeline'
@@ -22,7 +22,6 @@ import {
   SOURCE_OWNERSHIP_LABELS,
   formatDate,
   formatMoney,
-  idTone,
   projectStatusTone,
 } from '@/lib/work/format'
 import { getPortalDashboard } from '@/lib/work/queries/dashboard'
@@ -68,9 +67,9 @@ export default async function PortalDashboardPage() {
         title="ยินดีต้อนรับกลับมา"
         description="ภาพรวมโปรเจกต์และบัญชีของคุณ"
         action={
-          <Link className="primary" href={`/work/portal/projects/${featured.id}/payments`}>
+          <WorkLink className="primary" href={`/work/portal/projects/${featured.id}/payments`}>
             ดูการชำระเงิน <ArrowUpRight size={15} />
-          </Link>
+          </WorkLink>
         }
       />
 
@@ -80,17 +79,20 @@ export default async function PortalDashboardPage() {
           value={String(data.activeProjects)}
           icon={FolderKanban}
           tone="violet"
+          href="/work/portal/projects"
         />
         <StatCard
           label="ชำระแล้วทั้งหมด"
           value={formatMoney(data.totalPaid, data.currency)}
           icon={WalletCards}
+          href={`/work/portal/projects/${featured.id}/payments`}
         />
         <StatCard
           label="ยอดค้างชำระ"
           value={formatMoney(data.outstanding, data.currency)}
           icon={Clock3}
           tone="orange"
+          href={`/work/portal/projects/${featured.id}/payments`}
         />
         <StatCard
           label="การดูแลรักษา"
@@ -99,15 +101,18 @@ export default async function PortalDashboardPage() {
           }
           icon={ShieldCheck}
           tone="green"
+          href={`/work/portal/projects/${data.maintenance?.projectId ?? featured.id}/maintenance`}
         />
       </section>
 
       <section className="client-main">
         <Panel className="project-hero">
           <div className="hero-top">
-            <div className={`project-icon ${idTone(featured.id)} large`}>
-              <Code2 size={22} />
-            </div>
+            <ProjectIcon
+              projectId={featured.id}
+              logoAssetId={featured.logoAssetId}
+              size="large"
+            />
             <div>
               <p className="eyebrow">{featured.projectCode}</p>
               <h2>{featured.name}</h2>
@@ -144,9 +149,9 @@ export default async function PortalDashboardPage() {
                 {formatMoney(remaining, featured.currency)}
               </strong>
             </div>
-            <Link className="primary" href={`/work/portal/projects/${featured.id}/payments`}>
+            <WorkLink className="primary" href={`/work/portal/projects/${featured.id}/payments`}>
               ดูการชำระเงิน <ArrowUpRight size={15} />
-            </Link>
+            </WorkLink>
           </div>
         </Panel>
 
@@ -211,12 +216,12 @@ export default async function PortalDashboardPage() {
                 <span key={service}>{service}</span>
               ))}
             </div>
-            <Link
+            <WorkLink
               className="outline full"
               href={`/work/portal/projects/${data.maintenance.projectId}/maintenance`}
             >
               ดูรายละเอียด <ArrowUpRight size={15} />
-            </Link>
+            </WorkLink>
           </Panel>
         ) : (
           <Panel className="maintenance">

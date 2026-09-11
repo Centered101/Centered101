@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { WorkLink } from '@/components/work/layout/work-link'
 
 export type ProjectView = 'active' | 'archived' | 'all'
 
@@ -50,9 +50,9 @@ export function ProjectViewTabs({
   return (
     <nav className="range-tabs project-view-tabs">
       {tabs.map((tab) => (
-        <Link key={tab.key} href={href(tab.key)} className={view === tab.key ? 'selected' : ''}>
+        <WorkLink key={tab.key} href={href(tab.key)} className={view === tab.key ? 'selected' : ''}>
           {tab.label} ({tab.count})
-        </Link>
+        </WorkLink>
       ))}
     </nav>
   )

@@ -2,8 +2,10 @@ import Link from 'next/link'
 
 import { AuthBrand } from '@/components/work/layout/auth-brand'
 import { Footer } from '@/components/work/layout/footer'
+import { isWorkSubdomain } from '@/lib/work/auth/callback-url'
 import { resolveLandingPath } from '@/lib/work/auth/permissions'
 import { requireUser } from '@/lib/work/auth/session'
+import { workHref } from '@/lib/work/nav'
 import { ResetPasswordForm } from './reset-form'
 
 export const metadata = { title: 'ตั้งรหัสผ่านใหม่' }
@@ -21,7 +23,10 @@ export const metadata = { title: 'ตั้งรหัสผ่านใหม�
  */
 export default async function ResetPasswordPage() {
   await requireUser('/work/reset-password')
-  const landingPath = await resolveLandingPath()
+  // Resolved once here, not left for the client: reset-form.tsx uses the same
+  // value for a router.replace() after the password is set, and a Client
+  // Component can't await isWorkSubdomain() itself (see WorkLink's comment).
+  const landingPath = workHref(await resolveLandingPath(), await isWorkSubdomain())
 
   return (
     <div className="auth-screen">

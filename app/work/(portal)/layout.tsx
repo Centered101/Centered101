@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { NotificationList } from '@/components/work/domain/notification-list'
 import { AppShell } from '@/components/work/layout/app-shell'
 import { SchemaNotice } from '@/components/work/states/schema-notice'
+import { isWorkSubdomain } from '@/lib/work/auth/callback-url'
 import { requireClient } from '@/lib/work/auth/permissions'
 import { getNotifications } from '@/lib/work/queries/notifications'
 import { getMyProjectSwitcherList } from '@/lib/work/queries/projects'
@@ -29,14 +30,16 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   // The bell is now the person's OWN notifications rather than the project
   // activity feed: `notifications_select_own` is `recipient_id = auth.uid()`,
   // so it cannot become a window into a colleague's inbox either.
-  const [notifications, projects] = await Promise.all([
+  const [notifications, projects, stripWorkPrefix] = await Promise.all([
     getNotifications({ limit: 20 }),
     getMyProjectSwitcherList(),
+    isWorkSubdomain(),
   ])
 
   return (
     <AppShell
       activePortal="portal"
+      stripWorkPrefix={stripWorkPrefix}
       /* Not the client's name — that is in the footer. What the line under
          the brand says is which side of the app you are on. */
       workspaceRole="ลูกค้า"

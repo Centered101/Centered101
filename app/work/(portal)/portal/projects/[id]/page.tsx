@@ -1,8 +1,8 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Clock3, Code2, ShieldCheck } from 'lucide-react'
 
 import { Panel, PageHeading, PanelHead } from '@/components/work/data/panel'
+import { WorkLink } from '@/components/work/layout/work-link'
 import { Status } from '@/components/work/data/status'
 import { Timeline } from '@/components/work/data/timeline'
 import { requireProjectAccess } from '@/lib/work/auth/permissions'
@@ -145,9 +145,9 @@ export default async function PortalProjectPage(
           title="ไทม์ไลน์งาน"
           description={`ความคืบหน้างาน ${workProgress.percent}% (${workProgress.completed}/${workProgress.total} ไมล์สโตน)`}
           action={
-            <Link className="text-btn" href={`/work/portal/projects/${id}/timeline`}>
+            <WorkLink className="text-btn" href={`/work/portal/projects/${id}/timeline`}>
               ดูไทม์ไลน์ทั้งหมด
-            </Link>
+            </WorkLink>
           }
         />
         {workProgress.awaitingReview.length > 0 && (

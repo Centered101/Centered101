@@ -347,22 +347,30 @@ export async function getAdminProjectInbox(
 export type ProjectSwitcherItem = { id: string; name: string; projectCode: string }
 
 /**
- * The bare minimum for the sidebar's project switcher — id and name only,
- * no join to `clients`/`payments`/member counts. Deliberately separate from
+ * The bare minimum for the sidebar — id and name only, no join to
+ * `clients`/`payments`/member counts. Deliberately separate from
  * `getMyProjectsWithCollaboration()`, which the "My Projects" page needs in
- * full: the switcher renders on every portal navigation (it lives in the
- * layout), so it stays as cheap as `getProjects()`'s own base query allows.
+ * full: this renders on every navigation (it lives in the layout), so it
+ * stays as cheap as `getProjects()`'s own base query allows.
+ *
+ * Feeds two things: the client portal's project switcher, and the section
+ * nav's project-name header on both portals (ProjectNav). The admin side
+ * passes `includeArchived` so that header still resolves on an archived
+ * project's page, which staff can open from the "จัดเก็บแล้ว" view.
  */
-export async function getMyProjectSwitcherList(): Promise<ProjectSwitcherItem[]> {
+export async function getMyProjectSwitcherList(
+  { includeArchived = false }: { includeArchived?: boolean } = {},
+): Promise<ProjectSwitcherItem[]> {
   const supabase = await createClient()
 
-  const result = await supabase
+  let query = supabase
     .from('projects')
     .select('id, name, project_code')
-    .is('archived_at', null)
     .order('updated_at', { ascending: false })
 
-  const rows = unwrapOr<{ id: string; name: string; project_code: string }[]>(result, 'โปรเจกต์', [])
+  if (!includeArchived) query = query.is('archived_at', null)
+
+  const rows = unwrapOr<{ id: string; name: string; project_code: string }[]>(await query, 'โปรเจกต์', [])
   return rows.map((row) => ({ id: row.id, name: row.name, projectCode: row.project_code }))
 }
 
@@ -378,10 +386,10 @@ export async function getProjectById(id: string): Promise<ProjectDetail | null> 
   const row = unwrapOr<(ProjectRow & { owner_id: string | null }) | null>(result, 'โปรเจกต์', null)
   if (!row) return null
 
-  const paid = await paidByProject([row.id])
+  const [paid, logos] = await Promise.all([paidByProject([row.id]), logoByProject([row.id])])
 
   return {
-    ...toListItem(row, paid.get(row.id) ?? 0),
+    ...toListItem(row, paid.get(row.id) ?? 0, logos.get(row.id) ?? null),
     description: row.description,
     startDate: row.start_date,
     actualDelivery: row.actual_delivery,

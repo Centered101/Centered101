@@ -4,6 +4,7 @@ import { useActionState } from 'react'
 import Link from 'next/link'
 
 import { SubmitButton, useActionToast } from '@/components/work/forms'
+import { useWorkHref } from '@/components/work/layout/work-link-context'
 import { submitProject } from '@/lib/work/services/projects'
 import type { ActionState } from '@/lib/work/services/projects'
 
@@ -28,7 +29,7 @@ export function SubmitProjectForm({ projectId }: { projectId: string }) {
         โปรเจกต์นี้ยังเป็นฉบับร่าง — ทีมงานยังไม่เห็นจนกว่าคุณจะส่งคำขอ
       </p>
       <div className="form-actions" style={{ justifyContent: 'flex-start' }}>
-        <Link href={`/work/portal/projects/${projectId}/wizard`} className="outline btn-sm">
+        <Link href={useWorkHref(`/work/portal/projects/${projectId}/wizard`)} className="outline btn-sm">
           กรอกข้อมูลเพิ่มเติม
         </Link>
         <form action={formAction}>

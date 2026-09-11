@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { CheckCheck } from 'lucide-react'
 
 import { SubmitButton, useActionToast } from '@/components/work/forms'
+import { useWorkHref } from '@/components/work/layout/work-link-context'
 import { formatRelative } from '@/lib/work/format'
 import type { NotificationItem } from '@/lib/work/queries/notifications'
 import {
@@ -76,11 +77,14 @@ function NotificationRow({
   )
   useActionToast(state)
 
-  const href = item.projectId
+  const rawHref = item.projectId
     ? portal === 'admin'
       ? `/work/admin/projects/${item.projectId}`
       : `/work/portal/projects/${item.projectId}`
     : null
+  // useWorkHref is always called — hooks can't be conditional — with '' when
+  // there's nothing to link to; the render below still checks rawHref itself.
+  const href = useWorkHref(rawHref ?? '')
 
   return (
     <li className={item.readAt === null ? 'unread' : undefined}>
@@ -96,7 +100,7 @@ function NotificationRow({
       </div>
 
       <div className="notification-row-actions">
-        {href && (
+        {rawHref && (
           <Link className="text-btn" href={href}>
             เปิด
           </Link>

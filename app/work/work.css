@@ -283,6 +283,54 @@ button {
   color: var(--primary);
   background: #eef7ff;
 }
+
+/* The sidebar while one project is open (ProjectNav) — a back link, the
+   project's name as a header, then that project's sections. The <nav> inside
+   reuses `.sidebar nav a` for the links (active pill included); only the
+   header rows and a slightly denser link rhythm are set here, since the list
+   is longer than the top-level nav. */
+.project-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.project-nav-back {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 2px -2px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  text-decoration: none;
+  align-self: flex-start;
+}
+.project-nav-back:hover {
+  color: var(--primary);
+  background: #eef7ff;
+}
+.project-nav-title {
+  margin: 2px 6px 8px;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--foreground);
+  /* A long project name wraps rather than truncating — there is room to grow
+     downward here, and it has spaces to break at. */
+  overflow-wrap: break-word;
+}
+/* `.sidebar …` prefix so these beat the FLOATING CARD block's own
+   `.sidebar nav a` (equal specificity, but it comes later in the file). */
+.sidebar .project-nav nav {
+  display: grid;
+  gap: 2px;
+}
+.sidebar .project-nav nav a {
+  padding: 9px 12px;
+  gap: 10px;
+  font-size: var(--text-sm);
+}
+
 /* The name/email block, between the avatar and the chevron — needs its own
    minimum width reset (flex items don't shrink below content size by
    default), now that there's a fixed-width icon after it that name/email
@@ -428,8 +476,20 @@ button {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
   color: var(--muted-foreground);
   font-size: var(--text-base);
+}
+/* The trail can be four deep (โปรเจกต์ › project name › section). Cap the
+   name and the current crumb so a long one truncates instead of shoving the
+   topbar's actions off the edge; the short structural crumbs are untouched. */
+.breadcrumbs .crumb-mid,
+.breadcrumbs .crumb-current {
+  min-width: 0;
+  max-width: 24ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 /* Both crumbs navigate, so they are links — but a breadcrumb that looks like
    a link everywhere reads as chrome noise. Colour stays inherited, and hover
@@ -1385,12 +1445,27 @@ td {
   color: var(--muted-foreground);
   margin-left: auto;
 }
-@media (max-width: 1050px) {
-  .topbar,
-  .content {
+/* Card-edge alignment for the docked-sidebar range — everything from a small
+   laptop window down through every iPad size in either orientation (iPad Pro
+   11" landscape is 1194px). The phone block below re-tightens the same two
+   paddings at 700px. */
+@media (max-width: 1200px) {
+  /* The topbar keeps an inner inset so its icons don't sit on the card
+     border. */
+  .topbar {
     padding-left: 24px;
     padding-right: 24px;
   }
+  /* The content doesn't: the panels carry their own padding, so a second
+     inset here only pushed every card ~24px further in than the topbar card
+     above them (visible on iPad). Flush with .main's gutter instead, so the
+     card edges line up with the navbar — same as the phone breakpoint. */
+  .content {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+@media (max-width: 1050px) {
   .dashboard-grid,
   .client-main,
   .bottom-grid {
@@ -1431,8 +1506,10 @@ td {
     margin-right: auto;
     margin-left: 10px;
   }
+  /* Only the current page's crumb at phone width — the trail can be three or
+     four deep now (โปรเจกต์ › name › section), which would wrap or overflow. */
   .breadcrumbs span,
-  .breadcrumbs .crumb-root {
+  .breadcrumbs .crumb:not(.crumb-current) {
     display: none;
   }
   .breadcrumbs .crumb-current {
@@ -1447,7 +1524,11 @@ td {
     gap: 10px;
   }
   .content {
-    padding: 14px 12px 32px;
+    /* No side padding at this width: .main's 10px gutter is the only
+       horizontal inset, so the stacked panels line up flush with the outer
+       edge of the topbar card above them instead of sitting ~12px further
+       in — the misalignment the navbar/content mismatch came from. */
+    padding: 14px 0 32px;
     overflow: hidden;
   }
   .page-heading {
@@ -1601,8 +1682,10 @@ td {
 }
 @media (max-width: 380px) {
   .content {
-    padding-left: 10px;
-    padding-right: 10px;
+    /* Stay flush with .main's gutter (and the topbar card) — the 700px block
+       already zeroed the side padding; don't re-add it here. */
+    padding-left: 0;
+    padding-right: 0;
   }
   .stat-card {
     padding: 10px;
@@ -1919,7 +2002,23 @@ a.text-btn {
   height: calc(100dvh - 28px);
   min-height: 0;
   overflow-y: auto;
+  /* This card scrolls vertically, never sideways. Without this, an unbreakable
+     string in a child that can't be shrunk far enough — the long Google
+     address in the account card, .profile small — raised a horizontal
+     scrollbar under it on the client portal (admin's shorter test emails just
+     never hit the limit). .sidebar-bottom's grid fix below is the real
+     shrink; this clips anything that still won't fit. */
+  overflow-x: hidden;
   overscroll-behavior: contain;
+}
+
+/* .sidebar-bottom is display:grid (base rule); its one implicit column is
+   `auto`, whose minimum is min-content — so the account card could size
+   itself to the full, un-ellipsised email and push past the sidebar. minmax
+   lets the column shrink below that, which is what lets .profile small's
+   text-overflow: ellipsis actually engage. */
+.sidebar-bottom {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .brand {
@@ -2605,9 +2704,10 @@ button.profile:focus-visible {
   background: var(--card);
 }
 
-/* The attached file, once chosen. A name and a way to remove it — no preview
-   thumbnail: the person attaching a screenshot just took it and knows what is
-   in it, and a 5 MB image rendered in a dropdown moves the send button. */
+/* The attached file, once chosen: a small fixed-size thumbnail (so it's
+   visible without a click, but never the thing that makes this row taller
+   than the last one) and its name, opening a full-size preview lightbox
+   (.feedback-preview-backdrop below) on click — and a way to remove it. */
 .feedback-attachment {
   display: flex;
   align-items: center;
@@ -2619,20 +2719,91 @@ button.profile:focus-visible {
   color: var(--primary);
   font-size: var(--text-sm);
 }
-.feedback-attachment span {
+/* Specific enough to win over the generic `.feedback-attachment button`
+   below (the remove button) despite coming first in the file. */
+.feedback-attachment button.feedback-attachment-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.feedback-attachment button {
-  display: grid;
-  place-items: center;
   border: none;
   background: none;
   color: inherit;
   padding: 0;
+  cursor: pointer;
+}
+.feedback-attachment-name:disabled {
+  cursor: default;
+}
+.feedback-attachment-thumb {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 5px;
+  object-fit: cover;
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+}
+.feedback-attachment-name span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 2px;
+  transition: text-decoration-color 0.15s ease;
+}
+.feedback-attachment-name:not(:disabled):hover span {
+  text-decoration-color: currentColor;
+}
+.feedback-attachment button {
+  display: grid;
+  place-items: center;
+  flex: none;
+  border: none;
+  background: none;
+  color: inherit;
+  padding: 0;
+}
+
+/* The lightbox opened from the row above — the picture at full size over
+   everything else, dismissed by its backdrop, its own close button, or
+   Escape (handled in FeedbackMenu, which also gives it first claim on
+   Escape over the panel itself). */
+.feedback-preview-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: rgba(15, 23, 42, 0.65);
+}
+.feedback-preview-image {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  cursor: default;
+}
+.feedback-preview-close {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  cursor: pointer;
+}
+.feedback-preview-close:hover {
+  background: rgba(255, 255, 255, 0.28);
 }
 
 .feedback-actions {
@@ -2916,13 +3087,27 @@ button.profile:focus-visible {
   outline-offset: 1px;
 }
 .work-form label.checkbox {
+  /* Explicit, not inherited from `.work-form > label`'s display: grid —
+     that rule only reaches DIRECT children, and a checkbox label nested
+     inside a wrapper div (.scope-checklist, .unlock-checkboxes,
+     .milestone-draft-row) never got it, so `gap` did nothing there and its
+     icon sat flush against its text. */
+  display: grid;
   grid-auto-flow: column;
   justify-content: start;
   align-items: center;
   gap: 8px;
+  position: relative;
 }
+/* Visually hidden, not removed: the label (icon and text alike) still
+   toggles this input directly, and it stays what keyboard focus and screen
+   readers land on. See .gear-icon below for the control that replaces it. */
 .work-form label.checkbox input {
-  width: auto;
+  position: absolute;
+  opacity: 0;
+  width: 18px;
+  height: 18px;
+  margin: 0;
 }
 .work-form fieldset.vat-choice {
   grid-column: 1 / -1;
@@ -2946,9 +3131,36 @@ button.profile:focus-visible {
   align-items: center;
   gap: 8px;
   font-size: var(--text-md);
+  position: relative;
 }
 .work-form label.radio input {
-  width: auto;
+  position: absolute;
+  opacity: 0;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+/* Gear icon standing in for the native radio/checkbox box across every
+   /work form — see GearIcon (components/work/data/gear-icon.tsx). Color and
+   rotation carry the checked state that used to live on the native control. */
+.gear-icon {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  color: var(--muted-foreground);
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+.work-form label.checkbox input:checked + .gear-icon,
+.work-form label.radio input:checked + .gear-icon {
+  color: var(--primary);
+  transform: rotate(90deg);
+}
+.work-form label.checkbox input:focus-visible + .gear-icon,
+.work-form label.radio input:focus-visible + .gear-icon {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 .work-form .vat-disclaimer {
   grid-column: 1 / -1;
@@ -4710,6 +4922,16 @@ html:has(.work-root)::-webkit-scrollbar-button,
 .stat-card-link:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
+}
+/* On leaf pages a stat card links to the panel below that lists its rows
+   (href="#..."). The sticky .topbar (top: 14px) would sit over that panel's
+   heading when it lands, so a targeted element keeps a matching offset; and
+   the jump is eased rather than instant. */
+.work-root :target {
+  scroll-margin-top: 92px;
+}
+html:has(.work-root) {
+  scroll-behavior: smooth;
 }
 
 /* Client-uploaded logo in the project list. Same footprint as the generic

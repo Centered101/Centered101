@@ -9,11 +9,14 @@ import type { ReactNode } from 'react'
 export function Panel({
   children,
   className = '',
+  id,
 }: {
   children: ReactNode
   className?: string
+  /** Anchor target, so a stat card elsewhere on the page can link to this panel. */
+  id?: string
 }) {
-  return <article className={`panel ${className}`.trim()}>{children}</article>
+  return <article id={id} className={`panel ${className}`.trim()}>{children}</article>
 }
 
 export function PanelHead({

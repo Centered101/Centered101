@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react'
 
+import { GearIcon } from '@/components/work/data/gear-icon'
 import { Panel, PanelHead } from '@/components/work/data/panel'
 import { SubmitButton, useActionToast } from '@/components/work/forms'
 import { PAYMENT_PLAN_STATUS_LABELS, formatMoney } from '@/lib/work/format'
@@ -161,6 +162,7 @@ export function PaymentPlanForm({
                     checked={isStart}
                     onChange={() => setStartKey(row.key)}
                   />
+                  <GearIcon />
                   <span>งวดเริ่มต้น (฿250)</span>
                 </label>
                 <input
@@ -213,6 +215,7 @@ export function PaymentPlanForm({
                           )
                         }
                       />
+                      <GearIcon />
                       <span>{UNLOCKABLE_RESOURCE_LABELS[resource]}</span>
                     </label>
                   ))}

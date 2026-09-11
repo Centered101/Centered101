@@ -4,6 +4,7 @@ import { useActionState, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
+import { GearIcon } from '@/components/work/data/gear-icon'
 import { SubmitButton, useActionToast } from '@/components/work/forms'
 import { AssetThumbnail } from '@/components/work/domain/asset-thumbnail'
 import { useWizardDirty } from './wizard-dirty'
@@ -180,6 +181,7 @@ export function ScopeStepForm({
         {SCOPE_PRESETS.map((item) => (
           <label key={item} className="checkbox">
             <input type="checkbox" name="items" value={item} defaultChecked={existingNames.has(item)} />
+            <GearIcon />
             <span>{item}</span>
           </label>
         ))}
@@ -496,6 +498,7 @@ export function DeliveryStepForm({
         {DELIVERY_ITEM_KEYS.map((key) => (
           <label key={key} className="checkbox">
             <input type="checkbox" name="items" value={key} defaultChecked={intake.requestedDelivery.includes(key)} />
+            <GearIcon />
             <span>{DELIVERY_ITEM_LABELS[key]}</span>
           </label>
         ))}

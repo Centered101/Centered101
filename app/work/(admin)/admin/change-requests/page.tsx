@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { WorkLink } from '@/components/work/layout/work-link'
 
 import { Panel, PageHeading } from '@/components/work/data/panel'
 import { Status } from '@/components/work/data/status'
@@ -66,9 +66,9 @@ export default async function AdminChangeRequestsPage() {
                       <strong>{request.title}</strong>
                     </td>
                     <td>
-                      <Link href={`/work/admin/projects/${request.projectId}`}>
+                      <WorkLink href={`/work/admin/projects/${request.projectId}`}>
                         {request.projectName ?? '—'}
-                      </Link>
+                      </WorkLink>
                     </td>
                     <td className="muted">
                       {request.requestedByName ?? request.requestedByEmail ?? '—'}

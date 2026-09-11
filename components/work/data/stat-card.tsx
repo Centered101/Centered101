@@ -1,7 +1,7 @@
-import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
 import type { ElementType } from 'react'
 
+import { WorkLink } from '@/components/work/layout/work-link'
 import type { Tone } from './status'
 
 /**
@@ -52,12 +52,12 @@ export function StatCard({
   if (!href) return <article className="stat-card">{body}</article>
 
   return (
-    <Link
+    <WorkLink
       href={href}
       className={`stat-card stat-card-link${selected ? ' selected' : ''}`}
       aria-pressed={selected}
     >
       {body}
-    </Link>
+    </WorkLink>
   )
 }

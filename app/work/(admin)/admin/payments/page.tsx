@@ -1,7 +1,7 @@
-import Link from 'next/link'
 import { Clock3, WalletCards } from 'lucide-react'
 
 import { Panel, PageHeading } from '@/components/work/data/panel'
+import { WorkLink } from '@/components/work/layout/work-link'
 import { StatCard } from '@/components/work/data/stat-card'
 import { Status } from '@/components/work/data/status'
 import { EmptyState } from '@/components/work/states'
@@ -40,16 +40,22 @@ export default async function AdminPaymentsPage() {
       <PageHeading title="การชำระเงิน" description="รายการชำระเงินทั้งหมดในพื้นที่ทำงาน" />
 
       <section className="stats-grid">
-        <StatCard label="ได้รับแล้ว" value={formatMoney(paid, currency)} icon={WalletCards} />
+        <StatCard
+          label="ได้รับแล้ว"
+          value={formatMoney(paid, currency)}
+          icon={WalletCards}
+          href="#payments-list"
+        />
         <StatCard
           label="รอชำระ"
           value={formatMoney(pending, currency)}
           icon={Clock3}
           tone="orange"
+          href="#payments-list"
         />
       </section>
 
-      <Panel className="projects-panel">
+      <Panel className="projects-panel" id="payments-list">
         {payments.length === 0 ? (
           <EmptyState
             title="ยังไม่มีการชำระเงิน"
@@ -73,9 +79,9 @@ export default async function AdminPaymentsPage() {
                   <tr key={payment.id}>
                     <td>
                       <strong>
-                        <Link href={`/work/admin/projects/${payment.projectId}`}>
+                        <WorkLink href={`/work/admin/projects/${payment.projectId}`}>
                           {payment.projectName}
-                        </Link>
+                        </WorkLink>
                       </strong>
                     </td>
                     <td>{payment.clientName}</td>

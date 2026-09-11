@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react'
 
+import { GearIcon } from '@/components/work/data/gear-icon'
 import { Panel, PanelHead } from '@/components/work/data/panel'
 import { EmptyState } from '@/components/work/states'
 import { SubmitButton, useActionToast } from '@/components/work/forms'
@@ -128,6 +129,7 @@ function VatSettingsForm({ projectId, totals }: { projectId: string; totals: Pri
             checked={!vatEnabled}
             onChange={() => setVatEnabled(false)}
           />
+          <GearIcon />
           <span>ไม่คิด VAT</span>
         </label>
         <label className="radio">
@@ -138,6 +140,7 @@ function VatSettingsForm({ projectId, totals }: { projectId: string; totals: Pri
             checked={vatEnabled}
             onChange={() => setVatEnabled(true)}
           />
+          <GearIcon />
           <span>คิด VAT</span>
         </label>
       </fieldset>

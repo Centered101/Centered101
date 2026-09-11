@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { WorkLink } from '@/components/work/layout/work-link'
 import { ExternalLink } from 'lucide-react'
 
 import { Panel, PageHeading } from '@/components/work/data/panel'
@@ -55,9 +55,9 @@ export default async function AdminDeploymentsPage() {
                   <tr key={deployment.id}>
                     <td>
                       <strong>
-                        <Link href={`/work/admin/projects/${deployment.projectId}`}>
+                        <WorkLink href={`/work/admin/projects/${deployment.projectId}`}>
                           {deployment.projectName ?? '—'}
-                        </Link>
+                        </WorkLink>
                       </strong>
                     </td>
                     <td>{DEPLOYMENT_ENVIRONMENT_LABELS[deployment.environment]}</td>

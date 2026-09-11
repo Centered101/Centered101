@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
+import { useWorkHref } from '@/components/work/layout/work-link-context'
 import { PROJECT_STATUS_LABELS, PROJECT_TYPE_LABELS } from '@/lib/work/format'
 import type { ProjectStatus, ProjectType } from '@/lib/work/types/enums'
 
@@ -28,6 +29,7 @@ export function ProjectsFilterBar({
 }) {
   const router = useRouter()
   const [q, setQ] = useState(filters.q ?? '')
+  const projectsHref = useWorkHref('/work/admin/projects')
 
   function update(next: Partial<typeof filters>) {
     const merged = { ...filters, ...next }
@@ -38,7 +40,7 @@ export function ProjectsFilterBar({
     if (merged.q) params.set('q', merged.q)
     if (merged.bucket) params.set('bucket', merged.bucket)
     if (view && view !== 'active') params.set('view', view)
-    router.push(`/work/admin/projects${params.toString() ? `?${params.toString()}` : ''}`)
+    router.push(`${projectsHref}${params.toString() ? `?${params.toString()}` : ''}`)
   }
 
   return (

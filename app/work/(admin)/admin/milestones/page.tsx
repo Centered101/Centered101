@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { WorkLink } from '@/components/work/layout/work-link'
 
 import { Panel, PageHeading } from '@/components/work/data/panel'
 import { Status } from '@/components/work/data/status'
@@ -51,9 +51,9 @@ export default async function AdminMilestonesPage() {
                       </strong>
                     </td>
                     <td>
-                      <Link href={`/work/admin/projects/${milestone.projectId}`}>
+                      <WorkLink href={`/work/admin/projects/${milestone.projectId}`}>
                         {milestone.projectName}
-                      </Link>
+                      </WorkLink>
                     </td>
                     <td>{milestone.clientName}</td>
                     <td>

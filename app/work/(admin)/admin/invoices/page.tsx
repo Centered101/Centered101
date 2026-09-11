@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { WorkLink } from '@/components/work/layout/work-link'
 
 import { Panel, PageHeading } from '@/components/work/data/panel'
 import { Status } from '@/components/work/data/status'
@@ -58,9 +58,9 @@ export default async function AdminInvoicesPage() {
                     </td>
                     <td>
                       {invoice.projectId ? (
-                        <Link href={`/work/admin/projects/${invoice.projectId}`}>
+                        <WorkLink href={`/work/admin/projects/${invoice.projectId}`}>
                           {invoice.projectName}
-                        </Link>
+                        </WorkLink>
                       ) : (
                         '—'
                       )}

@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
+import { useStripWorkPrefix } from '@/components/work/layout/work-link-context'
+import { workHref } from '@/lib/work/nav'
 import { WIZARD_STEPS, type WizardStepKey } from '@/lib/work/wizard-steps'
 import { useWizardDirty } from './wizard-dirty'
 
@@ -23,6 +25,7 @@ export function WizardNav({ projectId, current }: { projectId: string; current: 
   const router = useRouter()
   const { dirty, clearDirty } = useWizardDirty()
   const [armed, setArmed] = useState(false)
+  const stripPrefix = useStripWorkPrefix()
 
   function go(href: string, targetStep: WizardStepKey) {
     if (targetStep === current) return
@@ -41,7 +44,10 @@ export function WizardNav({ projectId, current }: { projectId: string; current: 
   return (
     <nav className="range-tabs project-tabs">
       {WIZARD_STEPS.map((step, index) => {
-        const href = `/work/portal/projects/${projectId}/wizard?step=${step.key}`
+        const href = workHref(
+          `/work/portal/projects/${projectId}/wizard?step=${step.key}`,
+          stripPrefix,
+        )
         return (
           <Link
             key={step.key}

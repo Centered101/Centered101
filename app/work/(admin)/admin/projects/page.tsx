@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { WorkLink } from '@/components/work/layout/work-link'
 import {
   Archive,
   Clock3,
@@ -155,10 +155,10 @@ export default async function AdminProjectsPage(props: {
         }
         action={
           staff.can('project:write') ? (
-            <Link className="primary" href="/work/admin/projects/new">
+            <WorkLink className="primary" href="/work/admin/projects/new">
               <Plus size={17} />
               สร้างโปรเจกต์
-            </Link>
+            </WorkLink>
           ) : undefined
         }
       />

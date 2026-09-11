@@ -49,6 +49,24 @@ export async function getCallbackUrl(next = ''): Promise<string> {
 }
 
 /**
+ * True when this request reached the workspace via its own subdomain
+ * (work.<root> in production, work.localhost in dev) rather than the
+ * apex/preview host it also serves /work in place on (see proxy.ts).
+ *
+ * This is the flag every internal `<Link>` needs: nav.ts's hrefs are all
+ * authored `/work`-prefixed (the filesystem location), and this says whether
+ * that prefix is invisible on the current host or the real path. Server
+ * Components read it directly; a Client Component that builds its own href
+ * (Sidebar, ProjectNav, ProjectSwitcher) reads the same answer through
+ * useWorkHref (work-link-context.tsx), passed down from the layout that
+ * resolved it here.
+ */
+export async function isWorkSubdomain(): Promise<boolean> {
+  const origin = await getOrigin()
+  return /:\/\/work\./i.test(origin)
+}
+
+/**
  * Absolute URL of a workspace path, for somewhere outside the app to send the
  * browser back to — a Stripe Checkout return, an email link.
  *

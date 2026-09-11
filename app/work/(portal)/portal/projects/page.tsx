@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { WorkLink } from '@/components/work/layout/work-link'
 import { Plus } from 'lucide-react'
 
 import { PageHeading } from '@/components/work/data/panel'
@@ -26,9 +26,9 @@ export default async function PortalProjectsPage() {
         title="โปรเจกต์ของคุณ"
         description={`ทั้งหมด ${projects.length} โปรเจกต์`}
         action={
-          <Link href="/work/portal/projects/new" className="primary btn-sm">
+          <WorkLink href="/work/portal/projects/new" className="primary btn-sm">
             <Plus size={15} /> สร้างโปรเจกต์
-          </Link>
+          </WorkLink>
         }
       />
 

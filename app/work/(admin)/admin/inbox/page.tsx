@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { WorkLink } from '@/components/work/layout/work-link'
 
 import { Panel, PageHeading } from '@/components/work/data/panel'
 import { EmptyState } from '@/components/work/states'
@@ -57,7 +57,7 @@ export default async function AdminInboxPage(props: { searchParams: Promise<{ fi
           {projects.map((project) => (
             <Panel key={project.id} className="project-card">
               <h3>
-                <Link href={`/work/admin/projects/${project.id}/review`}>{project.name}</Link>
+                <WorkLink href={`/work/admin/projects/${project.id}/review`}>{project.name}</WorkLink>
               </h3>
               <small className="muted">{project.projectCode}</small>
 
@@ -73,9 +73,9 @@ export default async function AdminInboxPage(props: { searchParams: Promise<{ fi
                 <Status tone={projectStatusTone(project.status)}>
                   {PROJECT_STATUS_LABELS[project.status]}
                 </Status>
-                <Link href={`/work/admin/projects/${project.id}/review`} className="text-btn">
+                <WorkLink href={`/work/admin/projects/${project.id}/review`} className="text-btn">
                   ตรวจสอบโปรเจกต์
-                </Link>
+                </WorkLink>
               </div>
             </Panel>
           ))}

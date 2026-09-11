@@ -1,7 +1,7 @@
-import Link from 'next/link'
 import { Check, CreditCard, FileText, GitBranch } from 'lucide-react'
 import type { ElementType, ReactNode } from 'react'
 
+import { WorkLink } from '@/components/work/layout/work-link'
 import { formatRelative } from '@/lib/work/format'
 import { activityDetail, activityHref, type ActivityItem } from '@/lib/work/queries/activity'
 
@@ -56,9 +56,9 @@ export function ActivityList({
         )
 
         return href ? (
-          <Link key={item.id} href={href} className="activity-link">
+          <WorkLink key={item.id} href={href} className="activity-link">
             {body}
-          </Link>
+          </WorkLink>
         ) : (
           <div key={item.id}>{body}</div>
         )

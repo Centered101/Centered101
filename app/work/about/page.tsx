@@ -1,10 +1,28 @@
-import Link from 'next/link'
+import { WorkLink } from '@/components/work/layout/work-link'
 
 import { LegalSection, LegalShell } from '@/components/work/layout/legal-shell'
 import { APP_NAME } from '@/lib/work/branding'
 import { LEGAL } from '@/lib/work/legal'
 
-export const metadata = { title: 'เกี่ยวกับพื้นที่ทำงานนี้' }
+import type { Metadata } from 'next'
+
+const ABOUT_DESCRIPTION =
+  `${APP_NAME} คือพื้นที่ทำงานร่วมกันระหว่างทีมงานกับลูกค้า สำหรับติดตามโปรเจกต์ตั้งแต่เริ่มจนส่งมอบและดูแลต่อ — ` +
+  'ฝั่งลูกค้าและฝั่งทีมงานใช้ข้อมูลชุดเดียวกัน'
+
+// Public, like the two legal pages — opts out of the layout's noindex default.
+export const metadata: Metadata = {
+  title: 'เกี่ยวกับพื้นที่ทำงานนี้',
+  description: ABOUT_DESCRIPTION,
+  alternates: { canonical: '/about' },
+  robots: { index: true, follow: true },
+  openGraph: {
+    type: 'article',
+    url: '/about',
+    title: `เกี่ยวกับพื้นที่ทำงานนี้ — ${APP_NAME}`,
+    description: ABOUT_DESCRIPTION,
+  },
+}
 
 /**
  * A plain-language introduction to the workspace.
@@ -115,7 +133,7 @@ export default function WorkAboutPage() {
           หากต้องการให้เพื่อนร่วมงานเข้าถึงด้วย แจ้งทีมงานเพื่อเพิ่มบัญชีของเขา อย่าแบ่งปันบัญชีเดียวกัน
         </p>
         <p>
-          <Link href="/work">ไปที่พื้นที่ทำงาน</Link>
+          <WorkLink href="/work">ไปที่พื้นที่ทำงาน</WorkLink>
         </p>
       </LegalSection>
 
@@ -126,10 +144,10 @@ export default function WorkAboutPage() {
         </p>
         <ul>
           <li>
-            <Link href="/work/terms-of-service">ข้อกำหนดการใช้งาน</Link>
+            <WorkLink href="/work/terms-of-service">ข้อกำหนดการใช้งาน</WorkLink>
           </li>
           <li>
-            <Link href="/work/privacy-policy">นโยบายความเป็นส่วนตัว</Link>
+            <WorkLink href="/work/privacy-policy">นโยบายความเป็นส่วนตัว</WorkLink>
           </li>
           <li>
             ติดต่อทีมงาน · <a href={`mailto:${LEGAL.contactEmail}`}>{LEGAL.contactEmail}</a>
