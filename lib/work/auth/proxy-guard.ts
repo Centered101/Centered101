@@ -34,7 +34,7 @@ const PUBLIC_PREFIXES = [
   // guard would answer its POST with a 307 to /login — which Stripe records as
   // a delivery failure and retries forever, while a real payment sits
   // unrecorded. It is not unauthenticated: the route verifies the request's
-  // signature against STRIPE_WEBHOOK_SECRET before reading a byte of the body,
+  // signature against WORK_STRIPE_WEBHOOK_SECRET before reading a byte of the body,
   // which is a stronger check than a session cookie.
   '/work/api/payments/webhook',
 ]

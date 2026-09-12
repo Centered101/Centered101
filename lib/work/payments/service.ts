@@ -51,12 +51,20 @@ export interface PaymentService {
  * Which adapter is in play, decided by configuration alone.
  *
  * Resolved per call rather than cached in a module variable: the adapters hold
- * no connection of their own (the Stripe client is memoised in lib/stripe.ts),
+ * no connection of their own (the Stripe client is memoised in
+ * lib/work/stripe.ts, /work's OWN client — never the shared lib/stripe.ts),
  * and a cached choice would survive an env change in dev and quietly report
  * the wrong provider.
+ *
+ * Gated on WORK_STRIPE_SECRET_KEY, not the shared STRIPE_SECRET_KEY: this was
+ * reading the wrong var before (found in the same audit that fixed the
+ * webhook secret mismatch) — a deployment with a WORK-only Stripe account
+ * would have silently fallen through to MockPaymentService here even though
+ * StripePaymentService (lib/work/payments/stripe.ts) was fully configured
+ * and ready.
  */
 export async function getPaymentService(): Promise<PaymentService> {
-  if (process.env.STRIPE_SECRET_KEY) {
+  if (process.env.WORK_STRIPE_SECRET_KEY) {
     const { StripePaymentService } = await import('./stripe')
     return new StripePaymentService()
   }

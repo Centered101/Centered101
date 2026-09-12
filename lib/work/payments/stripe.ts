@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { getStripe } from '@/lib/stripe'
+import { getWorkStripe } from '@/lib/work/stripe'
 import type { CheckoutMethod, CheckoutRequest, CheckoutResult, PaymentService } from './service'
 
 /**
@@ -29,7 +29,7 @@ export class StripePaymentService implements PaymentService {
 
   async createCheckout(request: CheckoutRequest): Promise<CheckoutResult> {
     try {
-      const stripe = getStripe()
+      const stripe = getWorkStripe()
 
       const metadata = {
         paymentId: request.paymentId,

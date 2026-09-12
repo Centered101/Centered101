@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import type Stripe from 'stripe'
 
-import { getStripe } from '@/lib/stripe'
+import { getWorkStripe, getWorkWebhookSecret } from '@/lib/work/stripe'
 import { advanceProjectOnStartPayment, settleMilestoneIfCovered } from '@/lib/work/payments/settle'
 import { createAdminClient } from '@/lib/work/supabase/admin'
 import type { Json } from '@/lib/work/types/database'
@@ -12,9 +12,11 @@ import type { PaymentMethod } from '@/lib/work/types/enums'
  *
  * Three properties make this safe, and all three are load-bearing:
  *
- *   1. AUTHENTICITY. The body is verified against `STRIPE_WEBHOOK_SECRET`
- *      before anything is read from it. Without that check this route is an
- *      unauthenticated endpoint that marks invoices paid on request.
+ *   1. AUTHENTICITY. The body is verified against `WORK_STRIPE_WEBHOOK_SECRET`
+ *      (this endpoint's OWN signing secret — see lib/work/stripe.ts for why it
+ *      cannot be the shared `STRIPE_WEBHOOK_SECRET`) before anything is read
+ *      from it. Without that check this route is an unauthenticated endpoint
+ *      that marks invoices paid on request.
  *   2. RAW BODY. `request.text()`, never `request.json()` — the signature is
  *      over the exact bytes, and a re-serialised object will not verify.
  *   3. IDEMPOTENCE, at the data layer. The event id is inserted into
@@ -42,9 +44,9 @@ const METHOD_FROM_STRIPE: Record<string, PaymentMethod> = {
 }
 
 export async function POST(request: NextRequest) {
-  const secret = process.env.STRIPE_WEBHOOK_SECRET
+  const secret = getWorkWebhookSecret()
   if (!secret) {
-    console.error('[payments] STRIPE_WEBHOOK_SECRET is not configured')
+    console.error('[payments] WORK_STRIPE_WEBHOOK_SECRET is not configured')
     return NextResponse.json({ error: 'not configured' }, { status: 503 })
   }
 
@@ -57,10 +59,16 @@ export async function POST(request: NextRequest) {
 
   let event: Stripe.Event
   try {
-    event = getStripe().webhooks.constructEvent(raw, signature, secret)
+    event = getWorkStripe().webhooks.constructEvent(raw, signature, secret)
   } catch (error) {
-    // Never log the body here: an unverified payload is attacker-controlled.
-    console.error('[payments] webhook signature verification failed', error)
+    // Log the message only, never the error object itself: Stripe's SDK
+    // attaches the raw `stripe-signature` header AND the unverified body to
+    // this error's own `.header`/`.payload` properties (see the `stripe`
+    // package's StripeSignatureVerificationError) — console.error(..., error)
+    // would print both. The body is attacker-controlled until verified, and
+    // the header is exactly the "full webhook signature" this must not log.
+    const reason = error instanceof Error ? error.message : 'unknown error'
+    console.error('[payments] webhook signature verification failed:', reason)
     return NextResponse.json({ error: 'invalid signature' }, { status: 400 })
   }
 

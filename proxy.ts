@@ -219,8 +219,15 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url, 308)
   }
 
+  // `/api/payments/webhook` is carved out of the generic /api/* pass-through
+  // below so it resolves to /work/api/payments/webhook (this function's own
+  // `${basePath}${pathname}` branch a few lines down) instead of falling
+  // through unrewritten to the main site's API namespace, where no such
+  // route exists — the work subdomain's canonical Stripe webhook URL, kept
+  // to this one exact path so every other shared /api/* route (analytics,
+  // contact, etc.) keeps passing through to the main site exactly as before.
   const passThrough = selfContained
-    ? pathname.startsWith('/api/')
+    ? pathname.startsWith('/api/') && pathname !== '/api/payments/webhook'
     : pathname.startsWith('/auth/') ||
       pathname.startsWith('/api/') ||
       isPublicAssetPath(pathname)
